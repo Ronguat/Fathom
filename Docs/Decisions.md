@@ -299,12 +299,14 @@ pawns at them.
 **Verified.** Run `0905-024327`: every row of the matrix green with every mutation proven, 46 rows in
 285 s of wall time. On a rolling, sailing, turning deck at sea state 1 at 0, 50, 100 and 150 ms:
 both pawns based on every world through the second half, ship-space error against the server
-within 5 cm at every steady sample standing and walking, world-space peaks 0.2 to 0.3 cm while the ship holds its course and up to 31 cm in the frames a client's ship still awaits a wheel input cm, three
-rollbacks a row at 150 ms, a lateral creep of 3 cm along and 15 cm across cm over seven seconds of rolling. Each
+within 5 cm at every steady sample standing and walking, world-space peaks 0.2 to 0.3 cm while the ship holds its course and up to 31 cm in the frames a
+client's ship still awaits a wheel input, three rollbacks a row at 150 ms, a creep of 3 cm along
+and 15 cm across over seven seconds of rolling. Each
 client's view of the other pawn in ship space within 50 cm of the server's. Stations: a wheel
-call from the bow refused, two from the wheel applied, at 0 and 100 ms. Swimming: in Swimming
-within 63 to 63 frames of the drop, afloat within 30 cm of the surface from a second in, back on the
-deck within 21 to 27 frames of the ladder call, ship-space error after it within 5 cm, world-space
+call from the bow refused, two from the wheel applied, at 0 and 100 ms. Swimming: in Swimming 63 frames after the
+drop at every latency, three over the sixty pre-registered, the row's band at 120 and the drop
+200 cm above the water; afloat within 30 cm of the surface from a second in; back on the deck
+21 to 27 frames after the ladder call, ship-space error after it within 5 cm, world-space
 error while swimming 0.2 cm. The ship rows green with their pawns standing at the stations.
 Both checks pass.
 
