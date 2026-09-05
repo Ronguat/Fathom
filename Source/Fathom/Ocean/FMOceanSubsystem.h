@@ -33,6 +33,8 @@ public:
 
 	/** Seconds of wave time at a shared frame. */
 	float TimeOfFrame(int32 Frame) const { return static_cast<float>(Frame) / FrameRate; }
+	/** Seconds of wave time as drawn: one frame behind the shared frame plus the prediction framework's leftover fraction. */
+	float PresentedTime(int32 Frame) const;
 
 	FVector3f Displace(const FVector2f& XY, int32 Frame) const;
 	float HeightAt(const FVector2f& XY, int32 Frame) const;

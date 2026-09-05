@@ -194,6 +194,62 @@ def tape_report():
     return "\n".join(out)
 
 
+# --- judder: the camera's and the ship's step between rendered frames while walking -------------
+
+JUDDER = dict(handle=None, left=0, rows=[], err=None, role="p1", key=None)
+
+
+def _key(name):
+    k = unreal.Key()
+    k.import_text(name)
+    return k
+
+
+def _judder_tick(dt):
+    JUDDER["left"] -= 1
+    try:
+        role = JUDDER["role"]
+        tag = TAGS[role]
+        cam = STATE["pcs"][role].player_camera_manager
+        ship = ship_in(tag)
+        mesh = ship.get_components_by_class(unreal.DynamicMeshComponent)[0]
+        other = _other_pawn(tag, STATE["pawns"][(role, tag)])
+        JUDDER["rows"].append((dt, cam.get_camera_location(), mesh.get_world_location(), other.get_actor_location() if other else unreal.Vector()))
+    except Exception as e:
+        JUDDER["err"], JUDDER["left"] = repr(e), 0
+    if JUDDER["left"] <= 0 and JUDDER["handle"] is not None:
+        unreal.FMInputTools.input_key(STATE["pcs"][JUDDER["role"]], JUDDER["key"], False)
+        unreal.unregister_slate_post_tick_callback(JUDDER["handle"])
+        JUDDER["handle"] = None
+
+
+def judder_tape(frames=300, role="p1", key_name="W"):
+    """Holds a movement key on the role's client for the tape's length, sampling per Slate tick."""
+    JUDDER.update(left=frames, rows=[], err=None, role=role, key=_key(key_name))
+    unreal.FMInputTools.input_key(STATE["pcs"][role], JUDDER["key"], True)
+    JUDDER["handle"] = unreal.register_slate_post_tick_callback(_judder_tick)
+    return "taping judder for %d ticks, %s held on %s" % (frames, key_name, role)
+
+
+def judder_report(skip=40):
+    """Over the steady middle of the tape: the median step between rendered frames and how many
+    frames step under a quarter of it, for the camera, the ship's mesh and the other pawn."""
+    rows = JUDDER["rows"][skip:-skip] if len(JUDDER["rows"]) > 2 * skip else JUDDER["rows"]
+    out = ["%d ticks (%d in the middle), running=%s, err=%s" % (len(JUDDER["rows"]), len(rows), JUDDER["handle"] is not None, JUDDER["err"])]
+    for name, idx in (("camera", 1), ("ship mesh", 2), ("other pawn", 3)):
+        steps = sorted((rows[i][idx] - rows[i - 1][idx]).length() for i in range(1, len(rows)))
+        if not steps:
+            continue
+        median = steps[len(steps) // 2]
+        still = sum(1 for s in steps if s < 0.25 * median)
+        out.append("%s: median step %.2f cm, %d of %d frames under a quarter of it (%.0f%%), min %.2f max %.2f"
+                   % (name, median, still, len(steps), 100.0 * still / len(steps), steps[0], steps[-1]))
+    dts = [dt for dt, _c, _m, _o in JUDDER["rows"]]
+    if dts:
+        out.append("frame dt mean %.1f ms" % (1000 * sum(dts) / len(dts)))
+    return "\n".join(out)
+
+
 # --- the other pawn as each client renders it, against the server's truth in ship space ---------
 
 PROXY = dict(handle=None, left=0, rows=[], err=None)

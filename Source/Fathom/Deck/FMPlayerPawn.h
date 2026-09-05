@@ -65,6 +65,7 @@ public:
 	float LookScale = 0.5f;
 
 protected:
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdContext& InputCmdResult) override;
@@ -75,8 +76,15 @@ protected:
 	UFUNCTION()
 	void HandleRollback(const FMoverTimeStep& CurrentTimeStep, const FMoverTimeStep& ExpungedTimeStep);
 
-	/** Places a simulated proxy where its base-space state stands on the base as this world holds it now. */
+	/** Places a simulated proxy where its base-space state stands on the base as this world presents it. */
 	void PlaceOnBase(const FMoverDefaultSyncState& State, const UPrimitiveComponent& Base);
+
+	/** The base's transform as drawn this frame: a ship's mesh between its last two frames, any other base as it is. */
+	static FTransform PresentedBase(const UPrimitiveComponent& Base);
+
+	/** The smoothed root Mover offsets between frames; the mesh and the camera ride it. */
+	UPROPERTY(VisibleAnywhere, Category="Fathom")
+	TObjectPtr<USceneComponent> Visual;
 
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<UCapsuleComponent> Capsule;

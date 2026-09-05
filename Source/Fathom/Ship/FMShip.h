@@ -114,11 +114,15 @@ public:
 	/** Applies a station input on the server at the current frame, if the caller stands within the station's radius. */
 	void Apply(FName Input, float Value, AActor* Caller);
 
+	/** The hull's pose between its previous frame and its current one, at the prediction framework's leftover fraction of a step. */
+	FTransform PresentedTransform() const;
+
 	const FFMShipState& GetState() const { return State; }
 
 	static void Step(FFMShipState& S, const FFMShipInputs& In, const UFMShipSettings& K, const UFMOceanSubsystem* Ocean, float Dt);
 
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -156,7 +160,9 @@ private:
 
 	FFMShipState State;
 	TArray<FFMShipInputs> History;
-	FVector LastLocation = FVector::ZeroVector;
+	FTransform HullPose;
+	FTransform LastHullPose;
+	int32 PresentedFrame = -1;
 	FDelegateHandle TickStartHandle;
 	bool bHasState = false;
 	int32 LastTraceFrame = -1;

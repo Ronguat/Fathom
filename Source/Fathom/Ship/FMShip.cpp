@@ -8,6 +8,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Net/FMTrace.h"
 #include "Net/UnrealNetwork.h"
+#include "NetworkPredictionWorldManager.h"
 #include "Ocean/FMOcean.h"
 #include "Ocean/FMOceanSubsystem.h"
 #include "UDynamicMesh.h"
@@ -35,7 +36,8 @@ namespace
 
 AFMShip::AFMShip()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.TickGroup = TG_PrePhysics;
 	bReplicates = true;
 	bAlwaysRelevant = true;
 	SetReplicatingMovement(false);
@@ -295,9 +297,36 @@ void AFMShip::Present()
 	const float Dt = Ocean ? Ocean->TimeOfFrame(1) : 1.0f / 60.0f;
 	const FVector Location(State.X, State.Y, OceanSettings->PlaneZ + State.Heave + K->HullCenterAboveWater);
 	const FRotator Rotation(State.Pitch, State.Heading, State.Roll);
+	if (State.Frame != PresentedFrame)
+	{
+		LastHullPose = PresentedFrame < 0 ? FTransform(Rotation, Location) : HullPose;
+		HullPose = FTransform(Rotation, Location);
+		PresentedFrame = State.Frame;
+	}
 	SetActorLocationAndRotation(Location, Rotation, false, nullptr, ETeleportType::TeleportPhysics);
-	Hull->ComponentVelocity = (Location - LastLocation) / Dt;
-	LastLocation = Location;
+	Hull->ComponentVelocity = (HullPose.GetLocation() - LastHullPose.GetLocation()) / Dt;
+}
+
+FTransform AFMShip::PresentedTransform() const
+{
+	const UNetworkPredictionWorldManager* Prediction = GetWorld()->GetSubsystem<UNetworkPredictionWorldManager>();
+	float Fraction = 1.0f;
+	if (Prediction)
+	{
+		const FFixedTickState& Tick = Prediction->GetFixedTickState();
+		Fraction = FMath::Clamp(Tick.UnspentTimeMS / static_cast<float>(FMath::Max(1, Tick.FixedStepMS)), 0.0f, 1.0f);
+	}
+	return FTransform(FQuat::Slerp(LastHullPose.GetRotation(), HullPose.GetRotation(), Fraction),
+		FMath::Lerp(LastHullPose.GetLocation(), HullPose.GetLocation(), Fraction));
+}
+
+void AFMShip::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (bHasState)
+	{
+		Mesh->SetWorldTransform(PresentedTransform());
+	}
 }
 
 void AFMShip::Trace()

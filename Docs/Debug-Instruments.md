@@ -25,7 +25,8 @@ by one frame within a row, the prediction framework's client throttle, and fails
 pid=<player id> sf=<frame> x= y= z= yaw= mode= base=<0|1> bx= by= bz= rx= ry= rz= wz=` is
 written by every world for every pawn every sixth finalized frame, `sf` the frame the pawn last
 finalized, the position its sync state's, `bx..bz` that position in the space of the base it
-stands on when `base=1`, `rx..rz` the actor's rendered position in that same space, and `wz` the
+stands on when `base=1`, `rx..rz` the visual's position in the space of the base as it is drawn,
+one step behind, and `wz` the
 ocean's height under it; the determinism rows compare the world-space fields across worlds, the
 deck rows the base-space ones, and the other client's rendering against the server's base-space
 state. `ROLLBACK pid= n= to= from=` is
@@ -55,7 +56,9 @@ closed: the editor with `-server` on the harness map, the packaged client from
 **A hands-on session is `Tools/Editor/handson.py`**, driven through `Tools/Editor/run-in-editor.py
 -c` with the editor open: two-client PIE at an emulated round trip, both pawns on the deck, the
 ship driven on request, per-frame tapes of the rendered ship, pawn and camera transforms on every
-world, and consecutive rendered frames through the `Shot` command into `Saved/Screenshots/`. A
+world, consecutive rendered frames through the `Shot` command into `Saved/Screenshots/`, and a
+judder tape that holds a movement key and reads the camera's, the ship mesh's and the other
+pawn's step between rendered frames. A
 view mode or show flag reaches the play viewport only through the controller's console. The loop
 reads none of this; what is rendered is asserted by nothing.
 

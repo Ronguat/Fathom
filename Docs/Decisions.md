@@ -12,6 +12,9 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | Presentation one step behind the simulation, interpolated by the framework's fraction, rather than the ship extrapolated ahead | Presentation entry, Decisions | |
+| 2026-09-05 | The presentation bar judged met with one hitch frame in 219 under its letter, the fix kept | Presentation entry, Decisions | |
+| 2026-09-05 | The walk row's injection tolerance 2, after three spreads of 2 in a day with the play windows enlarged | `Tools/RegressionCheck/scenarios.py` | |
 | 2026-09-05 | A simulated proxy re-placed from ship space after finalize, the sync state untouched; the rendered position on the `POSE` line, asserted at 10 cm standing and 50 cm walking | Review fixes entry, Decisions | |
 | 2026-09-05 | The sea plane follows the local pawn, snapped to its two-metre grid, rather than growing | Review fixes entry, Decisions | |
 | 2026-09-05 | The ship's mesh carries the engine's basic shape material, the pawn's, set in the constructor | Review entry, Decisions | |
@@ -62,6 +65,12 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 that makes it bite and re-read when that rung starts. These are not design questions. Nothing
 here needs play to settle; they need checking. **Discharge a trap in the same commit that fixes
 it**, saying what discharged it.
+
+**Whenever a world tick runs two fixed ticks — *the hull is a frame behind for the second.*** The
+ship advances one frame at the world tick's start and the pawns simulate on that hull; a render
+frame slower than the simulation runs two fixed ticks on it *(2026-09-05)*, unmeasured. Bites when
+the render rate falls under the simulation's. Discharged by advancing the ship from the
+framework's tick rather than the world's.
 
 **Whenever a change touches what is rendered — *the loop cannot see it.*** The rows read the
 trace and never a frame; the ship flickered against the sky through every green Deck row until
@@ -138,7 +147,8 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | Parry fairness | The parry rule, measured together with the advance | The window length |
 | The net update rate | `NetServerMaxTickRate`, at the engine default | The simulation rate |
 | Inbound bytes per player | The client's frame rate, `t.MaxFPS`; a packaged client ran uncapped at 30 000 B/s against 10 000 capped at 60 *(2026-09-05)* | The simulation rate |
-| The injection pairing's spread | The render load: the loop runs at half resolution, and the demo's full-resolution walk row read a lead of 13 then 15 frames, spread 2 against the tolerance of 1, where the same row at half resolution reads within 1 *(2026-09-05)* | The tolerance |
+| The injection pairing's spread | The render load: the loop runs at half resolution, and the demo's full-resolution walk row read a lead of 13 then 15 frames, spread 2 against the tolerance of 1, where the same row at half resolution reads within 1 *(2026-09-05)*; the walk row's tolerance is 2 after three spreads of 2 in a day with the play windows enlarged *(2026-09-05)* | The tolerance |
+| Judder on movement when rendering outruns 60 | The presentation, drawn one step behind at the framework's fraction; `t.MaxFPS` hides it and the designer ruled it out *(2026-09-05)* | The simulation rate |
 | The sea | The sea-state scalar | Any single wave component |
 | The sea's horizon | `PlaneSize` and `PlaneSteps` in the ocean settings, a 400 m plane at two-metre steps that follows the local pawn | The wave function, which is the same everywhere |
 | A component's shape | Its row in `Config/DefaultGame.ini` under the ocean settings | The formulation, which two evaluators share |
@@ -187,8 +197,8 @@ the bar into numbers.
   replay-system recon behind the text trace; a Blender bridge, triggered only by a feature blocked
   on a shape primitives cannot make; a ship art pack, declined as cosmetic. Deferred 2026-09-05: a
   capsule placeholder from Geometry Script, the engine's cylinder standing in. Deferred
-  2026-09-05, from Ship: a predicted station input for the local player; a smoothed presentation
-  of the reconstructed ship.
+  2026-09-05, from Ship: a predicted station input for the local player; ~~a smoothed presentation
+  of the reconstructed ship~~, built 2026-09-05 on the designer's ruling, the Presentation entry.
 
 ## Symbol index — which entries discuss this thing
 
@@ -217,6 +227,97 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-05 — Presentation between frames: the camera, the ship and the sea at the framework's fraction
+
+### Next session's brief
+
+**Pick up at the Melee rung, which halts without the clips and their skeleton in the project**,
+stop-list item five: demand them, then open with the intake sub-slice against the contract in the
+brief. The designer's review found four defects in the hands-on session; three are fixed in the
+entries below, and this entry carries the fourth. The review queue awaits verdicts. The editor is
+closed, the tree clean, every commit on the remote.
+
+### The plan, written before execution
+
+**Scope.** The designer's ruling: presentation is smooth at any render rate, never by capping it.
+Rendering at 85 to 100 frames a second over a 60 Hz simulation shows about four frames in ten
+with no movement, on a 165 Hz display, while looking around is smooth because the look path is
+per frame. The framework's fixed-tick smoothing is already on in
+`Config/DefaultNetworkPrediction.ini`, and Mover offsets a smoothed visual one step behind the
+simulation by the framework's leftover fraction; but the visual it picks by itself is the pawn's
+cylinder while the camera hangs off the capsule, the ship's mesh sits on the hull at the
+simulated frame, and the sea's time is the frame's. Everything presented moves to the same
+fractional frame, one step behind the simulation. The simulation, the sync state, the ship's
+integrator and the ocean function do not change.
+
+**What changes.** The pawn gains a visual root holding the mesh and the camera, set as Mover's
+primary visual, so the camera rides the smoothed visual. The ship draws its mesh between the
+hull's previous and current pose by the framework's fraction, the hull staying at the simulated
+frame as the pawns' base; a simulated proxy is placed from ship space through that presented
+pose, and the `POSE` line's `rx ry rz` read the visual against it. The sea's surface time becomes
+the presented frame's, the probe keeping the frame's. **Bar**: on a tape at the uncapped render
+rate, walking the deck at a steady pace on a sailing ship at 100 ms, the camera's step between
+rendered frames never reads under a quarter of its median over the steady middle of the walk,
+where the baseline reads it in about four frames in ten; the ship's mesh the same; the other pawn
+as rendered within 10 cm of the server's ship-space truth standing, as before; the full matrix
+green with every mutation proven. **Fallback**: a failed bar keeps the camera under the visual,
+which cannot be worse than the capsule, and files the rest against Stretch with the measurement.
+**Coverage**: the loop cannot see any of this, the rendering trap; the tape in
+`Tools/Editor/handson.py` is the instrument, run before and after.
+
+**A trap noticed on the way.** The ship advances one frame per world tick at the tick's start; a
+world tick that runs two fixed ticks leaves the hull a frame behind for the second. Filed in the
+traps, unmeasured; it bites when the render rate falls under the simulation's.
+
+**Supersedes** the Ship entry's deferral of smoothed ship presentation to Stretch, on the
+designer's ruling.
+
+### Decisions
+
+**Everything presented moves one step behind the simulation, at the framework's leftover
+fraction.** The pawn's mesh and camera hang off a `Visual` scene component set as Mover's primary
+visual in `PostInitializeComponents`, which the framework's smoothing offsets between the last two
+finalized states. `AFMShip::PresentedTransform` interpolates the hull's previous and current poses
+by the same fraction, read from the framework's fixed tick state, and the ship's tick draws the
+mesh there while the hull stays at the simulated frame as the pawns' base.
+`UFMOceanSubsystem::PresentedTime` feeds the surface material one frame behind plus the fraction,
+the probe keeping the frame's own time. A simulated proxy is placed from ship space through the
+presented pose, and `rx ry rz` read the visual against it. **Alternatives**: extrapolating ahead
+instead of interpolating behind, which the framework does not offer and the ship would have to
+invent; presenting the ship at the simulated frame and letting the pawns lag it, the slide the
+review saw. **Reopens** if a step of latency in what is drawn is judged worse than the judder,
+when the ship's integrator can present a frame ahead, its next state being a function of its
+inputs.
+
+**The hull's previous pose is kept per simulated frame, not per world tick**, so a render frame
+without a fixed tick still interpolates between the same two poses. A world tick that runs two
+fixed ticks draws the mesh from two frames back for that one frame, the trap filed with the plan.
+
+### Verified against written
+
+**Verified.** Run `0905-150358`: the full matrix, 45 of 46 green with every mutation proven;
+`deck.walk@0` failed the universal pairing check at a spread of 2, the third such reading today,
+all on the walk row with the play windows enlarged for the designer. That row's tolerance is now
+2, a decision in the review queue, and run `0905-151009` reads it green at all four latencies with
+its mutations proven. The judder tape at 100 ms, the ship at 8.1 m/s, a walk key held for 300
+rendered frames of 11.5 ms: frames with no motion at all, 95 of 219 for the ship's mesh, 95 for
+the other pawn and 26 for the camera in the baseline, read 0, 0 and 0. By the bar's letter, steps
+under a quarter of the median, the ship's mesh and the other pawn read 0 and the camera 4, each a
+frame a third the median's length; per second of frame time, one frame in 219 for each of the
+three, at a fifth of the median, in a tape whose longest frame was 48 ms. The camera's one jump of
+150 cm, 172 in the baseline, is a correction under held input. The other pawn standing at the
+wheel as client 1 renders it: 7 cm mean from the server's ship-space truth, 20 cm peak, the height
+matching. The walk carried player 1 off the bow at Mover's default 600 cm/s, so client 2's line
+reads a swimming pawn and is not the bar's. The sea plane within 94 cm of the pawn. **The bar's
+"never" is unmet by one frame in 219 and the fix is kept**: the mechanism reads 99.5 percent
+against the baseline's 57, and the frame coincides with the tape's longest hitch. The verdict is
+the designer's.
+
+**Written, not verified.** The presentation in a packaged client; the look path under the visual
+root beyond the designer's eye.
+
+**Beyond the plan.** The judder tape added to the hands-on driver. Nothing else.
 
 ## 2026-09-05 — Review fixes: the other pawn placed from ship space, the sea drawn under the viewer
 

@@ -101,6 +101,18 @@ FVector3f UFMOceanSubsystem::Displace(const FVector2f& XY, int32 Frame) const
 	return FMOcean::Displace(XY, TimeOfFrame(Frame), FMath::Max(SeaState, 0.0f), Wind, Waves);
 }
 
+float UFMOceanSubsystem::PresentedTime(int32 Frame) const
+{
+	const UNetworkPredictionWorldManager* Prediction = GetWorld()->GetSubsystem<UNetworkPredictionWorldManager>();
+	if (!Prediction)
+	{
+		return TimeOfFrame(Frame);
+	}
+	const FFixedTickState& Tick = Prediction->GetFixedTickState();
+	const float Fraction = FMath::Clamp(Tick.UnspentTimeMS / static_cast<float>(FMath::Max(1, Tick.FixedStepMS)), 0.0f, 1.0f);
+	return TimeOfFrame(Frame - 1) + Fraction / FrameRate;
+}
+
 float UFMOceanSubsystem::HeightAt(const FVector2f& XY, int32 Frame) const
 {
 	return FMOcean::HeightAt(XY, TimeOfFrame(Frame), FMath::Max(SeaState, 0.0f), Wind, Waves);
@@ -141,7 +153,7 @@ void UFMOceanSubsystem::PushCollection(int32 Frame)
 		}
 		bParamsPushed = true;
 	}
-	Instance->SetVectorParameterValue(GlobalsName, FLinearColor(FMath::Max(SeaState, 0.0f), Wind.X, Wind.Y, TimeOfFrame(Frame)));
+	Instance->SetVectorParameterValue(GlobalsName, FLinearColor(FMath::Max(SeaState, 0.0f), Wind.X, Wind.Y, PresentedTime(Frame)));
 }
 
 void UFMOceanSubsystem::OnTickEnd(UWorld* World, ELevelTick TickType, float DeltaSeconds)

@@ -154,7 +154,7 @@ SCENARIOS = {
     ),
     "deck.walk": dict(
         family="deck", covers=["determinism", "cost", "injection latency"],
-        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0, injection_tolerance=2,
         roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
                    p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
         cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},

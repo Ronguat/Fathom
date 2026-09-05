@@ -30,6 +30,9 @@ question, never a fix. Every value here is a knob unless the tuning map says oth
   half. Neither is chosen by argument.
 - **A field session** is packaged clients against the editor running as a dedicated server. Every
   producer writes the same trace on the same server-frame timeline.
+- **What is drawn is one step behind the simulation**, interpolated by the prediction framework's
+  leftover fraction of a step: pawns by Mover's smoothing, the ship's mesh between its hull's last
+  two poses, the sea's time the same. The render rate is never capped to the simulation's.
 
 ## The ocean
 

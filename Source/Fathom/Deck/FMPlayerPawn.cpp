@@ -12,6 +12,7 @@
 #include "MoverDataModelTypes.h"
 #include "Net/FMTrace.h"
 #include "Ocean/FMOceanSubsystem.h"
+#include "Ship/FMShip.h"
 #include "UObject/ConstructorHelpers.h"
 
 bool FFMTeleportEffect::ApplyMovementEffect(FApplyMovementEffectParams& ApplyEffectParams, FMoverSyncState& OutputState)
@@ -48,8 +49,11 @@ AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
 	Capsule->SetCanEverAffectNavigation(false);
 	RootComponent = Capsule;
 
+	Visual = CreateDefaultSubobject<USceneComponent>(TEXT("Visual"));
+	Visual->SetupAttachment(Capsule);
+
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	Mesh->SetupAttachment(Capsule);
+	Mesh->SetupAttachment(Visual);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	if (CylinderMesh.Succeeded())
 	{
@@ -60,13 +64,19 @@ AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
 	Mesh->SetCanEverAffectNavigation(false);
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(Capsule);
+	Camera->SetupAttachment(Visual);
 	Camera->SetRelativeLocation(FVector(0.0f, 0.0f, 64.0f));
 	Camera->bUsePawnControlRotation = true;
 
 	Mover = CreateDefaultSubobject<UCharacterMoverComponent>(TEXT("Mover"));
 	Mover->MovementModes.Add(DefaultModeNames::Swimming, CreateDefaultSubobject<UFMSwimMode>(TEXT("SwimMode")));
 	Mover->Transitions.Add(CreateDefaultSubobject<UFMSwimTransition>(TEXT("SwimTransition")));
+}
+
+void AFMPlayerPawn::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	Mover->SetPrimaryVisualComponent(Visual);
 }
 
 void AFMPlayerPawn::BeginPlay()
@@ -212,7 +222,7 @@ void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const F
 	}
 	const FVector Location = State->GetLocation_WorldSpace();
 	const FVector BaseSpace = Base ? State->GetLocation_BaseSpace() : FVector::ZeroVector;
-	const FVector Rendered = Base ? Base->GetComponentTransform().InverseTransformPositionNoScale(GetActorLocation()) : FVector::ZeroVector;
+	const FVector Rendered = Base ? PresentedBase(*Base).InverseTransformPositionNoScale(Visual->GetComponentLocation()) : FVector::ZeroVector;
 	const UFMOceanSubsystem* Ocean = UFMOceanSubsystem::Get(this);
 	const float Water = GetDefault<UFMOceanSettings>()->PlaneZ + (Ocean ? Ocean->HeightAt(FVector2f(Location.X, Location.Y), SimFrame) : 0.0f);
 	FM_TRACE(this, TEXT("POSE pid=%d sf=%d x=%.2f y=%.2f z=%.2f yaw=%.1f mode=%s base=%d bx=%.2f by=%.2f bz=%.2f rx=%.2f ry=%.2f rz=%.2f wz=%.2f"),
@@ -221,9 +231,15 @@ void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const F
 		Base ? 1 : 0, BaseSpace.X, BaseSpace.Y, BaseSpace.Z, Rendered.X, Rendered.Y, Rendered.Z, Water);
 }
 
+FTransform AFMPlayerPawn::PresentedBase(const UPrimitiveComponent& Base)
+{
+	const AFMShip* Ship = Cast<AFMShip>(Base.GetOwner());
+	return Ship ? Ship->PresentedTransform() : Base.GetComponentTransform();
+}
+
 void AFMPlayerPawn::PlaceOnBase(const FMoverDefaultSyncState& State, const UPrimitiveComponent& Base)
 {
-	const FTransform BaseNow = Base.GetComponentTransform();
+	const FTransform BaseNow = PresentedBase(Base);
 	const FVector Location = BaseNow.TransformPositionNoScale(State.GetLocation_BaseSpace());
 	const FQuat Orientation = BaseNow.GetRotation() * State.GetCapturedMovementBaseQuat().Inverse() * State.GetOrientation_WorldSpace().Quaternion();
 	SetActorLocationAndRotation(Location, Orientation, false, nullptr, ETeleportType::TeleportPhysics);
