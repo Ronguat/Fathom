@@ -57,6 +57,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Entry | Superseded by | What changed |
 |---|---|---|
+| 2026-09-05 — Ship: a body every world integrates from the same state, its Stretch deferral of smoothed presentation | 2026-09-05 — Presentation between frames | The deferral, built on the designer's ruling that presentation never relies on a render cap |
 | 2026-09-04 — Fathom is bootstrapped: the spine, the regime and the inheritance | 2026-09-04 — The repository stands alone, and forgets its parent | The reference model's ownership: the file is dissolved into its homes and the ownership check removed; the Harness brief builds on the loop skeleton here rather than a reference elsewhere |
 
 ## Known traps, indexed by what sets them off
@@ -235,8 +236,11 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 **Pick up at the Melee rung, which halts without the clips and their skeleton in the project**,
 stop-list item five: demand them, then open with the intake sub-slice against the contract in the
 brief. The designer's review found four defects in the hands-on session; three are fixed in the
-entries below, and this entry carries the fourth. The review queue awaits verdicts. The editor is
-closed, the tree clean, every commit on the remote.
+entries below, and this entry carries the fourth. **Open**: the designer's verdict on this entry's
+bar, unmet by one hitch frame in 219 and kept; the walk row's pairing tolerance of two frames; the
+loop's blindness to anything rendered, a trap, with the hands-on tape as the only instrument. The
+review queue awaits verdicts on the day's rows. Budget: none set. The editor is closed, the tree
+clean, every commit on the remote.
 
 ### The plan, written before execution
 
