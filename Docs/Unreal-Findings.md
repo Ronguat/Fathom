@@ -216,6 +216,25 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
 
 An archive reached by search. Each entry keeps its date and the surface it measured on.
 
+## 2026-09-05 — What the loop's first drive found Python does and does not reach
+
+**Play settings are not in Python** *(Python, 2026-09-05)*: `unreal.LevelEditorPlaySettings` does
+not exist, and the CDO loaded by path, `/Script/UnrealEd.Default__LevelEditorPlaySettings`, answers
+*Failed to find property* for `play_net_mode`. The gitignored user ini is the read, and it is what
+the running editor loaded.
+
+**Pawn and player-state accessors are properties, not methods** *(Python, 2026-09-05)*:
+`Pawn.get_player_state()` and `PlayerState.get_player_id()` do not exist;
+`get_editor_property("player_state")` and `get_editor_property("player_id")` answer.
+
+**`UnrealEditorSubsystem.get_editor_world()` answers None during play** *(Python, 2026-09-05)*,
+with `LogUtils: Error: The Editor is currently in a play mode`. A PIE world is still addressable
+by package path, `/Game/Fathom/Maps/UEDPIE_<n>_L_Harness.L_Harness`, from the level's package name
+read before play starts.
+
+**The engine ships no capsule among its basic shapes** *(engine content, 2026-09-05)*:
+`/Engine/BasicShapes/` holds Cone, Cube, Cylinder, Plane and Sphere.
+
 ## 2026-09-03 — The clock, PIE and the shipping input path are all scriptable
 
 **A fixed time step is a function library away** *(C++ headers then an editor module, 2026-09-03)*.

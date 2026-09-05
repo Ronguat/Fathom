@@ -93,8 +93,9 @@ class is authoritative only until someone touches a details panel.
 **Deliberately not kept: per-system design docs.** A doc describing a system drifts, then gets
 trusted over the code.
 
-**Comments carry WHAT, and HOW where the mechanism is not plain from reading — never WHY.** No
-dates, no attributions, no history; `Tools/CommentCheck/comment-check.sh` fails on those, and
+**Code is authored to be read and reviewed by human collaborators.** Do not smother them in
+comments; let the code speak for itself. **Comments carry WHAT, and HOW where the mechanism is not
+plain from reading — never WHY.** No dates, no attributions, no history; `Tools/CommentCheck/comment-check.sh` fails on those, and
 warns when a file's comment volume outgrows `Tools/CommentCheck/baseline.txt`, which the closedown
 eye then judges.
 
@@ -180,9 +181,9 @@ plan time; a loop that lags the surface still prints green.
 
 ## Current Focus
 
-> **~~Bootstrap~~ → Harness → Ocean → Ship → Deck → Melee → Ship Combat → Ship to Ship → Stretch**
+> **~~Bootstrap~~ → ~~Harness~~ → Ocean → Ship → Deck → Melee → Ship Combat → Ship to Ship → Stretch**
 
-**Pick up at Harness.** Its brief is in `Docs/Decisions.md`, and the handoff at the top of the
+**Pick up at Ocean.** Its brief is in `Docs/Decisions.md`, and the handoff at the top of the
 newest dated entry there is the session brief. Deck opens with the Mover recon and carries Route B
 as its fallback; Melee opens only with the clips and their skeleton in the project.
 

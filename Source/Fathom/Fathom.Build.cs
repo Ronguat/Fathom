@@ -12,7 +12,10 @@ public class Fathom : ModuleRules
 			"Engine",
 			"InputCore",
 			"EnhancedInput",
-			"NetCore"
+			"NetCore",
+			"Mover",
+			"NetworkPrediction",
+			"Json"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

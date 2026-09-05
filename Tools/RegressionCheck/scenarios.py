@@ -16,7 +16,7 @@ A scenario entry:
         plan=[(0, "p1", "tap", "jump"), (60, "p2", "move", 1.0, 0.0, 30)],   # (frame, role, op, *args)
         stop=dict(duration=10.0),                  # server game seconds; or until=("TAG", n) + timeout
         mutations=[("drop", "COST", 1)],           # each must turn the row red
-        golden=dict(keep=["x", "y"]),              # fields the skeleton keeps beside frame, world, tag
+        golden=dict(keep=["x", "y"]),              # optional: skeleton fields beside frame, world, tag
         allow=[],                                  # engine-warning substrings this row tolerates
     )
 
@@ -26,10 +26,13 @@ it lists, as `<id>@<ms>`; the round trip is split evenly between the two directi
 
 # --- vocabulary ---------------------------------------------------------------
 
-# Actions a plan may name. The runner resolves each to its key from the mapping contexts in
-# IMC_PATHS at arm time; an action with no key fails validation there.
-ACTIONS = ("jump", "move", "attack", "parry", "feint", "use")
-IMC_PATHS = ()
+# Actions a plan may name. The runner resolves each to its key from the controller's key table,
+# KEY_TABLE_CLASS's ActionKeys, at arm time; an action with no key fails validation there.
+ACTIONS = ("move_forward", "move_back", "move_left", "move_right", "jump", "mark")
+KEY_TABLE_CLASS = "FMPlayerController"
+
+# What the move op holds for a direction: X right, Y forward.
+MOVE_ACTIONS = dict(forward="move_forward", back="move_back", left="move_left", right="move_right")
 
 # Plan ops the runner implements. tap/press/release/hold/move/stop_move drive a role's keys in its
 # own client world; face turns its control rotation; teleport moves its server pawn; mark writes a
@@ -46,7 +49,56 @@ FAMILIES = ("harness", "ocean", "ship", "deck", "melee", "ship-combat", "ship-to
 # The harness floor's half-extent; a placement beyond it fails before PIE.
 FLOOR_LIMIT = 5000.0
 
-SCENARIOS = {}
+# One mutation every harness row carries: the server's POSE positions zeroed, which the
+# determinism assertion must catch.
+POSE_SERVER_ZERO = ("regex", r"(\[S\] POSE pid=\d+ sf=\d+ x=)[-\d.]+", r"\g<1>0.00")
+
+SCENARIOS = {
+    "harness.idle": dict(
+        family="harness", covers=["two worlds", "cost", "determinism"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={},
+        plan=[(120, "p1", "mark", "idle")],
+        stop=dict(duration=6.0),
+        mutations=[("set", "COST", "tick_ms", "99.00"), POSE_SERVER_ZERO],
+        allow=[],
+    ),
+    "harness.walk": dict(
+        family="harness", covers=["two worlds", "cost", "injection latency", "determinism"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (-400.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={},
+        plan=[(60, "p1", "move", 0.0, 1.0, 120)],
+        stop=dict(duration=6.0),
+        mutations=[("drop", "INPUT", 1), POSE_SERVER_ZERO],
+        allow=[],
+    ),
+    "harness.walk-loss": dict(
+        family="harness", covers=["two worlds", "cost", "injection latency", "determinism"],
+        worlds=("S", "C1", "C2"), latencies=(0, 100), loss=5.0,
+        roles=dict(p1=("C1", (-400.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={},
+        plan=[(60, "p1", "move", 0.0, 1.0, 120)],
+        stop=dict(duration=6.0),
+        mutations=[("drop", "INPUT", 1), POSE_SERVER_ZERO],
+        allow=[],
+    ),
+    "harness.jump": dict(
+        family="harness", covers=["two worlds", "cost", "injection latency", "determinism"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={},
+        plan=[(60, "p1", "tap", "jump")],
+        stop=dict(duration=6.0),
+        mutations=[("drop", "INPUT", 1), POSE_SERVER_ZERO],
+        allow=[],
+    ),
+}
 
 
 # --- validation ---------------------------------------------------------------

@@ -50,13 +50,9 @@ def in_editor(statement):
 
 # --- preflight ----------------------------------------------------------------
 
-PLAY_SETTINGS = ("import unreal; s = unreal.get_default_object(unreal.LevelEditorPlaySettings); "
-                 "print('PLAY', s.get_editor_property('play_net_mode'), "
-                 "s.get_editor_property('play_number_of_clients'), "
-                 "s.get_editor_property('run_under_one_process'))")
-
-
 def play_settings_from_ini():
+    """The user ini is the read: play settings have no Python class, and the running editor
+    loaded this file at start and rewrites it at exit."""
     out = {}
     if os.path.exists(paths.USER_INI):
         for line in open(paths.USER_INI, errors="ignore"):
@@ -81,16 +77,9 @@ def preflight(args):
         print("    editor answers, not in PIE")
 
     # The two-world requirement: a dedicated server and at least two clients under one process.
-    r = in_editor(PLAY_SETTINGS)
-    live = [l for l in r.stdout.splitlines() if "PLAY " in l]
-    if live:
-        toks = live[-1].split("PLAY ", 1)[1].split()
-        mode, clients, one_proc = toks[0], toks[1], toks[2]
-        source = "live"
-    else:
-        ini = play_settings_from_ini()
-        mode, clients, one_proc = ini.get("PlayNetMode", "?"), ini.get("PlayNumberOfClients", "1"), ini.get("RunUnderOneProcess", "True")
-        source = "ini"
+    ini = play_settings_from_ini()
+    mode, clients, one_proc = ini.get("PlayNetMode", "?"), ini.get("PlayNumberOfClients", "1"), ini.get("RunUnderOneProcess", "True")
+    source = "ini"
     if "CLIENT" not in mode.upper() or "STANDALONE" in mode.upper():
         problems.append("PlayNetMode is %s (%s); the loop needs Play As Client with a dedicated server" % (mode, source))
     if int(clients or 1) < 2:
@@ -201,10 +190,13 @@ def evaluate(run, rid, slice_path, args):
     c = sh([PY, EVAL, slice_path, "--cost"])
     out["cost"] = c.stdout.strip()
 
-    keep = ",".join(s.get("golden", {}).get("keep", []))
-    g = sh([PY, EVAL, slice_path, "--golden", "--id", rid, "--keep", keep]
-           + (["--accept"] if args.accept_golden else []))
-    out["golden"] = g.stdout.strip()
+    if "golden" in s:
+        keep = ",".join(s["golden"].get("keep", []))
+        g = sh([PY, EVAL, slice_path, "--golden", "--id", rid, "--keep", keep]
+               + (["--accept"] if args.accept_golden else []))
+        out["golden"] = g.stdout.strip()
+    else:
+        out["golden"] = "no golden"
 
     if args.no_mutate or out["rc"] not in (0, None):
         out["mutations"] = "skipped"

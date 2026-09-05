@@ -3,10 +3,29 @@
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
 #include "InputMappingContext.h"
+#include "Net/FMTrace.h"
+
+AFMPlayerController::AFMPlayerController()
+{
+	ActionKeys.Add(TEXT("move_forward"), EKeys::W);
+	ActionKeys.Add(TEXT("move_back"), EKeys::S);
+	ActionKeys.Add(TEXT("move_left"), EKeys::A);
+	ActionKeys.Add(TEXT("move_right"), EKeys::D);
+	ActionKeys.Add(TEXT("jump"), EKeys::SpaceBar);
+	ActionKeys.Add(TEXT("mark"), EKeys::M);
+}
 
 void AFMPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (IsLocalController() && GetNetMode() == NM_Client)
+	{
+		if (const UFMTraceSubsystem* TraceSubsystem = UFMTraceSubsystem::Get(this))
+		{
+			ServerHello(TraceSubsystem->GetWorldTag());
+		}
+	}
 
 	ULocalPlayer* LocalPlayer = GetLocalPlayer();
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
@@ -22,5 +41,28 @@ void AFMPlayerController::BeginPlay()
 		{
 			Subsystem->AddMappingContext(Context, Priority++);
 		}
+	}
+}
+
+void AFMPlayerController::PlayerTick(float DeltaTime)
+{
+	Super::PlayerTick(DeltaTime);
+	const FKey* MarkKey = ActionKeys.Find(TEXT("mark"));
+	if (MarkKey && WasInputKeyJustPressed(*MarkKey))
+	{
+		FM_TRACE(this, TEXT("MARK category=hotkey"));
+	}
+}
+
+void AFMPlayerController::ServerHello_Implementation(const FString& WorldTag)
+{
+	ClientWorldTag = WorldTag;
+}
+
+void AFMPlayerController::ServerRelayTrace_Implementation(const TArray<FString>& Lines)
+{
+	if (UFMTraceSubsystem* TraceSubsystem = UFMTraceSubsystem::Get(this))
+	{
+		TraceSubsystem->Ingest(Lines);
 	}
 }

@@ -10,8 +10,10 @@
 #
 # file<TAB>comment lines<TAB>comment words
 Source/Fathom/Core/FMGameMode.h	1	13
-Source/Fathom/Core/FMPlayerController.h	1	15
-Source/Fathom/Fathom.h	2	9
+Source/Fathom/Core/FMPlayerController.h	8	80
+Source/Fathom/Deck/FMPlayerPawn.h	15	120
+Source/Fathom/Fathom.h	3	24
+Source/Fathom/Net/FMTrace.h	20	190
 Source/FathomEditor/Private/FMInputTools.cpp	4	29
 Source/FathomEditor/Public/FMInputTools.h	23	218
 Source/FathomEditor/Public/FMTimeTools.h	9	65
@@ -19,3 +21,4 @@ Tools/DocsCheck/docs-check.sh	118	1198
 Tools/GitHooks/install-hooks.sh	5	32
 Tools/McpBridge/ue-mcp.sh	12	88
 Tools/RegressionCheck/regression-run.sh	8	67
+Tools/RegressionCheck/field-session.sh	8	82

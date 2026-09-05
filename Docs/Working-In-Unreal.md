@@ -217,7 +217,9 @@ the `UEDPIE_0_` world's actors — right for inspecting live state, wrong for au
 capability in `Docs/Unreal-Findings.md`)*. Three silent failures: **both PIE requests are
 asynchronous**, so poll `is_in_play_in_editor` or drive the previous session; **begin play takes no
 start transform** and the level holds two `PlayerStart`s, so the pawn spawns at one at random;
-**fixed time step changes what wall clock means**, so restore it before reading a wall-time number.
+**fixed time step changes what wall clock means**, so restore it before reading a wall-time number;
+**and `get_editor_world()` answers None during play** *(Python, 2026-09-05)*, logging
+`The Editor is currently in a play mode`, so read the level's package before play starts.
 
 **Never duplicate a World Partition level to make a new map** — the external actor packages do not
 re-path and actors silently go missing. Use File → New Level → Empty.
@@ -340,18 +342,33 @@ than every source file. The unattended close/build/reopen cycle removes the paus
 build would once have been noticed.
 
 ```bash
-# Empty output means both DLLs are newer than every source. This is the check.
+# Empty output means each module's DLL is newer than that module's sources. This is the check.
 for d in Fathom FathomEditor; do
-  find Source \( -name "*.cpp" -o -name "*.h" \) -newer "Binaries/Win64/UnrealEditor-$d.dll" -print
+  find "Source/$d" \( -name "*.cpp" -o -name "*.h" \) -newer "Binaries/Win64/UnrealEditor-$d.dll" -print
 done
 ls Binaries/Win64/UnrealEditor-Fathom*.patch_* 2>/dev/null || echo "no patch files"
 ```
+
+A change inside `Fathom` alone relinks only its DLL *(UBT, 2026-09-05)*, so the editor module's
+DLL is compared against its own sources, never against the game module's.
 
 Use `-newer` rather than comparing timestamps by eye — `ls` and `find -printf` report in **different
 timezones** here, making yesterday's file look newer than a fresh build. Sweep leftover `patch_*`
 files so the binary state is unambiguous.
 
 Batch all the C++ for a slice while the editor is closed, do one rebuild, then open once and stay in.
+
+**Packaging runs the automation tool the same way** *(Bash, 2026-09-05)*, `AutomationTool.dll` on
+the bundled dotnet with `BuildCookRun -project=... -platform=Win64 -clientconfig=Development -build
+-cook -map=/Game/Fathom/Maps/L_Harness -stage -pak -archive -archivedirectory=... -unattended
+-nocompileeditor`, into `Saved/Packaged/Windows/`; an incremental run took 82 s. **Package with the
+editor closed**: the cook commandlet loads the MCP plugin, its listener fails to bind the port the
+open editor holds, and the cook's own error count fails the whole run with nothing else wrong.
+
+**Git Bash rewrites an argument that starts with `/`** *(Bash, 2026-09-05)*: `/Game/Fathom/Maps/L_Harness`
+reached the editor as `C:/Program Files/Git/Game/...` and the server exited on a missing package.
+Prefix the command with `MSYS_NO_PATHCONV=1`; an `-ini:` override with `[/Script/...]` inside
+survived untouched.
 
 ---
 

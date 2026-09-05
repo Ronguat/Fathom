@@ -20,7 +20,9 @@ import scenarios as SC  # noqa: E402
 from regression_rows import ROWS  # noqa: E402
 
 ROWS_OUT = []
-TRACE_SITE = re.compile(r'(?:FM_TRACE|UE_LOG\s*\(\s*LogFMTrace\s*,\s*\w+\s*,)\s*\(?\s*TEXT\s*\(\s*"([^"]*)"')
+TRACE_SITE = re.compile(r'(?:FM_TRACE\s*\(\s*[^,()]+,|UE_LOG\s*\(\s*LogFMTrace\s*,\s*\w+\s*,)\s*TEXT\s*\(\s*"([^"]*)"')
+# The emitter itself prints a finished line through this literal.
+EMITTER_LITERAL = "%s"
 
 
 def out(status, label, detail):
@@ -55,6 +57,8 @@ def format_lint():
         for m in TRACE_SITE.finditer(text):
             sites += 1
             literal = m.group(1)
+            if literal == EMITTER_LITERAL:
+                continue
             tag = literal.split()[0] if literal.split() else ""
             if not (tag.isalpha() and tag.isupper()):
                 rel = os.path.relpath(path, paths.ROOT).replace("\\", "/")

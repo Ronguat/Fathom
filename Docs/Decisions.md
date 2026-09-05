@@ -12,6 +12,14 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | The field session as a script: the editor with `-server`, one packaged client, the hotkey pressed into its window, a fixed wait for the server | `Tools/RegressionCheck/field-session.sh` | |
+| 2026-09-05 | An asset-manager rule for game-feature data so the cook counts no error | `Config/DefaultGame.ini` | |
+| 2026-09-05 | The injection pairing may move one frame within a row; the runner counts in the server's simulation frame; the frame rate is capped at the fixed rate during a run | Harness entry, Decisions | |
+| 2026-09-05 | The engine's cylinder as the pawn's placeholder, a capsule deferred to Stretch | Harness entry, Decisions | |
+| 2026-09-05 | The harness pawn is a Mover character from rung one; the trace frame is the prediction framework's pending frame plus offset | Harness entry, Decisions | |
+| 2026-09-05 | Input polled from key state through a key table on the pawn; no Enhanced Input assets | Harness entry, Decisions | |
+| 2026-09-05 | The world tag scheme, the relay to the server's session file, the bundle layout, the `POSE` line | Harness entry, Decisions | |
+| 2026-09-05 | The determinism bar of 1 cm over the second half of a row, and three smoke rows as the Harness coverage | Harness entry, The plan | |
 | 2026-09-05 | No ability system in the simulation spine, the manufactured constraint re-decided on the designer's word that the choice is the agent's | The repository stands alone entry, Decisions | |
 | 2026-09-04 | The reference model dissolved into its homes rather than kept as the verbatim source | The repository stands alone entry | |
 | 2026-09-04 | What the findings archive dropped as useless to this project | The commit that trimmed `Docs/Unreal-Findings.md` | |
@@ -93,11 +101,11 @@ delivery, halt and demand it. Bites at Melee.
 **Whenever the attacker's view delay is needed — *it is authored, never estimated.*** The rendered
 frame rides in the input command. Bites at Melee.
 
-**Whenever the loop first drives PIE — *the skeleton has driven no frame.*** `Tools/RegressionCheck/`
-was written 2026-09-04 against measurements made before this project existed: the world addressing
-by PIE instance, the player-id match between a client and its server pawn, `NetEmulation.PktLag` as
-the latency knob, the live read of the play settings. Each is a route named from headers or a prior
-measurement, none exercised here. Bites at Harness.
+**Whenever a Mover pawn is placed by teleport — *it hovers until it moves.*** Teleported to
+z = 100 over a floor at 0 with an 88 cm half-height capsule, the pawn read z = 100.00 in Walking
+until its jump, then rested at 90.15 *(PIE, 2026-09-05, `harness.jump` at 50 ms and above)*. A row
+reading a height before the pawn has moved reads the hover. Bites at Deck, where placement on the
+deck is the rung.
 
 ## Tuning map — a verdict comes back, which knob moves
 
@@ -110,6 +118,7 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | Hit timing under latency | The advance fraction and its cap, per attack, once Melee builds them | The windup |
 | Parry fairness | The parry rule, measured together with the advance | The window length |
 | The net update rate | `NetServerMaxTickRate`, at the engine default | The simulation rate |
+| Inbound bytes per player | The client's frame rate, `t.MaxFPS`; a packaged client ran uncapped at 30 000 B/s against 10 000 capped at 60 *(2026-09-05)* | The simulation rate |
 | The sea | The sea-state scalar | Any single wave component |
 | Ship handling | The speed curve, the rudder rate, the anchor drag | The hull sample points, which shape the fit rather than the handling |
 
@@ -119,25 +128,15 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 its fallback, its coverage and its inheritance; the plan entry written before execution turns
 the bar into numbers.
 
-- **Harness** — The two-world regression loop, built on the skeleton in `Tools/RegressionCheck/`:
-  scenarios with roles, plans in frames, mutations the validator will not let you omit, a universal
-  assertion set, a preflight, none of it yet proven against PIE. Plus the trace emitter
-  with server-frame stamps and world tags, the client relay, the marker hotkey, the session bundle
-  and its ingest script, a latency and loss knob per connection, the cost printout, a fixed-clock
-  determinism check across worlds, the dedicated-server PIE mode, and a packaged client build.
-  **Decide first** whether the harness pawn is a Mover pawn from this rung or the trace stamps
-  server time until Deck; both are in the review queue. **Bar**: a scenario with two scripted
-  clients runs unattended at 0, 50, 100 and 150 ms and prints rows and costs; a field bundle from
-  a packaged client ingests into the same evaluator. **Fallback**: if the editor-as-server route
-  fails, a listen server with emulated latency on the client, filed as a trap. **Coverage**: the
-  loop's own smoke rows. **Inherits**: the two-world facts and the loop's shape in `Docs/Debug-Instruments.md`, the
-  skeleton's trap above, the input and clock tools in `FathomEditor`.
 - **Ocean** — The wave function in C++, the matching material function, the surface itself, the
   sea-state scalar and wind vector replicated once, wave time driven from server time. **Bar**:
   server, client and GPU agree on height at sampled points and frames within a pre-registered
   epsilon, one centimetre proposed; the ocean is visible in PIE. **Fallback**: a plane and a
   material sharing the function if the plugin's ocean body fights the open sea. **Coverage**: the
-  determinism row, protocol two.
+  determinism row, protocol two. **Inherits**: the loop with its four harness rows and the run
+  report, the trace with `POSE` as the pose evidence, the field session script and the bundle
+  ingest, `AFMPlayerPawn` as the player on foot, and the Harness entry's measurements as the
+  cost baseline.
 - **Ship** — The kinematic hull fit, the sail, wind, rudder and anchor model, the compact
   replicated state and its history, the stations, a placeholder hull from Geometry Script with
   deck collision, spawned at runtime. Whether the ship is itself a Mover actor or a custom
@@ -179,15 +178,147 @@ the bar into numbers.
   crew scaling; special shot; above-waterline holes and mast and wheel damage; a sink motion;
   islands and rock holes; harpoons and mermaids; every class but the sloop. Also deferred: the
   replay-system recon behind the text trace; a Blender bridge, triggered only by a feature blocked
-  on a shape primitives cannot make; a ship art pack, declined as cosmetic.
+  on a shape primitives cannot make; a ship art pack, declined as cosmetic. Deferred 2026-09-05: a
+  capsule placeholder from Geometry Script, the engine's cylinder standing in.
 
 ## Symbol index — which entries discuss this thing
 
-Current through **2026-09-04**. Regenerated, byte-sorted, one row per symbol; empty until the
-first rung lands code.
+Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 
 | Symbol | Entries |
 |---|---|
+| `AFMPlayerController` | 09-05 |
+| `AFMPlayerPawn` | 09-05 |
+| `FM_TRACE` | 09-05 |
+| `LogFMTrace` | 09-04, 09-05 |
+| `UFMInputTools` | 09-04 |
+| `UFMTimeTools` | 09-04 |
+| `UFMTraceLibrary` | 09-05 |
+| `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-05 — Harness: the loop drives its first frames
+
+### Next session's brief
+
+**Pick up at the Ocean rung.** Write its plan entry first: the wave function in C++ and the
+matching material function, the sea-state scalar and wind vector replicated once, wave time from
+server time; the pre-registered epsilon, one centimetre proposed; the determinism row, protocol
+two, as a scenario in `Tools/RegressionCheck/scenarios.py` with a row asserting server, client and
+GPU agreement at sampled points and frames. Budget: none set; the designer winds down manually.
+The editor is closed, the tree clean, every commit on the remote. Verified against written is
+below the measurements.
+
+### The plan, written before execution
+
+**Scope.** The Harness brief in full, three sub-slices in order. **One**: the trace emitter, the
+cost printout, the client relay, the marker hotkey and the session bundle in C++, with a Mover
+character as the harness pawn; the loop's runner adapted to the pawn's key table; one rebuild.
+**Two**: the two-world PIE settings, the runner proven against PIE, three smoke rows green at every
+latency. **Three**: a packaged client against the editor as a dedicated server, the bundle
+ingested by a new script into the same evaluator.
+
+**Bar, pre-registered.** `regression-run.sh --all` exits 0: `harness.idle`, `harness.walk` and
+`harness.jump` at 0, 50, 100 and 150 ms, twelve rows, each row's mutations proven and the
+universal set clean. **Determinism**: the autonomous pawn on its own client against the same pawn
+on the server, at the same simulation frame, within 1 cm at every matched sample in the second
+half of every row, at every latency. **Injection latency**: constant within a row, reported in
+frames. **Cost**: bandwidth per connection, server tick time and measured lag printed for every
+row; no threshold, this is the first measurement. **Field**: one packaged Development client
+joins the editor running with `-server`, stays ten seconds or more, and the bundle it leaves
+ingests into a slice on which the universal set passes and at least one `MARK` is listed.
+
+**Fallbacks.** The Mover pawn not moving under a dedicated PIE server within sub-slice one: the
+trace stamps server time until Deck, the review queue's other option, filed as a trap. The
+editor-as-server route failing: a listen server with emulated latency on the client, the brief's
+fallback, filed as a trap. Packaging refused by the installed build: the field bar met with a
+second editor instance as the client, filed as a trap. A dead end after these winds the session
+down.
+
+**Coverage.** The three scenarios above, each naming the mechanics it asserts; the coverage map
+fills from them. **Budget.** None set; the designer winds down manually.
+
+### Decisions
+
+**The harness pawn is a Mover character from this rung.** The trace's frame is the prediction
+framework's own: the world manager's pending frame plus its server offset, one definition on
+every world, so a client stamps the server frame it is predicting. **Alternative**: server time
+until Deck, which would have stamped an estimated clock, the two-clocks trap in a new coat, and
+rebuilt the harness's proof at Deck. **Reopens** if the pawn fails sub-slice one's fallback.
+
+**Input is key state polled when the input command is authored**, from a key table on the pawn,
+no Enhanced Input assets. The runner reads the same table off the class default object, so a
+rebind moves the fixture with the game. **Alternative**: mapping-context assets, created and kept
+through the editor's silent-failure surfaces for no value the simulation reads. **Reopens** when
+a rung needs an input no key state expresses.
+
+**The world tag** is `S` for any server and `C<n>` for a client, `n` the PIE instance under one
+process and the `-FMClient=<n>` switch on a packaged client, `1` without it. **A client relays its
+trace to the server's session file**, and to the server's log only outside PIE, where the process
+log already carries every world once. **The bundle** is a directory per world under
+`Saved/Fathom/Sessions/`, PIE worlds under `PIE/` and the rest under `Field/`: the trace and a
+`meta.json` rewritten every ten seconds and at the end. **`POSE` lines** carry the simulation frame the pawn last finalized and its sync-state
+location, the determinism row's evidence; the actor's transform is presentation.
+
+**Code is authored to be read and reviewed by human collaborators**, the designer's ruling of
+2026-09-05, now in `CLAUDE.md`: no smothering in comments, the code speaking for itself.
+
+**The runner counts in the server's simulation frame.** Its first drive counted server game time
+in sixtieths, and the rounding put a one-frame spread on the injection pairing. Now a row's frame
+zero is the server's shared frame at `BEGIN`, so the `INJECT` marker and the `INPUT` line sit on
+one timeline. **The universal set allows the pairing to move by one frame within a row**: at zero
+latency it moved once between a press at frame 60 and its release at 180, with no fault logged;
+the prediction framework throttles an autonomous client's simulation frequency to keep the server's
+input buffer fed *(headers, 2026-09-05, `NetworkPredictionWorldManager.cpp` lines 98 to 106)*, one
+frame at a time. Two frames still fail. **The frame rate is capped at the fixed rate for a run**:
+free-running, the editor played 6.5 game seconds in 4.1 wall seconds, and an emulated lag counts
+wall milliseconds, so uncapped it would shrink in frames.
+
+**The pawn's placeholder is the engine's cylinder**, the engine shipping no capsule shape
+*(engine content, 2026-09-05)*; a capsule from Geometry Script is a Stretch line.
+
+### Verified against written
+
+**Verified.** The matrix: `regression-run.sh --all`, fourteen rows at 0, 50, 100 and 150 ms with
+5 percent loss on two of them, every row green, every mutation proven, run again on the binary
+that ships. The runner's every route the trap named: worlds by PIE instance, the player-id
+match, `NetEmulation.PktLag` and `PktLoss`, teleport through the simulation, keys through
+`UFMInputTools`, the fixed clock through `UFMTimeTools`. The trace from three worlds with one
+frame definition; the relay, 224 client lines in a PIE server's bundle and the field client's
+1 172 in the server's log; COST per connection; POSE from every world; the hotkey `M` as
+`MARK category=hotkey` at frame 590 of the field session. **The field session**: the editor
+with `-server` on the harness map, the packaged Development client from `Saved/Packaged/Windows/`
+joining as `C1` (`Join succeeded` in the server log), 23 COST samples over the session, the
+bundle ingested by `ingest_bundle.py`, the universal set passing on it. The field numbers:
+lag 31 ms on the loopback with the server ticking at the engine's 30 Hz default, server tick
+2.40 ms, inbound 30 000 B/s against 2 600 out, the client's frame rate uncapped. Both checks pass.
+
+**Written, not verified.** `FM.Bundle` and `FM.Mark` as console commands, which nothing typed;
+`meta.json`'s `connections` on a client, always empty by construction; the field script's
+graceful server stop, which `taskkill` without `/F` delivered once. The packaged client's own
+bundle under its Saved directory was not read.
+
+**Beyond the plan.** A fourth scenario, `harness.walk-loss`, at 5 percent loss; `run_report.py`
+for the lead and lag per row; the asset-manager rule for the game-feature data type in
+`Config/DefaultGame.ini`, without which the cook counts an error; the session bundles split into
+`PIE/` and `Field/`. Nothing else.
+
+### Measured
+
+Run `0905-010830`, fourteen rows in 57 s of wall time, every row green, twenty-eight mutations
+proven, the universal set clean throughout. Per connection, two players, one process:
+
+| Round trip | Lag measured (ms) | Client lead (frames) | In / out (B/s) | Server tick (ms) |
+|---|---|---|---|---|
+| 0 | 6 to 7 | 6, once 7 | 10 500 to 11 000 / 9 100 to 9 500 | 0.52 to 0.57 |
+| 50 | 44 | 10, once 11 | 10 000 to 10 600 / 8 900 to 9 600 | 0.54 to 0.55 |
+| 100 | 76 to 77 | 13 | 10 100 to 10 700 / 9 300 to 9 500 | 0.53 to 0.56 |
+| 150 | 108 to 109 | 16 | 10 300 to 10 600 / 9 400 to 9 700 | 0.53 to 0.56 |
+
+The server tick is the server world's actor tick alone, 0.27 ms per player. **Determinism**: the
+autonomous pawn on its client against the same pawn on the server at the same simulation frame,
+every matched sample in the second half of every row within 1 cm, idle, walking and jumping, at
+every round trip and at 5 percent loss. Walking 120 frames covered 1 000 to 2 000 cm on the server
+at every latency; the jump rose 80 to 160 cm and came back to Walking within two seconds.
 
 ## 2026-09-04 — The repository stands alone, and forgets its parent
 

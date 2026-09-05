@@ -98,6 +98,111 @@ def frames_apart(a, b):
     return b.frame - a.frame
 
 
+# --- reading POSE -----------------------------------------------------------------
+
+def role_pids(ctx):
+    """role -> player id, from the ROLES marker."""
+    out = {}
+    for kind, rest in ctx.markers:
+        if kind == "ROLES":
+            for tok in rest.split()[1:]:
+                if "=" in tok and ":" in tok:
+                    role, where = tok.split("=", 1)
+                    out[role] = int(where.split(":")[1])
+    return out
+
+
+def poses(ctx, world, pid):
+    """sf -> the POSE line of one pawn in one world, the last line per simulation frame."""
+    out = {}
+    for ln in ctx.lines("POSE", world):
+        if int(ln.fields.get("pid", -1)) == pid and "sf" in ln.fields:
+            out[int(ln.fields["sf"])] = ln
+    return out
+
+
+def distance(a, b):
+    return sum((a.fields[k] - b.fields[k]) ** 2 for k in ("x", "y", "z")) ** 0.5
+
+
+# --- the harness assertions ---------------------------------------------------------
+
+def determinism(ctx, r, s, tolerance_cm=1.0):
+    """Each role's pawn on its own client against the same pawn on the server, at every matched
+    simulation frame in the second half of the row."""
+    pids = role_pids(ctx)
+    for role, (world, _loc, _yaw) in sorted(s["roles"].items()):
+        pid = pids.get(role, -1)
+        server, client = poses(ctx, "S", pid), poses(ctx, world, pid)
+        matched = sorted(set(server) & set(client))
+        band(r, "%s POSE frames matched on S and %s" % (role, world), [len(matched)], 10, 10 ** 6, "")
+        later = matched[len(matched) // 2:]
+        band(r, "%s S vs %s distance, second half (cm)" % (role, world),
+             [distance(server[f], client[f]) for f in later], 0.0, tolerance_cm, "cm")
+
+
+def cost_sane(ctx, r):
+    lines = ctx.lines("COST", "S")
+    band(r, "server tick per COST line (ms)", [ln.fields["tick_ms"] for ln in lines], 0.0, 50.0, "ms")
+    for conn in sorted(set(str(ln.fields.get("conn")) for ln in lines)):
+        peak = max(ln.fields["in_bps"] for ln in lines if str(ln.fields.get("conn")) == conn)
+        band(r, "%s inbound peak (B/s)" % conn, [peak], 1.0, 10 ** 9, "B/s")
+
+
+@row("harness.idle")
+def harness_idle(ctx, r, s):
+    determinism(ctx, r, s)
+    pids = role_pids(ctx)
+    for role in sorted(s["roles"]):
+        zs = [ln.fields["z"] for _sf, ln in sorted(poses(ctx, "S", pids.get(role, -1)).items())]
+        later = zs[len(zs) // 2:]
+        band(r, "%s stands still on the server, z spread (cm)" % role,
+             [max(later) - min(later)] if later else [], 0.0, 1.0, "cm")
+    cost_sane(ctx, r)
+
+
+@row("harness.walk")
+def harness_walk(ctx, r, s):
+    determinism(ctx, r, s)
+    pids = role_pids(ctx)
+    p1 = sorted(poses(ctx, "S", pids.get("p1", -1)).items())
+    if p1:
+        first, last = p1[0][1], p1[-1][1]
+        band(r, "p1 travelled +X on the server (cm)", [last.fields["x"] - first.fields["x"]], 1000.0, 2000.0, "cm")
+        band(r, "p1 drift in Y on the server (cm)", [abs(last.fields["y"] - first.fields["y"])], 0.0, 20.0, "cm")
+    else:
+        r.add(False, "p1 travelled +X on the server (cm)", "no POSE for p1 on S")
+    count(r, "p1 INPUT edges on C1", len(ctx.lines("INPUT", "C1", "role=p1 ")), 2)
+    cost_sane(ctx, r)
+
+
+ROWS["harness.walk-loss"] = harness_walk
+
+
+@row("harness.jump")
+def harness_jump(ctx, r, s):
+    determinism(ctx, r, s)
+    pids = role_pids(ctx)
+    p1 = poses(ctx, "S", pids.get("p1", -1))
+    press = ctx.first("INPUT", "C1", "action=jump edge=pressed")
+    if p1 and press:
+        before = [ln.fields["z"] for sf, ln in p1.items() if sf < press.frame]
+        window = [ln.fields["z"] for sf, ln in p1.items() if press.frame <= sf <= press.frame + 60]
+        after = [ln for sf, ln in p1.items() if press.frame + 120 <= sf <= press.frame + 180]
+        base = before[-1] if before else None
+        rest = min(ln.fields["z"] for ln in p1.values())
+        band(r, "p1 jump height on the server (cm)",
+             [max(window) - base] if window and base is not None else [], 80.0, 160.0, "cm")
+        band(r, "p1 at rest height two seconds later (cm)", [ln.fields["z"] - rest for ln in after], 0.0, 2.0, "cm")
+        equal(r, "p1 back in Walking two seconds later", [ln.fields.get("mode") for ln in after], "Walking")
+        falling = [ln for sf, ln in p1.items() if press.frame <= sf <= press.frame + 60 and ln.fields.get("mode") == "Falling"]
+        band(r, "p1 POSE lines in Falling during the jump", [len(falling)], 1, 20, "")
+    else:
+        r.add(False, "p1 jump height on the server (cm)", "no POSE for p1 on S, or no jump INPUT on C1")
+    count(r, "p1 INPUT edges on C1", len(ctx.lines("INPUT", "C1", "role=p1 ")), 2)
+    cost_sane(ctx, r)
+
+
 # --- self-test --------------------------------------------------------------------
 
 SELF_TEST_SLICE = """\

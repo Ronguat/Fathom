@@ -20,12 +20,14 @@ server as PIE instance 0 and client k as instance k; each is addressed by its pa
 role lives in one client world, drives that world's player controller, and is matched to its
 server pawn by the replicated player id, never by name.
 
-Frames: the runner's frame is the server world's game time since the row's BEGIN, in sixtieths.
+Frames: the runner's frame is the server world's shared simulation frame since the row's BEGIN.
 A plan step is due when that frame reaches the step's; the INJECT marker carries it, and the
 evaluator pairs it with the INPUT line's shared simulation frame.
 
 Latency: the row's round trip is split evenly, NetEmulation.PktLag on every world; loss is
 NetEmulation.PktLoss on every world; both are cleared with NetEmulation.Off at the row's end.
+The emulation counts wall milliseconds, so the frame rate is capped at the fixed rate for the
+run; otherwise the editor runs the fixed step faster than real time and a lag shrinks in frames.
 
 Anything thrown releases every hold, restores the clock and screen percentage, ends play, and
 the run continues with the next row.
@@ -74,31 +76,16 @@ def key(name):
 
 
 # --- key resolution -------------------------------------------------------------
-# Actions are named in plans; the keys come from the mapping contexts in scenarios.IMC_PATHS, so
-# a rebind moves the fixture with the game. The move action's WASD quartet is kept separately.
+# Actions are named in plans; the keys come from the controller's key table, read off its class
+# default object, so a rebind moves the fixture with the game.
 _ACTION_KEYS = {}
-_MOVE_KEYS = {}
 
 
 def resolve_keys():
     _ACTION_KEYS.clear()
-    _MOVE_KEYS.clear()
-    for path in SC.IMC_PATHS:
-        imc = unreal.load_asset(path)
-        if not imc:
-            continue
-        for m in imc.get_editor_property("default_key_mappings").get_editor_property("mappings"):
-            action = m.get_editor_property("action")
-            if not action:
-                continue
-            name = action.get_name()
-            kname = m.get_editor_property("key").export_text()
-            short = name[3:].lower() if name.startswith("IA_") else name.lower()
-            if short == "move":
-                if kname in ("W", "A", "S", "D"):
-                    _MOVE_KEYS[kname] = kname
-                continue
-            _ACTION_KEYS.setdefault(short, kname)
+    table = unreal.get_default_object(getattr(unreal, SC.KEY_TABLE_CLASS)).get_editor_property("action_keys")
+    for name, k in table.items():
+        _ACTION_KEYS[str(name)] = k.export_text()
     return _ACTION_KEYS
 
 
@@ -106,27 +93,39 @@ def key_for(action):
     return _ACTION_KEYS.get(action)
 
 
-def move_keys(x, y):
-    """The WASD keys whose sum is the requested direction: X right, Y forward."""
+def move_actions(x, y):
+    """The move actions whose sum is the requested direction: X right, Y forward."""
     out = []
     if y > 0:
-        out.append("W")
+        out.append(SC.MOVE_ACTIONS["forward"])
     elif y < 0:
-        out.append("S")
+        out.append(SC.MOVE_ACTIONS["back"])
     if x > 0:
-        out.append("D")
+        out.append(SC.MOVE_ACTIONS["right"])
     elif x < 0:
-        out.append("A")
-    return [k for k in out if k in _MOVE_KEYS]
+        out.append(SC.MOVE_ACTIONS["left"])
+    return [a for a in out if key_for(a)]
+
+
+def is_move_key(kname):
+    return any(key_for(a) == kname for a in SC.MOVE_ACTIONS.values())
 
 
 # --- worlds ---------------------------------------------------------------------
 
+_LEVEL = None
+
+
+def remember_level():
+    """The editor level's package folder and name, readable only before play starts."""
+    global _LEVEL
+    folder, name = ues.get_editor_world().get_outer().get_name().rsplit("/", 1)
+    _LEVEL = (folder, name)
+
+
 def pie_world(instance):
     """The PIE world of one instance, by package path, or None before it exists."""
-    editor_world = ues.get_editor_world()
-    pkg = editor_world.get_outer().get_name()
-    folder, name = pkg.rsplit("/", 1)
+    folder, name = _LEVEL
     return unreal.find_object(None, "%s/UEDPIE_%d_%s.%s" % (folder, instance, name, name))
 
 
@@ -196,6 +195,7 @@ class Run(object):
         try:
             if self.fixed:
                 unreal.FMTimeTools.set_fixed_time_step(False)
+                unreal.SystemLibrary.execute_console_command(None, "t.MaxFPS 0")
             if self.orig_screen_pct is not None:
                 unreal.SystemLibrary.execute_console_command(
                     None, "r.ScreenPercentage %d" % self.orig_screen_pct)
@@ -274,12 +274,14 @@ class Run(object):
             unreal.SystemLibrary.execute_console_command(None, "%s %s" % (name, value))
         if self.fixed:
             unreal.FMTimeTools.set_fixed_time_step(True, self.dt)
+            unreal.SystemLibrary.execute_console_command(None, "t.MaxFPS %d" % int(round(1.0 / self.dt)))
         if self.screen_pct and self.orig_screen_pct is None:
             self.orig_screen_pct = unreal.SystemLibrary.get_console_variable_int_value(
                 "r.ScreenPercentage") or 100
             unreal.SystemLibrary.execute_console_command(
                 None, "r.ScreenPercentage %d" % int(self.screen_pct))
         self.pie_wall = time.time()
+        remember_level()
         les.editor_request_begin_play()
         self.goto("wait_world")
 
@@ -308,6 +310,10 @@ class Run(object):
                     raise RuntimeError("role %s has no pawn in %s after %.0fs" % (role, wtag, WORLD_TIMEOUT_S))
                 return
             pid = self.player_id(pc.get_editor_property("player_state"))
+            if pid < 0:
+                if timed_out:
+                    raise RuntimeError("role %s has no player state in %s after %.0fs" % (role, wtag, WORLD_TIMEOUT_S))
+                return
             server_pawn = self.server_pawn_for(worlds["S"], pid)
             if server_pawn is None:
                 if timed_out:
@@ -321,11 +327,11 @@ class Run(object):
 
     @staticmethod
     def player_id(player_state):
-        return int(player_state.get_player_id()) if player_state else -1
+        return int(player_state.get_editor_property("player_id")) if player_state else -1
 
     def server_pawn_for(self, server_world, pid):
         for pawn in unreal.GameplayStatics.get_all_actors_of_class(server_world, unreal.Pawn):
-            if self.player_id(pawn.get_player_state()) == pid:
+            if self.player_id(pawn.get_editor_property("player_state")) == pid:
                 return pawn
         return None
 
@@ -333,19 +339,21 @@ class Run(object):
         s = SC.SCENARIOS[self.sid]
         self.apply_emulation(self.latency, float(s.get("loss", 0.0)))
         for role, (wtag, loc, yaw) in s["roles"].items():
-            self.pawns[(role, "S")].set_actor_location_and_rotation(
-                unreal.Vector(*loc), unreal.Rotator(0.0, 0.0, yaw), False, True)
+            self.pawns[(role, "S")].harness_teleport(unreal.Vector(*loc), yaw)
+            self.pawns[(role, wtag)].set_harness_role(role)
             self.pcs[role].set_control_rotation(unreal.Rotator(0.0, 0.0, yaw))
         server = self.worlds["S"]
         self.begin_game_time = unreal.GameplayStatics.get_time_seconds(server)
-        self.mark("BEGIN %s run=%s latency=%d loss=%s idx=%d game=%.3f"
-                  % (self.rid, self.run_id, self.latency, s.get("loss", 0.0), self.idx, self.begin_game_time))
+        self.begin_frame = self.sim_frame()
+        self.mark("BEGIN %s run=%s latency=%d loss=%s idx=%d game=%.3f frame=%d"
+                  % (self.rid, self.run_id, self.latency, s.get("loss", 0.0), self.idx,
+                     self.begin_game_time, self.begin_frame))
         self.mark("ROLES %s %s" % (self.rid, " ".join(
             "%s=%s:%d" % (role, wtag, self.player_id(self.pcs[role].get_editor_property("player_state")))
             for role, (wtag, _l, _y) in sorted(s["roles"].items()))))
         if self.tapes:
             self.tape = open(os.path.join(self.out_dir, "%s.tape.tsv" % self.rid), "w")
-            self.tape.write("frame\tworld\trole\tx\ty\tz\tyaw\n")
+            self.tape.write("frame\tworld\trole\tx\ty\tz\tyaw\tsf\n")
         self.frame, self.step, self.pending, self.holds, self.last_sampled = 0, 0, [], [], -1
         stop = s.get("stop", {})
         self.until_tag, self.until_need, self.until_count = None, 0, 0
@@ -372,11 +380,14 @@ class Run(object):
     def now(self):
         return unreal.GameplayStatics.get_time_seconds(self.worlds["S"])
 
+    def sim_frame(self):
+        return int(unreal.FMTraceLibrary.get_frame(self.worlds["S"]))
+
     def phase_run(self):
         s = SC.SCENARIOS[self.sid]
         now = self.now()
         elapsed = now - self.begin_game_time
-        f = self.frame = int(round(elapsed * 60.0))
+        f = self.frame = self.sim_frame() - self.begin_frame
         plan = s.get("plan", [])
         while self.step < len(plan) and plan[self.step][0] <= f:
             self.do_op(plan[self.step])
@@ -441,25 +452,26 @@ class Run(object):
         elif op == "move":
             x, y = float(stepv[3]), float(stepv[4])
             frames = int(stepv[5]) if len(stepv) > 5 else 0
-            for kname in move_keys(x, y):
+            for action in move_actions(x, y):
+                kname = key_for(action)
                 if (wtag, kname) not in self.holds:
                     unreal.FMInputTools.input_key(pc, key(kname), True)
                     self.holds.append((wtag, kname))
-                    self.mark("INJECT %s frame=%d %s move-%s press" % (self.rid, self.frame, role, kname))
+                    self.mark("INJECT %s frame=%d %s %s press" % (self.rid, self.frame, role, action))
                 if frames > 0:
-                    self.pending.append((self.frame + frames, wtag, kname, role, "move-" + kname))
+                    self.pending.append((self.frame + frames, wtag, kname, role, action))
         elif op == "stop_move":
             for w, kname in list(self.holds):
-                if w == wtag and kname in _MOVE_KEYS:
-                    self.up(wtag, kname, role, "move-" + kname)
+                if w == wtag and is_move_key(kname):
+                    action = [a for a in SC.MOVE_ACTIONS.values() if key_for(a) == kname][0]
+                    self.up(wtag, kname, role, action)
         elif op == "face":
             pc.set_control_rotation(unreal.Rotator(0.0, 0.0, float(stepv[3])))
         elif op == "teleport":
             pawn = self.pawns[(role, "S")]
             loc = stepv[3]
             yaw = float(stepv[4]) if len(stepv) > 4 else pawn.get_actor_rotation().yaw
-            pawn.set_actor_location_and_rotation(
-                unreal.Vector(*loc), unreal.Rotator(0.0, 0.0, yaw), False, True)
+            pawn.harness_teleport(unreal.Vector(*loc), yaw)
         elif op == "mark":
             self.mark("MARK %s %s" % (self.rid, stepv[3]))
         else:
@@ -486,8 +498,8 @@ class Run(object):
             self.last_sampled = f
             for (role, wtag), pawn in sorted(self.pawns.items()):
                 loc = pawn.get_actor_location()
-                self.tape.write("%d\t%s\t%s\t%.1f\t%.1f\t%.1f\t%.1f\n" % (
-                    f, wtag, role, loc.x, loc.y, loc.z, pawn.get_actor_rotation().yaw))
+                self.tape.write("%d\t%s\t%s\t%.1f\t%.1f\t%.1f\t%.1f\t%d\n" % (
+                    f, wtag, role, loc.x, loc.y, loc.z, pawn.get_actor_rotation().yaw, pawn.get_sim_frame()))
 
     def close_tape(self):
         if self.tape:
@@ -499,7 +511,7 @@ class Run(object):
         if self.settle_at is None:
             self.release_all()
             self.settle_at = self.frame
-        f = self.frame = int(round((self.now() - self.begin_game_time) * 60.0))
+        f = self.frame = self.sim_frame() - self.begin_frame
         self.sample_if_due(f)
         if f - self.settle_at < SETTLE_FRAMES:
             return

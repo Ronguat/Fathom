@@ -1,8 +1,7 @@
 # Debug instruments
 
 **Trigger: about to measure something.** The trace, the two-world PIE recipe, the loop and the
-field log. The loop's skeleton is in `Tools/RegressionCheck/`; what it has not done is drive a
-frame, and the Harness rung is where it first does.
+field log. The loop is in `Tools/RegressionCheck/`, and `regression-run.sh --all` is the run.
 
 ## The trace
 
@@ -10,22 +9,35 @@ frame, and the Harness rung is where it first does.
 `LogFMTrace: [server frame] [world] TAG key=value ...`, where the world is `S` for the server,
 `C<n>` for a client, and the frame is the shared simulation frame. The PIE server, every PIE client
 and every packaged build write the same shape, and the regression evaluator reads a field session
-exactly as it reads a scenario. *Designed 2026-09-04; nothing emits it until the Harness rung ships.*
+exactly as it reads a scenario. `UFMTraceSubsystem` in `Source/Fathom/Net/` emits it; **the frame
+is the prediction framework's pending frame plus its server offset**, so a client stamps the server
+frame it is predicting, six frames ahead of the server at zero latency and ten at 50 ms *(measured
+2026-09-05)*. `C<n>` is the PIE instance under one process, or `-FMClient=<n>` on a packaged client,
+`1` without it.
 
-**Tags the loop reads.** `COST conn=<C<n>> in_bps=<n> out_bps=<n> tick_ms=<f>`, written by the
-server per connection once a second, is protocol three's printout; the universal set fails a slice
-without one per client. `INPUT role=<r> action=<a> edge=<pressed|released>` is written by the world
-that consumed an injected key, and pairs with the runner's `INJECT` marker to assert a constant
-injection latency. `MARK category=<c>` is the marker hotkey. Everything else is a rung's own
-vocabulary.
+**Tags the loop reads.** `COST conn=<C<n>> in_bps=<n> out_bps=<n> tick_ms=<f> lag_ms=<f>
+players=<n>`, written by the server per connection once a second, is protocol three's printout:
+the connection's bytes each way, the server world's actor-tick wall time, the connection's measured
+lag; the universal set fails a slice without one per client. `INPUT role=<r> action=<a>
+edge=<pressed|released>` is written by the pawn as it authors an input command whose key state
+changed, and pairs with the runner's `INJECT` marker; the universal set allows the pairing to move
+by one frame within a row, the prediction framework's client throttle, and fails on two. `POSE
+pid=<player id> sf=<frame> x= y= z= yaw= mode=` is written by every world for every pawn every
+sixth finalized frame, `sf` the frame the pawn last finalized and the position its sync state's,
+which the determinism rows compare across worlds. `MARK category=<c>` is the marker hotkey, `M`,
+and the console command `FM.Mark <category>`. Everything else is a rung's own vocabulary.
 
-**Clients relay their trace to the server** in batches over a reliable call, so the server log
-carries every world reconciled by frame; each client also writes its own file as the fallback for a
-dropped connection. **A marker hotkey** drops a `MARK` line at the frame the player pressed it, which
-is the only thing a remote human is asked to do. **A session bundle** is written at server shutdown
-and on a console command: every trace, the commit hash, the knob values, the sea state, and
-per-connection latency and bandwidth. An ingest script turns a bundle into the evaluator's slice
-format and lists the marks.
+**Clients relay their trace to the server** once a second over a reliable call, into the
+server's session file, and into its log only outside PIE, where the process log already carries
+every world once. **A marker hotkey** drops a `MARK` line at the frame the player pressed it, which
+is the only thing a remote human is asked to do. **Every world keeps a session bundle** under
+`Saved/Fathom/Sessions/<PIE|Field>/<stamp>-<tag>/`: `trace.log`, and `meta.json` with the commit, the map, the
+fixed rate, the frame range and per-connection averages, rewritten every ten seconds, at the end
+and on `FM.Bundle`; the server's carries every world. `Tools/RegressionCheck/ingest_bundle.py`
+turns a server bundle into a slice, runs the universal set and the cost readout on it, and lists
+the marks. **A field session is `Tools/RegressionCheck/field-session.sh`**, the interactive editor
+closed: the editor with `-server` on the harness map, the packaged client from
+`Saved/Packaged/Windows/` joining as `C1`, the hotkey pressed in its window, then the ingest.
 
 **The engine's replay system is the upgrade to recon**, recording the server for scrubbing in the
 editor by frame. Its compatibility with the prediction framework is unmeasured, so the text trace
@@ -64,7 +76,8 @@ and `RunUnderOneProcess=True` under `[/Script/UnrealEd.LevelEditorPlaySettings]`
 spawns a dedicated server and gives every human real latency; `PIE_ListenServer` gives the host
 none and hides the defects this project exists to find. One process is what lets the runner address
 every world; `False` writes `Saved/Logs/Fathom_2.log` for the client instead. The loop's preflight
-blocks on anything else. The file is gitignored machine state.
+reads that file, the settings having no Python class, and blocks on anything else. The file is
+gitignored machine state. *Run this way 2026-09-05: the server is instance 0, the clients 1 and 2.*
 
 ## The regression loop
 
@@ -83,10 +96,12 @@ per player.
 **The shape of a run.** `regression-run.sh` preflights, arms `ue_regression_runner.py` inside the
 editor through the remote-execution pipe, and follows the log for the `REGRESSION` markers each
 row emits; the runner starts play as a client with a dedicated server, addresses each world by its
-PIE instance, splits the round trip across both directions with `NetEmulation.PktLag`, drives keys
-through `UFMInputTools` on each role's own player controller, and writes a tape of every role's
-pose in its own world and on the server. *Written 2026-09-04 against the measurements above; no
-row has run.*
+PIE instance, caps the frame rate at the fixed rate so an emulated lag keeps its size in frames,
+splits the round trip across both directions with `NetEmulation.PktLag`, places each role through
+the simulation, counts frames in the server's own simulation frame, drives keys through
+`UFMInputTools` on each role's own player controller, and writes a tape of every role's pose in
+its own world and on the server. *First driven 2026-09-05: twelve rows in under a minute of wall
+time, four seconds of play each.*
 
 **Coverage binds at plan time.** A rung's plan lists the rows it adds or files a dated trap naming
 what is now untested. A loop that lags the surface still prints green.
@@ -97,7 +112,10 @@ what is now untested. A loop that lags the surface still prints green.
 
 | Scenario | Worlds | Round trips (ms) | Plan | Stop | Covers |
 |---|---|---|---|---|---|
-| *none yet* | | | | | |
+| `harness.idle` | S C1 C2 | 0, 50, 100, 150 | f120 p1 mark idle | 6 s | two worlds, cost, determinism |
+| `harness.jump` | S C1 C2 | 0, 50, 100, 150 | f60 p1 tap jump | 6 s | two worlds, cost, injection latency, determinism |
+| `harness.walk` | S C1 C2 | 0, 50, 100, 150 | f60 p1 move 0.0 1.0 120 | 6 s | two worlds, cost, injection latency, determinism |
+| `harness.walk-loss` | S C1 C2 | 0, 100 | f60 p1 move 0.0 1.0 120 | 6 s | two worlds, cost, injection latency, determinism |
 
 *Generated from `Tools/RegressionCheck/scenarios.py` by `Tools/RegressionCheck/gen-matrix.py`. Edit the fixtures there, never this table.*
 <!-- matrix:end -->
@@ -108,10 +126,10 @@ what is now untested. A loop that lags the surface still prints green.
 
 | Mechanic | Rows asserting it |
 |---|---|
-| two worlds | **none** |
-| cost | **none** |
-| injection latency | **none** |
-| determinism | **none** |
+| two worlds | `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
+| cost | `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
+| injection latency | `harness.jump`, `harness.walk`, `harness.walk-loss` |
+| determinism | `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
 
 *Generated from each row's `covers` in `Tools/RegressionCheck/scenarios.py` by `Tools/RegressionCheck/gen-matrix.py`.*
 <!-- coverage:end -->

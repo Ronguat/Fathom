@@ -26,6 +26,9 @@ ALLOWLIST = os.path.join(HERE, "log-allowlist.txt")
 TRACE = re.compile(r"LogFMTrace: \[(\d+)\] \[(S|C\d+)\] ([A-Z][A-Z ]*?)(?: (.*))?$")
 TRACE_ANY = re.compile(r"LogFMTrace: (.*)$")
 MARKER = re.compile(r"REGRESSION ([A-Z]+) (.*)$")
+# Frames an injection's delivery may move within a row: the prediction framework throttles an
+# autonomous client's simulation frequency to keep the server's input buffer fed, one frame at a time.
+INJECTION_SPREAD_TOL = 1
 # Engine categories whose warnings and errors the universal set surfaces.
 WARN_CATEGORIES = ("LogFathom", "LogFMTrace", "LogNetworkPrediction", "LogMover", "LogNet",
                    "LogNetPackageMap", "LogScript", "LogBlueprint", "LogPython")
@@ -128,7 +131,7 @@ def universal(trace, markers, raw, bad, r, allow=()):
     deltas = injection_deltas(trace, markers)
     if deltas:
         span = max(deltas) - min(deltas)
-        r.add(span == 0, "injection latency constant",
+        r.add(span <= INJECTION_SPREAD_TOL, "injection latency constant",
               "%d injection(s), %d frame(s)%s" % (len(deltas), deltas[0],
                                                   "" if span == 0 else ", spread %d" % span))
     else:
@@ -177,7 +180,8 @@ def injection_deltas(trace, markers):
 # --- cost -----------------------------------------------------------------------
 
 def cost(trace):
-    """Per connection, the mean of in_bps, out_bps and tick_ms off the server's COST lines."""
+    """Per connection, the mean of in_bps, out_bps, tick_ms, lag_ms and players off the server's
+    COST lines."""
     sums, n = {}, {}
     for ln in trace:
         if ln.tag != "COST" or ln.world != "S":
@@ -185,7 +189,7 @@ def cost(trace):
         conn = str(ln.fields.get("conn", "?"))
         n[conn] = n.get(conn, 0) + 1
         acc = sums.setdefault(conn, {})
-        for k in ("in_bps", "out_bps", "tick_ms"):
+        for k in ("in_bps", "out_bps", "tick_ms", "lag_ms", "players"):
             acc[k] = acc.get(k, 0.0) + float(ln.fields.get(k, 0.0))
     out = {}
     for conn in sorted(sums):
@@ -197,8 +201,9 @@ def cost(trace):
 def cost_text(c):
     if not c:
         return "no COST lines"
-    return "; ".join("%s in %.0f out %.0f bps, tick %.2f ms (%d)" % (
-        k, v["in_bps"], v["out_bps"], v["tick_ms"], v["samples"]) for k, v in sorted(c.items()))
+    return "; ".join("%s in %.0f out %.0f bps, lag %.0f ms, tick %.2f ms, %.2f/player (%d)" % (
+        k, v["in_bps"], v["out_bps"], v["lag_ms"], v["tick_ms"],
+        v["tick_ms"] / v["players"] if v["players"] else 0.0, v["samples"]) for k, v in sorted(c.items()))
 
 
 # --- golden skeletons -------------------------------------------------------------
