@@ -135,7 +135,7 @@ against the plan, which is what stops a session rationalising mid-run.
 
 **Wind-down is agent-triggered** by four conditions — scope done, a stop-list item reached, the
 session brief's budget reached, a dead end after the fallback — and `Docs/Closing-Down.md` then
-runs in full. **Main stays green**: verified units commit to main and push when the gate is green;
+runs in full and ends with the editor closed, so every session starts the same way. **Main stays green**: verified units commit to main and push when the gate is green;
 unverified work goes to a named `wip/` branch the handoff points at. **The handoff writes the next
 session's brief**, so "continue" is a complete prompt. **One session at a time holds the editor
 and the repository.**

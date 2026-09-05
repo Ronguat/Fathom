@@ -174,6 +174,18 @@ first rung lands code.
 | Symbol | Entries |
 |---|---|
 
+## 2026-09-04 — The wind-down closes the editor
+
+**Decision**, the designer's, asked as a question and ruled the same evening. TheDream leaves its
+editor open at closedown because a session winding down there does not end the designer's own;
+Fathom's sessions are unattended and sequential, so the closedown ends by quitting the editor
+gracefully. **Why**: every session starts from one state, editor closed and restore file empty,
+which the startup check reads cleanly; an idle editor held nearly four gigabytes on a machine the
+designer reclaims; both projects' MCP servers bind the same port; and any header change closes it
+anyway. **Cost**: a launch of a minute or two next session, with the bridge and the Python runner
+reaching the editor before any tool registers. **Reopens** on the designer's word, and the
+exception is written in: present and saying so, they keep it open.
+
 ## 2026-09-04 — Fathom is bootstrapped: the spine, the regime and the inheritance
 
 ### Next session's brief

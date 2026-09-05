@@ -6,8 +6,7 @@ procedure every time; it is what makes an unattended session reviewable.
 
 1. **Make the editor state safe.** Save what you touched by name, then read `git status`; seeing
    the files listed is the check, calling save is not. Decline any restore prompt on reopening,
-   and reset `Saved/Autosaves/PackageRestoreData.json` before an unattended relaunch. Closing the
-   editor is not part of this.
+   and reset `Saved/Autosaves/PackageRestoreData.json` before an unattended relaunch.
 2. **Run the loop, and read what it says rather than its exit code.** Once the Harness rung ships:
    the rows the session's changes can reach, selected by mechanism, at every latency they carry;
    a change to anything shared runs everything. A red row blocks the push. An unproven mutation is
@@ -38,3 +37,7 @@ procedure every time; it is what makes an unattended session reviewable.
    re-checked.
 9. **Check memory points rather than restates.** Anything a future instance needs is in the repo.
 10. **Title the session, five words maximum.** What it did, not what it touched.
+11. **Close the editor, last.** Announce it, quit gracefully through the Python runner, confirm the
+    process is gone and the restore file reads `Packages: []`. Every session then starts the same
+    way: editor closed, tree clean, restore file empty. It also frees the machine and the port the
+    other project's editor needs. The one exception: the designer, present, says to leave it open.
