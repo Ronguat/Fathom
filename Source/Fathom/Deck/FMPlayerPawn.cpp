@@ -189,6 +189,12 @@ void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdC
 
 void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const FMoverAuxStateContext& AuxState)
 {
+	const FMoverDefaultSyncState* State = SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
+	const UPrimitiveComponent* Base = State ? State->GetMovementBase() : nullptr;
+	if (Base && GetLocalRole() == ROLE_SimulatedProxy)
+	{
+		PlaceOnBase(*State, *Base);
+	}
 	const APlayerState* Player = GetPlayerState();
 	if (PendingRollbackTo >= 0 && Player)
 	{
@@ -200,20 +206,27 @@ void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const F
 	{
 		return;
 	}
-	const FMoverDefaultSyncState* State = SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
 	if (!State || !Player)
 	{
 		return;
 	}
 	const FVector Location = State->GetLocation_WorldSpace();
-	const bool bBased = State->GetMovementBase() != nullptr;
-	const FVector BaseSpace = bBased ? State->GetLocation_BaseSpace() : FVector::ZeroVector;
+	const FVector BaseSpace = Base ? State->GetLocation_BaseSpace() : FVector::ZeroVector;
+	const FVector Rendered = Base ? Base->GetComponentTransform().InverseTransformPositionNoScale(GetActorLocation()) : FVector::ZeroVector;
 	const UFMOceanSubsystem* Ocean = UFMOceanSubsystem::Get(this);
 	const float Water = GetDefault<UFMOceanSettings>()->PlaneZ + (Ocean ? Ocean->HeightAt(FVector2f(Location.X, Location.Y), SimFrame) : 0.0f);
-	FM_TRACE(this, TEXT("POSE pid=%d sf=%d x=%.2f y=%.2f z=%.2f yaw=%.1f mode=%s base=%d bx=%.2f by=%.2f bz=%.2f wz=%.2f"),
+	FM_TRACE(this, TEXT("POSE pid=%d sf=%d x=%.2f y=%.2f z=%.2f yaw=%.1f mode=%s base=%d bx=%.2f by=%.2f bz=%.2f rx=%.2f ry=%.2f rz=%.2f wz=%.2f"),
 		Player->GetPlayerId(), SimFrame, Location.X, Location.Y, Location.Z,
 		State->GetOrientation_WorldSpace().Yaw, *SyncState.MovementMode.ToString(),
-		bBased ? 1 : 0, BaseSpace.X, BaseSpace.Y, BaseSpace.Z, Water);
+		Base ? 1 : 0, BaseSpace.X, BaseSpace.Y, BaseSpace.Z, Rendered.X, Rendered.Y, Rendered.Z, Water);
+}
+
+void AFMPlayerPawn::PlaceOnBase(const FMoverDefaultSyncState& State, const UPrimitiveComponent& Base)
+{
+	const FTransform BaseNow = Base.GetComponentTransform();
+	const FVector Location = BaseNow.TransformPositionNoScale(State.GetLocation_BaseSpace());
+	const FQuat Orientation = BaseNow.GetRotation() * State.GetCapturedMovementBaseQuat().Inverse() * State.GetOrientation_WorldSpace().Quaternion();
+	SetActorLocationAndRotation(Location, Orientation, false, nullptr, ETeleportType::TeleportPhysics);
 }
 
 void AFMPlayerPawn::HandleRollback(const FMoverTimeStep& CurrentTimeStep, const FMoverTimeStep& ExpungedTimeStep)

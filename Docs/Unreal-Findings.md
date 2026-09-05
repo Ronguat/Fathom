@@ -228,6 +228,15 @@ screen-space reflections, fog and the aerial perspective's fast apply made no di
 at runtime; disabling the atmosphere removed the wash; assigning any material removed it and, on
 the designer's word, the flicker. A dynamic mesh gets its material in the constructor.
 
+**Mover places a based simulated proxy through the base pose captured with its state** *(engine
+source, 2026-09-05)*: `FMoverDefaultSyncState::Interpolate` interpolates in base space when the
+bases match, `GetLocation_WorldSpace` then transforms by the captured `MovementBasePos` and
+`MovementBaseQuat`, and `UMoverComponent::FinalizeFrame` sets the component there. On a client
+whose base is predicted ahead, the proxy trails the base by the round trip and the lead: 230 cm at
+100 ms on a ship at 8 m/s, and a bob against the deck when still. `OnPostFinalize` fires after
+that placement, and a re-placement through the base's current transform there holds until the
+next finalize.
+
 **A console command sent with a world context never reaches the play viewport** *(PIE,
 2026-09-05)*: `viewmode` and `show` through `SystemLibrary.execute_console_command(world, ...)`
 changed nothing in the captures; a player controller's `console_command` is the route. The `Shot`

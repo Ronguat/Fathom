@@ -6,6 +6,9 @@
 #include "MoverSimulationTypes.h"
 #include "FMPlayerPawn.generated.h"
 
+struct FMoverDefaultSyncState;
+class UPrimitiveComponent;
+
 class UCameraComponent;
 class UCapsuleComponent;
 class UCharacterMoverComponent;
@@ -71,6 +74,9 @@ protected:
 
 	UFUNCTION()
 	void HandleRollback(const FMoverTimeStep& CurrentTimeStep, const FMoverTimeStep& ExpungedTimeStep);
+
+	/** Places a simulated proxy where its base-space state stands on the base as this world holds it now. */
+	void PlaceOnBase(const FMoverDefaultSyncState& State, const UPrimitiveComponent& Base);
 
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<UCapsuleComponent> Capsule;

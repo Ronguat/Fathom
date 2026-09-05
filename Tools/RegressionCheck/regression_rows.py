@@ -303,10 +303,11 @@ def based_poses(ctx, world, pid):
 INPUT_SETTLE_FRAMES = 18
 
 
-def deck_relative(ctx, r, s, tolerance_cm=5.0):
+def deck_relative(ctx, r, s, tolerance_cm=5.0, rendered_cm=50.0):
     """Each role's pawn in ship space on its client against the server at the same frame, second
     half, outside INPUT_SETTLE_FRAMES after the role's own input edges; based on every world
-    throughout that half; the transient after an edge and the world-space error reported."""
+    throughout that half; the transient after an edge and the world-space error reported; the
+    other client's view of the pawn, as its sync state holds it and as it renders it."""
     pids = role_pids(ctx)
     for role, (world, _loc, _yaw) in sorted(s["roles"].items()):
         pid = pids.get(role, -1)
@@ -337,6 +338,9 @@ def deck_relative(ctx, r, s, tolerance_cm=5.0):
             seen_deck = [sum((server_all[f].fields.get(k, 0.0) - seen[f].fields.get(k, 0.0)) ** 2 for k in ("bx", "by", "bz")) ** 0.5
                          for f in seen_later if server_all[f].fields.get("base") == 1.0 and seen[f].fields.get("base") == 1.0]
             band(r, "%s as %s sees it, ship-space error vs S, second half (cm)" % (role, other_world), seen_deck, 0.0, 50.0, "cm")
+            rendered = [sum((server_all[f].fields.get(k, 0.0) - seen[f].fields.get(rk, 0.0)) ** 2 for k, rk in (("bx", "rx"), ("by", "ry"), ("bz", "rz"))) ** 0.5
+                        for f in seen_later if server_all[f].fields.get("base") == 1.0 and seen[f].fields.get("base") == 1.0]
+            band(r, "%s as %s renders it, ship-space error vs S, second half (cm)" % (role, other_world), rendered, 0.0, rendered_cm, "cm")
 
 
 def ship_turned(ctx, r):
@@ -346,7 +350,7 @@ def ship_turned(ctx, r):
 
 @row("deck.stand")
 def deck_stand(ctx, r, s):
-    deck_relative(ctx, r, s)
+    deck_relative(ctx, r, s, rendered_cm=10.0)
     pids = role_pids(ctx)
     for role in sorted(s["roles"]):
         based = sorted(based_poses(ctx, "S", pids.get(role, -1)).items())

@@ -40,7 +40,8 @@ direction. Wave time is the shared frame over the fixed rate. The CPU function a
 material function share one formulation, `Shaders/FMOcean.ush` mirrored in
 `Source/Fathom/Ocean/FMOcean.cpp`, and a standing regression row asserts that server, client and
 GPU agree at the same point and frame within one centimetre. The components' constants live in
-`Config/DefaultGame.ini`.
+`Config/DefaultGame.ini`. The surface is drawn by a plane that follows the local viewer, snapped
+to its own grid; nothing about the surface depends on where it is drawn.
 
 ## The ship
 
@@ -56,7 +57,9 @@ Based movement on the ship's hull box, with jumping; the pawn's position in the 
 what the loop measures and Melee rewinds. Falling off enters Swimming when the pawn sinks under
 the ocean's height at its position, a mode that holds it near the surface at a capped swim speed;
 the ladder station, called from within its radius, returns the player to the deck through the
-simulation. A station is driven only from within its radius on the ship.
+simulation. A station is driven only from within its radius on the ship. Another player's pawn is
+drawn from its ship-space state on the ship as this client holds it, so a player standing still is
+drawn where they stand whatever the round trip.
 
 ## Combat
 

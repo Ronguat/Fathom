@@ -47,6 +47,8 @@ private:
 	void SyncFromGameState();
 	void PushCollection(int32 Frame);
 	void Probe(int32 Frame);
+	/** Keeps the surface under the local pawn, snapped to the plane's grid step. */
+	void Follow();
 	bool Renders() const;
 
 	UPROPERTY()

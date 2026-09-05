@@ -4,6 +4,8 @@
 #include "Engine/Engine.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
@@ -152,12 +154,27 @@ void UFMOceanSubsystem::OnTickEnd(UWorld* World, ELevelTick TickType, float Delt
 	const UFMTraceSubsystem* Trace = World->GetSubsystem<UFMTraceSubsystem>();
 	const int32 Frame = Trace ? Trace->GetFrame() : 0;
 	PushCollection(Frame);
+	Follow();
 	const int32 Every = FMath::Max(1, GetDefault<UFMOceanSettings>()->ProbeEveryFrames);
 	if (IsReady() && Frame % Every == 0 && Frame != LastProbeFrame)
 	{
 		LastProbeFrame = Frame;
 		Probe(Frame);
 	}
+}
+
+void UFMOceanSubsystem::Follow()
+{
+	const APlayerController* PC = Surface ? GetWorld()->GetFirstPlayerController() : nullptr;
+	const APawn* Viewer = PC ? PC->GetPawn() : nullptr;
+	if (!Viewer)
+	{
+		return;
+	}
+	const UFMOceanSettings* Settings = GetDefault<UFMOceanSettings>();
+	const double Step = Settings->PlaneSize / FMath::Max(1, Settings->PlaneSteps);
+	const FVector At = Viewer->GetActorLocation();
+	Surface->SetActorLocation(FVector(FMath::GridSnap(At.X, Step), FMath::GridSnap(At.Y, Step), Settings->PlaneZ));
 }
 
 void UFMOceanSubsystem::Probe(int32 Frame)

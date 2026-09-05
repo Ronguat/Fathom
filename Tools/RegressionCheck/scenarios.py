@@ -148,7 +148,8 @@ SCENARIOS = {
         cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
         plan=[(120, "p1", "ship", "sail_length", 1.0), (300, "p2", "ship", "wheel", 0.5)],
         stop=dict(duration=14.0),
-        mutations=[("regex", r"(\[S\] POSE pid=\d+ sf=\d+ .*? bx=)[-\d.]+", r"\g<1>999.00"), ("set", "POSE", "base", "0")],
+        mutations=[("regex", r"(\[S\] POSE pid=\d+ sf=\d+ .*? bx=)[-\d.]+", r"\g<1>999.00"), ("set", "POSE", "base", "0"),
+                   ("regex", r"(\[C1\] POSE pid=\d+ sf=\d+ .*? rx=)[-\d.]+", r"\g<1>999.00")],
         allow=[],
     ),
     "deck.walk": dict(

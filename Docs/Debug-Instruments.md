@@ -22,11 +22,13 @@ lag; the universal set fails a slice without one per client. `INPUT role=<r> act
 edge=<pressed|released>` is written by the pawn as it authors an input command whose key state
 changed, and pairs with the runner's `INJECT` marker; the universal set allows the pairing to move
 by one frame within a row, the prediction framework's client throttle, and fails on two. `POSE
-pid=<player id> sf=<frame> x= y= z= yaw= mode= base=<0|1> bx= by= bz= wz=` is written by every
-world for every pawn every sixth finalized frame, `sf` the frame the pawn last finalized, the
-position its sync state's, `bx..bz` that position in the space of the base it stands on when
-`base=1`, and `wz` the ocean's height under it; the determinism rows compare the world-space
-fields across worlds and the deck rows the base-space ones. `ROLLBACK pid= n= to= from=` is
+pid=<player id> sf=<frame> x= y= z= yaw= mode= base=<0|1> bx= by= bz= rx= ry= rz= wz=` is
+written by every world for every pawn every sixth finalized frame, `sf` the frame the pawn last
+finalized, the position its sync state's, `bx..bz` that position in the space of the base it
+stands on when `base=1`, `rx..rz` the actor's rendered position in that same space, and `wz` the
+ocean's height under it; the determinism rows compare the world-space fields across worlds, the
+deck rows the base-space ones, and the other client's rendering against the server's base-space
+state. `ROLLBACK pid= n= to= from=` is
 written by a client at the finalize after its pawn rolled back, `n` the count so far. `OCEAN sf=<frame> sea=<s> h0..h3=<cm>
 g0..g3=<cm> gpu_max=<cm> gpu_mean=<cm>` is written once a second by every world: the CPU's
 displacement height at four fixed points, the GPU's at the same points read back from the probe

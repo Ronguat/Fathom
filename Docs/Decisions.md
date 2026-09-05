@@ -12,6 +12,8 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | A simulated proxy re-placed from ship space after finalize, the sync state untouched; the rendered position on the `POSE` line, asserted at 10 cm standing and 50 cm walking | Review fixes entry, Decisions | |
+| 2026-09-05 | The sea plane follows the local pawn, snapped to its two-metre grid, rather than growing | Review fixes entry, Decisions | |
 | 2026-09-05 | The ship's mesh carries the engine's basic shape material, the pawn's, set in the constructor | Review entry, Decisions | |
 | 2026-09-05 | The hands-on driver kept as `Tools/Editor/handson.py`; the play windows enlarged in the user ini for a human and restored after | Review entry, Decisions | |
 | 2026-09-05 | The Character Movement recon not run, its result unable to change the route once Mover met the bar unpatched | Deck entry, Decisions | |
@@ -121,7 +123,8 @@ frame rides in the input command. Bites at Melee.
 
 **Whenever a sim proxy's deck position is read — *it is interpolated presentation.*** A
 client's view of the other pawn in ship space is asserted at 50 cm *(2026-09-05)* and no
-tighter until Melee's rewind reads the sync state instead. Bites at Melee.
+tighter until Melee's rewind reads the sync state instead; its rendering is placed from ship
+space and asserted at 10 cm standing *(2026-09-05)*, and the staleness stays. Bites at Melee.
 
 ## Tuning map — a verdict comes back, which knob moves
 
@@ -137,6 +140,7 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | Inbound bytes per player | The client's frame rate, `t.MaxFPS`; a packaged client ran uncapped at 30 000 B/s against 10 000 capped at 60 *(2026-09-05)* | The simulation rate |
 | The injection pairing's spread | The render load: the loop runs at half resolution, and the demo's full-resolution walk row read a lead of 13 then 15 frames, spread 2 against the tolerance of 1, where the same row at half resolution reads within 1 *(2026-09-05)* | The tolerance |
 | The sea | The sea-state scalar | Any single wave component |
+| The sea's horizon | `PlaneSize` and `PlaneSteps` in the ocean settings, a 400 m plane at two-metre steps that follows the local pawn | The wave function, which is the same everywhere |
 | A component's shape | Its row in `Config/DefaultGame.ini` under the ocean settings | The formulation, which two evaluators share |
 | The probe's cost | `ProbeEveryFrames` and `ProbeCells` in the ocean settings; the readback is synchronous | The trace cadence |
 | Ship handling | The speed curve, the rudder rate, the anchor drag | The hull sample points, which shape the fit rather than the handling |
@@ -213,6 +217,86 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-05 — Review fixes: the other pawn placed from ship space, the sea drawn under the viewer
+
+### Next session's brief
+
+**Pick up at the Melee rung, which halts without the clips and their skeleton in the project**,
+stop-list item five: demand them, then open with the intake sub-slice against the contract in the
+brief. The designer's review found three defects in the hands-on session; the ship's material is
+fixed in the entry below, and this entry carries the other two. The review queue awaits verdicts.
+The editor is closed, the tree clean, every commit on the remote.
+
+### The plan, written before execution
+
+**Scope.** Two presentation defects the designer's review found in the hands-on session. Each
+client draws the other pawn where the server's ship was when its state was captured, so it trails
+the deck by the round trip plus the client's lead, 230 cm under way at 100 ms, and bobs against
+the surface when still. And the sea is a 400 m plane at the origin, which the ship sails off.
+Neither touches the simulation: the sync state, the ship and the ocean function stay as they are.
+
+**Sub-slice one, the other pawn.** A simulated proxy is re-placed after Mover finalizes it, from
+its base-space location and orientation through the base's current transform on that client. The
+`POSE` line gains `rx ry rz`, the actor's rendered position in the space of its base, on every
+role, so the loop reads something rendered for the first time. **Bar**: the rendered position of
+the other pawn against the server's ship-space position at the same frame within 10 cm on the
+stand row and 50 cm on the walk row at 0, 50, 100 and 150 ms, asserted by the deck rows from the
+new fields, with a mutation zeroing a client's `rx` proven on the stand row; and in the hands-on
+tape at 100 ms with the ship under way at 5 m/s or more and the other pawn standing, a mean within
+10 cm and a height off the deck within 5 cm. **Fallback**: a failed bar reverts the re-placement
+and files the measurement against the Melee brief, where the proxy's presentation was already a
+trap.
+
+**Sub-slice two, the sea.** On a world that renders, the ocean subsystem moves the plane every
+tick to the local pawn's position snapped to the plane's grid step, 200 cm, so the sampling points
+never move in world space. **Bar**: the plane's origin within one grid step of the local pawn on
+every client on every tick of a hands-on tape while the ship sails; the ocean rows unchanged,
+since the probe does not read the plane. **Fallback**: follow the camera manager instead of the
+pawn. **Coverage**: no row reads the plane; this rests on the rendering trap in the entry below
+and on the tape.
+
+**Scenarios.** Every deck row that compares the other pawn gains the rendered assertion;
+`deck.stand` gains the `rx` mutation. The full matrix runs, since the pawn's trace line changed.
+
+### Decisions
+
+**A simulated proxy is placed from ship space after Mover finalizes it.** Mover interpolates a
+based proxy in base space, correctly, then resolves it to the world through the base pose captured
+with the state, `FMoverDefaultSyncState::GetLocation_WorldSpace`: the server's ship of seven to
+nine frames earlier, while the client's ship runs thirteen ahead. `AFMPlayerPawn::PlaceOnBase`
+re-places the actor from the base-space location and orientation through the base's current
+transform on that world; the sync state is untouched, so Melee's rewind reads what it read.
+**Alternatives**: a Mover smoothing mode, none of which knows the base has moved on; interpolating
+the ship rather than predicting it, the Stretch line. **Reopens** if a based proxy is ever read
+for a hit from its actor transform rather than its sync state.
+
+**The `POSE` line carries the rendered position in base space**, `rx ry rz`, and the deck rows
+compare the other client's rendering of a pawn with the server's ship-space state at the same
+frame: 10 cm on the stand row, 50 cm walking, a mutation on the stand row proving it.
+
+**The sea plane follows the local pawn, snapped to its grid.** `UFMOceanSubsystem::Follow` moves it
+every tick on a world that renders. **Alternatives**: a larger plane, more triangles for the same
+two-metre sampling; tiles thinning with distance, Stretch. **Reopens** when a 200 m horizon is
+judged short, where the plane's size and step become a tuning row.
+
+### Verified against written
+
+**Verified.** Run `0905-143329`: the full matrix, 45 of 46 rows green with every mutation proven,
+the stand row now 26 assertions with the rendered comparison and its mutation proven.
+`deck.walk@50` passed its own 24 assertions and failed the universal pairing check, the client's
+lead 11 then 13 frames, spread 2 against the tolerance of 1; rerun `0905-144031` read 11 then
+12 and went green with both mutations proven, in the enlarged demo windows both times. The
+hands-on tape at 100 ms with the ship at 7.9 to 8.4 m/s and the other pawn standing: the rendered pawn against the
+server's ship-space truth, mean 0 cm on both clients with one 28 cm spike in 200 ticks, the height
+matching the truth; the same tape read 230 cm mean before the fix. The sea plane within 100 cm of
+the pawn along and 18 cm across on every tick, the snap's half step.
+
+**Written, not verified.** The re-placement under a walking other pawn, asserted by the loop at
+50 cm and not taped by hand; the plane follow in a packaged client; the designer's eye on the
+session after the rebuild.
+
+**Beyond the plan.** The hands-on driver gained the proxy tape and the plane check. Nothing else.
 
 ## 2026-09-05 — Review: the ship flickered, and the loop could not have seen it
 

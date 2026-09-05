@@ -129,7 +129,12 @@ def stop():
 # --- per-frame tapes: what is rendered, sampled at every Slate tick ------------------------------
 
 TAPE = dict(handle=None, left=0, rows=[], err=None)
-NAMES = ("x", "y", "z", "pitch", "yaw", "roll", "px", "py", "pz", "pyaw", "cx", "cy", "cz", "cpitch", "cyaw", "sf")
+NAMES = ("x", "y", "z", "pitch", "yaw", "roll", "px", "py", "pz", "pyaw", "cx", "cy", "cz", "cpitch", "cyaw", "sf", "sea_dx", "sea_dy")
+
+
+def sea_in(tag):
+    seas = unreal.GameplayStatics.get_all_actors_of_class(world(tag), unreal.FMOceanActor)
+    return seas[0] if seas else None
 
 
 def _tape_stop():
@@ -150,8 +155,10 @@ def _tape_tick(dt):
                 cam = STATE["pcs"][role].player_camera_manager if tag != "S" else None
                 cl = cam.get_camera_location() if cam else unreal.Vector()
                 cr = cam.get_camera_rotation() if cam else unreal.Rotator()
+                sea = sea_in(tag)
+                sl = sea.get_actor_location() if sea else pl
                 row[tag] = (l.x, l.y, l.z, r.pitch, r.yaw, r.roll, pl.x, pl.y, pl.z, pr.yaw,
-                            cl.x, cl.y, cl.z, cr.pitch, cr.yaw, pawn.get_sim_frame())
+                            cl.x, cl.y, cl.z, cr.pitch, cr.yaw, pawn.get_sim_frame(), abs(sl.x - pl.x), abs(sl.y - pl.y))
         TAPE["rows"].append((dt, row))
     except Exception as e:
         TAPE["err"], TAPE["left"] = repr(e), 0
@@ -167,7 +174,8 @@ def tape(frames=150):
 
 
 def tape_report():
-    """The largest and mean change between consecutive ticks of every taped value, per world."""
+    """The largest and mean change between consecutive ticks of every taped value, per world, and
+    the sea plane's largest offset from the pawn it follows."""
     out = ["%d ticks, running=%s, err=%s" % (len(TAPE["rows"]), TAPE["handle"] is not None, TAPE["err"])]
     for tag in ("S", "C1", "C2"):
         rows = [r[tag] for _dt, r in TAPE["rows"] if tag in r]
@@ -178,9 +186,69 @@ def tape_report():
         mean = [sum(j[k] for j in jumps) / len(jumps) for k in range(len(NAMES))]
         out.append("%s max  %s" % (tag, " ".join("%s=%.2f" % (n, v) for n, v in zip(NAMES, mx))))
         out.append("%s mean %s" % (tag, " ".join("%s=%.2f" % (n, v) for n, v in zip(NAMES, mean))))
+        if tag != "S":
+            out.append("%s sea plane offset from the pawn: max dx %.0f dy %.0f cm" % (tag, max(r[16] for r in rows), max(r[17] for r in rows)))
     dts = [dt for dt, _ in TAPE["rows"]]
     if dts:
         out.append("tick dt mean %.1f ms, max %.1f ms" % (1000 * sum(dts) / len(dts), 1000 * max(dts)))
+    return "\n".join(out)
+
+
+# --- the other pawn as each client renders it, against the server's truth in ship space ---------
+
+PROXY = dict(handle=None, left=0, rows=[], err=None)
+STANDING_Z = 150.0 + 88.0
+
+
+def _other_pawn(tag, own):
+    for p in unreal.GameplayStatics.get_all_actors_of_class(world(tag), unreal.FMPlayerPawn):
+        if p != own:
+            return p
+    return None
+
+
+def _ship_local(tag, actor):
+    return ship_in(tag).get_actor_transform().inverse_transform_location(actor.get_actor_location())
+
+
+def _proxy_tick(dt):
+    PROXY["left"] -= 1
+    try:
+        row = {}
+        for tag, own_role, other_role in (("C1", "p1", "p2"), ("C2", "p2", "p1")):
+            other = _other_pawn(tag, STATE["pawns"][(own_role, tag)])
+            truth = STATE["pawns"][(other_role, "S")]
+            if other and truth:
+                l, t = _ship_local(tag, other), _ship_local("S", truth)
+                row[tag] = (l.x, l.y, l.z, t.x, t.y, t.z, other.get_sim_frame(), truth.get_sim_frame())
+        PROXY["rows"].append((dt, row))
+    except Exception as e:
+        PROXY["err"], PROXY["left"] = repr(e), 0
+    if PROXY["left"] <= 0 and PROXY["handle"] is not None:
+        unreal.unregister_slate_post_tick_callback(PROXY["handle"])
+        PROXY["handle"] = None
+
+
+def proxy_tape(frames=200):
+    PROXY.update(left=frames, rows=[], err=None)
+    PROXY["handle"] = unreal.register_slate_post_tick_callback(_proxy_tick)
+    return "taping the other pawn for %d ticks" % frames
+
+
+def proxy_report():
+    """Per client: the rendered other pawn's jump per tick, its distance from the server's
+    ship-space truth, its height against a pawn standing on the deck, and its frame behind the server's."""
+    out = ["%d ticks, running=%s, err=%s" % (len(PROXY["rows"]), PROXY["handle"] is not None, PROXY["err"])]
+    for tag in ("C1", "C2"):
+        rows = [r[tag] for _dt, r in PROXY["rows"] if tag in r]
+        if len(rows) < 2:
+            continue
+        jumps = [sum((rows[i][k] - rows[i - 1][k]) ** 2 for k in range(3)) ** 0.5 for i in range(1, len(rows))]
+        errs = [sum((r[k] - r[k + 3]) ** 2 for k in range(3)) ** 0.5 for r in rows]
+        height = [r[2] - STANDING_Z for r in rows]
+        lead = [r[6] - r[7] for r in rows]
+        out.append("%s other pawn rendered, ship space: jump/tick max %.1f mean %.1f cm; vs server truth max %.0f mean %.0f cm; height over standing %+.0f..%+.0f cm; frame behind server %d..%d"
+                   % (tag, max(jumps), sum(jumps) / len(jumps), max(errs), sum(errs) / len(errs), min(height), max(height), -max(lead), -min(lead)))
     return "\n".join(out)
 
 
