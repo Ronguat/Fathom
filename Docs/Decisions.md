@@ -12,6 +12,10 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | A station call queued for the controller's tick, the one home for a client's server call from a script | Ship entry, Decisions | |
+| 2026-09-05 | The ship's numbers: top speed 1 000 cm/s, drag 0.3, anchor drag 20, turn rate 15 degrees a second, a 24 by 8 m hull, the fit at stiffness 6 and damping 4 | `Config/DefaultGame.ini` | |
+| 2026-09-05 | The ship as a custom integrator rather than a Mover actor; inputs replicated with their frame, unpredicted; the reconstruction shown unsmoothed | Ship entry, Decisions | |
+| 2026-09-05 | The stations as named inputs without occupancy until Deck | Ship entry, The plan | |
 | 2026-09-05 | A per-scenario injection tolerance, three frames on the loss rows | Ocean entry, Decisions | |
 | 2026-09-05 | The comment extractor retries an unterminated quote as text | The commit that fixed it | |
 | 2026-09-05 | The ocean as this project's own plane and material rather than the Water plugin's body; the engine's Gerstner shape; amplitude and steepness scaling with the sea state, wavelengths and direction offsets fixed | Ocean entry, Decisions | |
@@ -70,11 +74,9 @@ the patch goes in a project-local copy of the plugin. Bites at Deck.
 
 **Whenever the ship is kinematic — *it must publish its velocity.*** Mover carries a standing
 player by the base component's velocity *(headers, 2026-09-04, the same file around line 158)*,
-which a component moved by hand has only if it is set every tick. Bites at Ship and Deck.
-
-**Whenever a ship is a Mover actor — *spawn it, never place it.*** Mover's README warns that
-level-placed instances with customised movement modes may not move *(README, 2026-09-04, verbatim
-in the bootstrap entry)*. Bites at Ship.
+which a component moved by hand has only if it is set every tick. The hull box sets
+`ComponentVelocity` from its frame-to-frame motion *(2026-09-05, unverified under a pawn)*.
+Bites at Deck.
 
 **Whenever the Water plugin's ocean body is used — *it wants an island and a bounded zone.*** Its
 ocean is the outside of a spline inside a zone of finite extent; its wave clock is a locally
@@ -105,10 +107,9 @@ delivery, halt and demand it. Bites at Melee.
 **Whenever the attacker's view delay is needed — *it is authored, never estimated.*** The rendered
 frame rides in the input command. Bites at Melee.
 
-**Whenever the hull fit reads the ocean — *the inversion and the normal are unasserted.***
-`FMOcean::HeightAt` inverts the horizontal displacement by three fixed-point steps, written
-2026-09-05 and read by nothing; the `ocean.agree` row asserts the forward function only. Bites
-at Ship, whose plan adds the row that measures it.
+**Whenever a pawn claims a station — *occupancy does not exist yet.*** A station is a named
+input any pawn's controller may drive *(2026-09-05)*; the walk to a station and its claim are
+Deck's, where a pawn first stands on the deck. Bites at Deck.
 
 **Whenever a Mover pawn is placed by teleport — *it hovers until it moves.*** Teleported to
 z = 100 over a floor at 0 with an 88 cm half-height capsule, the pawn read z = 100.00 in Walking
@@ -132,6 +133,7 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | A component's shape | Its row in `Config/DefaultGame.ini` under the ocean settings | The formulation, which two evaluators share |
 | The probe's cost | `ProbeEveryFrames` and `ProbeCells` in the ocean settings; the readback is synchronous | The trace cadence |
 | Ship handling | The speed curve, the rudder rate, the anchor drag | The hull sample points, which shape the fit rather than the handling |
+| The ship's reconstruction | `SnapshotEveryFrames` in the ship settings, 12; every input carries its frame | The integrator, which every world runs alike |
 
 ## Rung briefs — read the one you are picking up
 
@@ -139,24 +141,19 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 its fallback, its coverage and its inheritance; the plan entry written before execution turns
 the bar into numbers.
 
-- **Ship** — The kinematic hull fit, the sail, wind, rudder and anchor model, the compact
-  replicated state and its history, the stations, a placeholder hull from Geometry Script with
-  deck collision, spawned at runtime. Whether the ship is itself a Mover actor or a custom
-  integrator follows from Harness's frame decision. **Bar**: a client reconstructs the ship's pose
-  within a pre-registered error at 100 ms and five percent loss; the ship sails, turns and stops.
-  **Coverage**: ship-motion rows at every latency, and the row that measures the ocean's
-  inversion, the trap above. **Inherits**: `UFMOceanSubsystem` with `Displace` and `HeightAt`
-  by frame, the sea state and wind on `AFMGameState` and the `fm.SeaState` and `fm.WindAngle`
-  console variables for rows, the `OCEAN` row as the standing determinism row, the loop with its
-  five rows, the trace, the field session script, `AFMPlayerPawn`, and the Harness and Ocean
-  entries' measurements as the cost baseline.
 - **Deck** — Opens with the Mover recon: Character Movement and Mover on the same deterministic
   ship, the same scenario, one pre-registered bar. Then the base-at-frame patch through a
   project-local copy of the plugin if the recon needs it, the kinematic base publishing its
-  velocity, jumping, falling off into the swim mode, the ladder station, and two scripted players
-  seeing each other on the deck. **Bar**: deck-relative position error under the bar at 0, 50,
-  100 and 150 ms with the ship rolling. **Fallback**: Route B, Character Movement with a custom
-  replicated combat component, if Mover fails the bar after the patch. **This rung is the
+  velocity, jumping, falling off into the swim mode, the ladder station, station occupancy, and
+  two scripted players seeing each other on the deck. **Bar**: deck-relative position error under
+  the bar at 0, 50, 100 and 150 ms with the ship rolling. **Fallback**: Route B, Character
+  Movement with a custom replicated combat component, if Mover fails the bar after the patch.
+  **Inherits**: `AFMShip`, a custom integrator every world steps from a replicated snapshot and
+  input history, its hull box the movement base with `ComponentVelocity` set each frame, its
+  deck top at the hull's half height plus `HullCenterAboveWater` over the fitted water; the
+  stations as named inputs through `AFMPlayerController::DriveShip` and the runner's `ship` op;
+  the `SHIP` line as the ship's pose evidence; the ship rows and the Ship entry's transients as
+  the reconstruction baseline; everything Ocean and Harness handed on. **This rung is the
   minimum answer's foundation.**
 - **Melee** — **Halts without the clips and their skeleton in the project.** Opens with an intake
   sub-slice against a contract: clip list and directions, where windup ends and release begins,
@@ -186,7 +183,9 @@ the bar into numbers.
   islands and rock holes; harpoons and mermaids; every class but the sloop. Also deferred: the
   replay-system recon behind the text trace; a Blender bridge, triggered only by a feature blocked
   on a shape primitives cannot make; a ship art pack, declined as cosmetic. Deferred 2026-09-05: a
-  capsule placeholder from Geometry Script, the engine's cylinder standing in.
+  capsule placeholder from Geometry Script, the engine's cylinder standing in. Deferred
+  2026-09-05, from Ship: a predicted station input for the local player; a smoothed presentation
+  of the reconstructed ship.
 
 ## Symbol index — which entries discuss this thing
 
@@ -198,15 +197,115 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 | `AFMOceanActor` | 09-05 |
 | `AFMPlayerController` | 09-05 |
 | `AFMPlayerPawn` | 09-05 |
+| `AFMShip` | 09-05 |
+| `FFMShipInputs` | 09-05 |
+| `FFMShipState` | 09-05 |
 | `FMOcean` | 09-05 |
 | `FM_TRACE` | 09-05 |
 | `LogFMTrace` | 09-04, 09-05 |
 | `UFMInputTools` | 09-04 |
 | `UFMOceanSettings` | 09-05 |
 | `UFMOceanSubsystem` | 09-05 |
+| `UFMShipSettings` | 09-05 |
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-05 — Ship: a body every world integrates from the same state
+
+### Next session's brief
+
+**Pick up at the Deck rung.** Write its plan entry first: the Mover recon, Character Movement
+and Mover on the same deterministic ship, the same scenario, one pre-registered bar; then the
+base-at-frame patch through a project-local copy of the plugin if the recon needs it, the hull
+publishing its velocity verified under a standing pawn, jumping, falling off into the swim mode,
+the ladder station, and two scripted players seeing each other on the deck, with station
+occupancy claimed by the pawn at the station. Budget: none set; the designer winds down
+manually. The editor is closed, the tree clean, every commit on the remote. Verified against
+written is below the decisions.
+
+### The plan, written before execution
+
+**Scope.** The ship as a deterministic kinematic body. **One**: `AFMShip` in `Source/Fathom/Ship/`,
+spawned by the game mode at runtime on the ocean beyond the floor; a box hull for collision with
+a Geometry Script placeholder over it, moved by transform each frame with its velocity
+published. **Two**: the integrator, one frame at a time in single floats on every world: sail
+length, sail angle and rudder driven toward their targets at fixed rates; surge from sail length
+and the sail's angle against the wind through one curve, toward a top speed with an acceleration
+and a drag, the anchor a strong drag when down and raised over a fixed time; yaw from the rudder
+at a rate scaled by speed; heave, roll and pitch fitted to the ocean at four hull points by a
+spring-damper; every rate a setting in `UFMShipSettings`. **Three**: the compact state replicated
+as a snapshot with its frame every twelve frames and the inputs with the frame they took effect;
+a client integrates forward from the latest snapshot through its input history to its own frame,
+and re-integrates when a snapshot or an input arrives late. **Four**: the stations as the named
+inputs `wheel`, `sail_length`, `sail_angle` and `anchor`, driven by a pawn's server call with no
+occupancy yet; the runner's `ship` op drives them from a role's client. **Five**: `SHIP` lines
+every sixth frame from every world and `SHIPIN` on the server when an input takes effect; the
+ocean's inversion residual on the `OCEAN` line. **Six**: the rows `ship.sail`, `ship.turn`,
+`ship.stop` at 0, 50, 100 and 150 ms and `ship.turn-loss` at 0 and 100 ms with 5 percent loss.
+
+**Bar, pre-registered.** On every client, the reconstructed pose against the server's at the
+same frame: within 10 cm and 1 degree at every matched sample from thirty frames after the last
+input change to the row's end, at every latency and under the loss row; the transient after an
+input change reported as its peak and its length in frames, not asserted. The ship sails: its
+speed on the server reaches four fifths of the top speed within the sail row; turns: its heading
+changes by at least thirty degrees over four seconds of full rudder; stops: its speed falls
+under 20 cm/s within two seconds of the anchor dropping. The ocean's inversion residual within
+1 cm at four points every second at sea state 1. Every earlier row stays green.
+
+**Fallbacks.** Reconstruction failing the bar through float drift between the server's running
+state and a client's re-integration: the snapshot cadence halved, then the bar re-measured; a
+dead end after that winds the session down. Collision or the deck placeholder fighting the
+transform-driven motion: the visual mesh alone, collision filed for Deck.
+
+**Coverage.** The four ship rows and the inversion field on the ocean row, which discharges the
+Ship trap. **A trap filed**: station occupancy, the walk to a station and its claim, is Deck's,
+where a pawn first stands on the deck.
+
+### Decisions
+
+**A custom integrator, not a Mover actor.** The ship is shared by every player and its inputs
+arrive over the network from whoever holds a station; the prediction framework predicts one
+owner's inputs and rolls one body back, which is the pawn's shape, not the ship's. The ship's
+own shape is a snapshot plus an input history that any world integrates forward, the spine's
+"reconstructible at any past frame". **Alternative**: a Mover actor with a custom mode, for the
+based-movement plumbing it would give Deck for free. **Reopens** if Deck's recon finds Mover's
+base handling needs the base to be a Mover body.
+
+**Inputs replicate with their frame and are not predicted.** The helmsman feels the round trip
+on the wheel; a client applies an input change at the frame the server did, re-integrating from
+its snapshot when the change arrives late. **Alternative**: predicting the local player's station
+input, which is a Stretch line.
+
+**The reconstruction is presentation as well**, snaps included; smoothing is a Stretch line.
+
+**A station call is queued for the controller's tick.** Sent from the runner's callback between
+world ticks, a reliable server call on the pawn and then on the controller never reached the
+server and logged nothing; sent from `PlayerTick` it always did. The queue is the one home for
+that rule; the trace relay, sent from a world-tick delegate, never needed it.
+
+### Verified against written
+
+**Verified.** Run `0905-020254`: thirty-two rows, every one green, every mutation proven, 184 s of
+wall time. The ship sails to 947 cm/s on the server and covers 6 700 cm in the sail row; turns
+more than thirty degrees over four seconds of rudder; stops under 20 cm/s within two seconds of
+the anchor. **Reconstruction** on both clients against the server at the same frame, after the
+settle window, within 10 cm and 1 degree on every row at 0, 50, 100 and 150 ms and under 5
+percent loss; identical to the two decimals printed once settled. **Transients before settle**:
+sail and turn rows peak 0.2 cm at 0 and 50 ms, 0.4 to 1.3 cm at 100 and 150; the stop row peaks
+10 cm at 0 ms, 93 at 50, 140 at 100 and 186 at 150, three samples over 10 cm at most, the
+anchor's instant drag running on the client until its input arrives. **The ocean's inversion
+residual** reads 0.002 to 0.019 cm at four points every second at sea state 1, which discharges
+the Ship trap. Server tick 0.60 to 0.63 ms with the ship; inbound 15 800 to 17 000 B/s per
+connection, the SHIP relay lines added. The harness and ocean rows green on the same binary.
+Both checks pass.
+
+**Written, not verified.** The hull's published velocity, which nothing stands on until Deck;
+the surface normal, still unwritten; the hull box as a movement base; the ship in a packaged
+client, not repackaged since Harness.
+
+**Beyond the plan.** The station call queued for the controller's tick after two silent drops
+from the runner's callback, a finding in `Docs/Unreal-Findings.md`. Nothing else.
 
 ## 2026-09-05 — Ocean: one function, three evaluators
 

@@ -203,6 +203,94 @@ def harness_jump(ctx, r, s):
     cost_sane(ctx, r)
 
 
+# --- the ship assertions ----------------------------------------------------------
+
+def ship_lines(ctx, world):
+    return dict((int(ln.fields["sf"]), ln) for ln in ctx.lines("SHIP", world) if "sf" in ln.fields)
+
+
+def begin_frame(ctx):
+    for kind, rest in ctx.markers:
+        if kind == "BEGIN":
+            return int(fields(rest).get("frame", 0))
+    return 0
+
+
+def yaw_gap(a, b):
+    d = abs(a - b) % 360.0
+    return min(d, 360.0 - d)
+
+
+def ship_reconstruction(ctx, r, s, settle_after):
+    """Each client's SHIP pose against the server's at the same frame from settle_after the row's
+    start; the transient before it reported."""
+    server = ship_lines(ctx, "S")
+    band(r, "SHIP lines on S", [len(server)], 10, 10 ** 6, "")
+    start = begin_frame(ctx) + settle_after
+    for world in s["worlds"]:
+        if world == "S":
+            continue
+        client = ship_lines(ctx, world)
+        matched = sorted(set(server) & set(client))
+        settled = [f for f in matched if f >= start]
+        band(r, "%s SHIP frames matched with S after settle" % world, [len(settled)], 10, 10 ** 6, "")
+        pos = [((server[f].fields["x"] - client[f].fields["x"]) ** 2 + (server[f].fields["y"] - client[f].fields["y"]) ** 2
+                + (server[f].fields["z"] - client[f].fields["z"]) ** 2) ** 0.5 for f in settled]
+        yaw = [yaw_gap(server[f].fields["yaw"], client[f].fields["yaw"]) for f in settled]
+        band(r, "%s position error after settle (cm)" % world, pos, 0.0, 10.0, "cm")
+        band(r, "%s heading error after settle (deg)" % world, yaw, 0.0, 1.0, "deg")
+        early = [f for f in matched if f < start]
+        peak = max([((server[f].fields["x"] - client[f].fields["x"]) ** 2 + (server[f].fields["y"] - client[f].fields["y"]) ** 2) ** 0.5
+                    for f in early] or [0.0])
+        over = [f for f in early if ((server[f].fields["x"] - client[f].fields["x"]) ** 2 + (server[f].fields["y"] - client[f].fields["y"]) ** 2) ** 0.5 > 10.0]
+        r.add(True, "%s transient before settle" % world, "peak %.1f cm, %d sample(s) over 10 cm" % (peak, len(over)))
+
+
+def server_at(ctx, rel_frame):
+    """The server's SHIP line at or after a frame counted from the row's start."""
+    server = ship_lines(ctx, "S")
+    target = begin_frame(ctx) + rel_frame
+    for f in sorted(server):
+        if f >= target:
+            return server[f]
+    return None
+
+
+@row("ship.sail")
+def ship_sail(ctx, r, s):
+    ship_reconstruction(ctx, r, s, settle_after=60 + 30)
+    last = server_at(ctx, 700)
+    band(r, "speed on the server near the end (cm/s)", [last.fields["speed"]] if last else [], 800.0, 1100.0, "cm/s")
+    first = server_at(ctx, 0)
+    band(r, "travelled +X on the server (cm)", [last.fields["x"] - first.fields["x"]] if last and first else [], 3000.0, 20000.0, "cm")
+    cost_sane(ctx, r)
+
+
+def ship_turn_common(ctx, r, s):
+    ship_reconstruction(ctx, r, s, settle_after=480 + 30)
+    before, after = server_at(ctx, 240), server_at(ctx, 480)
+    band(r, "heading change over four seconds of rudder (deg)",
+         [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 30.0, 180.0, "deg")
+    cost_sane(ctx, r)
+
+
+@row("ship.turn")
+def ship_turn(ctx, r, s):
+    ship_turn_common(ctx, r, s)
+
+
+ROWS["ship.turn-loss"] = ship_turn
+
+
+@row("ship.stop")
+def ship_stop(ctx, r, s):
+    ship_reconstruction(ctx, r, s, settle_after=360 + 30)
+    moving, stopped = server_at(ctx, 350), server_at(ctx, 480)
+    band(r, "speed before the anchor (cm/s)", [moving.fields["speed"]] if moving else [], 300.0, 1100.0, "cm/s")
+    band(r, "speed two seconds after the anchor (cm/s)", [stopped.fields["speed"]] if stopped else [], 0.0, 20.0, "cm/s")
+    cost_sane(ctx, r)
+
+
 # --- the ocean assertions -----------------------------------------------------------
 
 @row("ocean.agree")
@@ -212,6 +300,7 @@ def ocean_agree(ctx, r, s):
     equal(r, "sea state 1 on S", [round(ln.fields.get("sea", -1.0), 2) for ln in server.values()], 1.0)
     band(r, "waves exist on S, largest |h| (cm)",
          [max([abs(ln.fields["h%d" % k]) for ln in server.values() for k in range(4)] or [0.0])], 20.0, 10 ** 6, "cm")
+    band(r, "inversion residual on S (cm)", [ln.fields.get("inv", 10 ** 6) for ln in server.values()], 0.0, 1.0, "cm")
     for world in s["worlds"]:
         if world == "S":
             continue

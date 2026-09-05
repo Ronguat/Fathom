@@ -18,6 +18,7 @@ Source/Fathom/Net/FMTrace.h	20	190
 Source/Fathom/Ocean/FMOcean.h	5	83
 Source/Fathom/Ocean/FMOceanActor.h	1	20
 Source/Fathom/Ocean/FMOceanSubsystem.h	8	102
+Source/Fathom/Ship/FMShip.h	11	144
 Source/FathomEditor/Private/FMInputTools.cpp	4	29
 Source/FathomEditor/Public/FMInputTools.h	23	218
 Source/FathomEditor/Public/FMTimeTools.h	9	65

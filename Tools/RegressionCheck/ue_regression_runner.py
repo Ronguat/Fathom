@@ -12,6 +12,7 @@ the log for the REGRESSION markers each row emits:
     REGRESSION ROLES <rid> <role>=<world>:<player id> ...
     REGRESSION INJECT <rid> frame=<f> <role> <action> <press|release>
     REGRESSION MARK <rid> <text>
+    REGRESSION SHIPOP <rid> frame=<f> <role> <station> <value>
     REGRESSION END <rid> status=<ok|error> frames=<n> game=<s> pie=<s>
     REGRESSION DONE run=<run> [status=stopped|invalid]
 
@@ -474,6 +475,9 @@ class Run(object):
             pawn.harness_teleport(unreal.Vector(*loc), yaw)
         elif op == "mark":
             self.mark("MARK %s %s" % (self.rid, stepv[3]))
+        elif op == "ship":
+            self.pawns[(role, wtag)].drive_ship(stepv[3], float(stepv[4]))
+            self.mark("SHIPOP %s frame=%d %s %s %s" % (self.rid, self.frame, role, stepv[3], stepv[4]))
         else:
             raise RuntimeError("unknown plan op %r" % (op,))
 

@@ -38,7 +38,10 @@ MOVE_ACTIONS = dict(forward="move_forward", back="move_back", left="move_left", 
 # Plan ops the runner implements. tap/press/release/hold/move/stop_move drive a role's keys in its
 # own client world; face turns its control rotation; teleport moves its server pawn; mark writes a
 # MARK line.
-OPS = ("tap", "press", "release", "hold", "move", "stop_move", "face", "teleport", "mark")
+OPS = ("tap", "press", "release", "hold", "move", "stop_move", "face", "teleport", "mark", "ship")
+
+# The ship's stations, which the ship op drives from a role's client.
+SHIP_INPUTS = ("wheel", "sail_length", "sail_angle", "anchor")
 
 # The mechanics a row may claim to cover. The coverage map in Docs/Debug-Instruments.md is
 # generated from these, so a claim outside the list fails at load rather than drifting.
@@ -53,6 +56,7 @@ FLOOR_LIMIT = 5000.0
 # One mutation every harness row carries: the server's POSE positions zeroed, which the
 # determinism assertion must catch.
 POSE_SERVER_ZERO = ("regex", r"(\[S\] POSE pid=\d+ sf=\d+ x=)[-\d.]+", r"\g<1>0.00")
+SHIP_SERVER_ZERO = ("regex", r"(\[S\] SHIP id=\d+ sf=\d+ x=)[-\d.]+", r"\g<1>0.00")
 
 SCENARIOS = {
     "harness.idle": dict(
@@ -88,6 +92,51 @@ SCENARIOS = {
         mutations=[("drop", "INPUT", 1), POSE_SERVER_ZERO],
         allow=[],
         injection_tolerance=3,
+    ),
+    "ship.sail": dict(
+        family="ship", covers=["determinism", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
+        plan=[(60, "p1", "ship", "sail_length", 1.0)],
+        stop=dict(duration=12.0),
+        mutations=[SHIP_SERVER_ZERO, ("set", "SHIP", "speed", "0.00")],
+        allow=[],
+    ),
+    "ship.turn": dict(
+        family="ship", covers=["determinism", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
+        plan=[(60, "p1", "ship", "sail_length", 1.0), (240, "p1", "ship", "wheel", 1.0), (480, "p1", "ship", "wheel", 0.0)],
+        stop=dict(duration=12.0),
+        mutations=[SHIP_SERVER_ZERO, ("set", "SHIP", "yaw", "0.00")],
+        allow=[],
+    ),
+    "ship.turn-loss": dict(
+        family="ship", covers=["determinism", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 100), loss=5.0,
+        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
+        plan=[(60, "p1", "ship", "sail_length", 1.0), (240, "p1", "ship", "wheel", 1.0), (480, "p1", "ship", "wheel", 0.0)],
+        stop=dict(duration=12.0),
+        mutations=[SHIP_SERVER_ZERO, ("set", "SHIP", "yaw", "0.00")],
+        allow=[],
+        injection_tolerance=3,
+    ),
+    "ship.stop": dict(
+        family="ship", covers=["determinism", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
+        plan=[(60, "p1", "ship", "sail_length", 1.0), (360, "p1", "ship", "anchor", 1.0)],
+        stop=dict(duration=10.0),
+        mutations=[SHIP_SERVER_ZERO, ("set", "SHIP", "speed", "999.00")],
+        allow=[],
     ),
     "ocean.agree": dict(
         family="ocean", covers=["determinism", "cost"],
@@ -168,6 +217,11 @@ def validate(resolve_action=None):
                 problems.append(where + "unknown op '%s'" % op)
             if role not in s.get("roles", {}):
                 problems.append(where + "op %s names %s, which is not a role" % (op, role))
+            if op == "ship":
+                if len(step) < 5 or step[3] not in SHIP_INPUTS:
+                    problems.append(where + "ship op needs a station in SHIP_INPUTS and a value")
+                elif not isinstance(step[4], (int, float)):
+                    problems.append(where + "ship op value must be a number")
             if op in ("tap", "press", "release", "hold"):
                 action = step[3]
                 if action not in ACTIONS:

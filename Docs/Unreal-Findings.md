@@ -235,6 +235,13 @@ read before play starts.
 **The engine ships no capsule among its basic shapes** *(engine content, 2026-09-05)*:
 `/Engine/BasicShapes/` holds Cone, Cube, Cylinder, Plane and Sphere.
 
+**A server call made from the Slate post-tick callback never reaches the server** *(PIE,
+2026-09-05)*: `ServerDriveShip`, a reliable server function on the client's pawn and then on its
+player controller, called from the runner's callback between world ticks, produced no server
+execution and no warning, twice; the same function queued and sent from the controller's
+`PlayerTick` reached the server every time, and the trace relay, sent from a world-tick delegate,
+always had. Send a client's server call from inside the world's tick.
+
 **Materials are authored from Python** *(Python, 2026-09-05, `Tools/Editor/make-ocean-assets.py`)*:
 `AssetTools.create_asset` with `MaterialFactoryNew` and `MaterialParameterCollectionFactoryNew`,
 `MaterialEditingLibrary.create_material_expression`, `connect_material_expressions` by output and

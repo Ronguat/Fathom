@@ -69,7 +69,7 @@ Docs/Decisions.md:::## Tuning map:::CLAUDE.md routing table sends knob rows here
 Docs/Decisions.md:::## What has been superseded:::the supersession check reads this table
 Docs/Decisions.md:::## Symbol index:::CLAUDE.md names it as a working section
 Docs/Decisions.md:::## Rung briefs:::CLAUDE.md sends every rung pickup here
-Docs/Decisions.md:::- **Ship**:::CLAUDE.md Current Focus points at this brief -- MOVE THIS ROW when a rung ships
+Docs/Decisions.md:::- **Deck**:::CLAUDE.md Current Focus points at this brief -- MOVE THIS ROW when a rung ships
 Docs/Debug-Instruments.md:::## The trace:::Working-In-Unreal sends log readers here
 Tools/CommentCheck/comment-check.sh:::--self-test:::CLAUDE.md names the script; Closing-Down runs it
 Tools/CommentCheck/comment-check.sh:::--baseline:::Closing-Down names the flag as the sanctioned reset

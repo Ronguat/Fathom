@@ -80,8 +80,14 @@ namespace FMOcean
 	FATHOM_API FVector3f Wave(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const FFMWaveComponent& W);
 	FATHOM_API FVector3f Displace(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const TArray<FFMWaveComponent>& Waves);
 
-	/** The surface height over P: the horizontal displacement inverted by fixed-point iteration. */
+	/** The source point whose displaced position lands on P, by fixed-point iteration. */
+	FATHOM_API FVector2f SourceOf(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const TArray<FFMWaveComponent>& Waves, int32 Iterations = 3);
+
+	/** The surface height over P: the displacement's height at SourceOf(P). */
 	FATHOM_API float HeightAt(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const TArray<FFMWaveComponent>& Waves, int32 Iterations = 3);
+
+	/** How far SourceOf(P)'s displaced position misses P, in cm. */
+	FATHOM_API float InversionResidual(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const TArray<FFMWaveComponent>& Waves, int32 Iterations = 3);
 
 	/** A unit vector for an angle in degrees, X along zero. */
 	FATHOM_API FVector2f WindFromAngle(float Degrees);

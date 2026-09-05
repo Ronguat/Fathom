@@ -31,6 +31,13 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerRelayTrace(const TArray<FString>& Lines);
 
+	/** Drives one of the ship's stations: wheel, sail_length, sail_angle, anchor. Sent to the server from the next tick. */
+	UFUNCTION(BlueprintCallable, Category="Fathom|Ship")
+	void DriveShip(FName Input, float Value);
+
+	UFUNCTION(Server, Reliable)
+	void ServerDriveShip(FName Input, float Value);
+
 protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TArray<TObjectPtr<UInputMappingContext>> DefaultMappingContexts;
@@ -43,4 +50,5 @@ protected:
 
 private:
 	FString ClientWorldTag;
+	TArray<TPair<FName, float>> PendingDrives;
 };

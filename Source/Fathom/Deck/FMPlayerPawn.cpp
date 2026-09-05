@@ -97,6 +97,14 @@ void AFMPlayerPawn::HarnessTeleport(FVector Location, float Yaw)
 	Mover->QueueInstantMovementEffect(Effect);
 }
 
+void AFMPlayerPawn::DriveShip(FName Input, float Value)
+{
+	if (AFMPlayerController* PC = Cast<AFMPlayerController>(GetController()))
+	{
+		PC->DriveShip(Input, Value);
+	}
+}
+
 FVector AFMPlayerPawn::GetSimLocation() const
 {
 	const FMoverDefaultSyncState* State = Mover->GetSyncState().SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();

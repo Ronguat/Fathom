@@ -31,6 +31,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Fathom|Harness")
 	void HarnessTeleport(FVector Location, float Yaw);
 
+	/** Drives one of the ship's stations through the controller: wheel, sail_length, sail_angle, anchor. */
+	UFUNCTION(BlueprintCallable, Category="Fathom|Ship")
+	void DriveShip(FName Input, float Value);
+
 	/** The sync state's location, which the POSE line reports. */
 	UFUNCTION(BlueprintPure, Category="Fathom|Harness")
 	FVector GetSimLocation() const;

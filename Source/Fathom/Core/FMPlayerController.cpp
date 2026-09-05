@@ -4,6 +4,7 @@
 #include "Engine/LocalPlayer.h"
 #include "InputMappingContext.h"
 #include "Net/FMTrace.h"
+#include "Ship/FMShip.h"
 
 AFMPlayerController::AFMPlayerController()
 {
@@ -52,11 +53,36 @@ void AFMPlayerController::PlayerTick(float DeltaTime)
 	{
 		FM_TRACE(this, TEXT("MARK category=hotkey"));
 	}
+	for (const TPair<FName, float>& Drive : PendingDrives)
+	{
+		if (HasAuthority())
+		{
+			ServerDriveShip_Implementation(Drive.Key, Drive.Value);
+		}
+		else
+		{
+			ServerDriveShip(Drive.Key, Drive.Value);
+		}
+	}
+	PendingDrives.Reset();
 }
 
 void AFMPlayerController::ServerHello_Implementation(const FString& WorldTag)
 {
 	ClientWorldTag = WorldTag;
+}
+
+void AFMPlayerController::DriveShip(FName Input, float Value)
+{
+	PendingDrives.Emplace(Input, Value);
+}
+
+void AFMPlayerController::ServerDriveShip_Implementation(FName Input, float Value)
+{
+	if (AFMShip* Ship = AFMShip::Find(GetWorld()))
+	{
+		Ship->Apply(Input, Value);
+	}
 }
 
 void AFMPlayerController::ServerRelayTrace_Implementation(const TArray<FString>& Lines)

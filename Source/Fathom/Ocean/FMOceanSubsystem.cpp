@@ -173,14 +173,17 @@ void UFMOceanSubsystem::Probe(int32 Frame)
 		return Origin + FVector2f((I + 0.5f) / Cells, (J + 0.5f) / Cells) * Extent;
 	};
 	float H[4];
+	float Residual = 0.0f;
 	for (int32 k = 0; k < 4; ++k)
 	{
-		H[k] = FMOcean::Displace(SamplePoint(Points[k].X, Points[k].Y), Time, SeaState, Wind, Waves).Z;
+		const FVector2f P = SamplePoint(Points[k].X, Points[k].Y);
+		H[k] = FMOcean::Displace(P, Time, SeaState, Wind, Waves).Z;
+		Residual = FMath::Max(Residual, FMOcean::InversionResidual(P, Time, SeaState, Wind, Waves));
 	}
 
 	if (!Renders() || !ProbeMaterial || !ProbeTarget)
 	{
-		FM_TRACE(this, TEXT("OCEAN sf=%d sea=%.2f h0=%.2f h1=%.2f h2=%.2f h3=%.2f gpu=none"), Frame, SeaState, H[0], H[1], H[2], H[3]);
+		FM_TRACE(this, TEXT("OCEAN sf=%d sea=%.2f h0=%.2f h1=%.2f h2=%.2f h3=%.2f inv=%.3f gpu=none"), Frame, SeaState, H[0], H[1], H[2], H[3], Residual);
 		return;
 	}
 
@@ -196,7 +199,7 @@ void UFMOceanSubsystem::Probe(int32 Frame)
 	FTextureRenderTargetResource* Resource = ProbeTarget->GameThread_GetRenderTargetResource();
 	if (!Resource || !Resource->ReadLinearColorPixels(Pixels) || Pixels.Num() != Cells * Cells)
 	{
-		FM_TRACE(this, TEXT("OCEAN sf=%d sea=%.2f h0=%.2f h1=%.2f h2=%.2f h3=%.2f gpu=unread"), Frame, SeaState, H[0], H[1], H[2], H[3]);
+		FM_TRACE(this, TEXT("OCEAN sf=%d sea=%.2f h0=%.2f h1=%.2f h2=%.2f h3=%.2f inv=%.3f gpu=unread"), Frame, SeaState, H[0], H[1], H[2], H[3], Residual);
 		return;
 	}
 
@@ -219,6 +222,6 @@ void UFMOceanSubsystem::Probe(int32 Frame)
 	{
 		G[k] = Pixels[Points[k].Y * Cells + Points[k].X].B - FMOcean::ProbeOffset;
 	}
-	FM_TRACE(this, TEXT("OCEAN sf=%d sea=%.2f h0=%.2f h1=%.2f h2=%.2f h3=%.2f g0=%.2f g1=%.2f g2=%.2f g3=%.2f gpu_max=%.3f gpu_mean=%.4f"),
-		Frame, SeaState, H[0], H[1], H[2], H[3], G[0], G[1], G[2], G[3], MaxError, static_cast<float>(SumError / (Cells * Cells)));
+	FM_TRACE(this, TEXT("OCEAN sf=%d sea=%.2f h0=%.2f h1=%.2f h2=%.2f h3=%.2f inv=%.3f g0=%.2f g1=%.2f g2=%.2f g3=%.2f gpu_max=%.3f gpu_mean=%.4f"),
+		Frame, SeaState, H[0], H[1], H[2], H[3], Residual, G[0], G[1], G[2], G[3], MaxError, static_cast<float>(SumError / (Cells * Cells)));
 }

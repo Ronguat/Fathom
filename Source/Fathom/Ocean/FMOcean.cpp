@@ -28,7 +28,7 @@ FVector3f FMOcean::Displace(const FVector2f& P, float Time, float SeaState, cons
 	return Out;
 }
 
-float FMOcean::HeightAt(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const TArray<FFMWaveComponent>& Waves, int32 Iterations)
+FVector2f FMOcean::SourceOf(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const TArray<FFMWaveComponent>& Waves, int32 Iterations)
 {
 	FVector2f Source = P;
 	for (int32 i = 0; i < Iterations; ++i)
@@ -36,7 +36,19 @@ float FMOcean::HeightAt(const FVector2f& P, float Time, float SeaState, const FV
 		const FVector3f D = Displace(Source, Time, SeaState, Wind, Waves);
 		Source = P - FVector2f(D.X, D.Y);
 	}
-	return Displace(Source, Time, SeaState, Wind, Waves).Z;
+	return Source;
+}
+
+float FMOcean::HeightAt(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const TArray<FFMWaveComponent>& Waves, int32 Iterations)
+{
+	return Displace(SourceOf(P, Time, SeaState, Wind, Waves, Iterations), Time, SeaState, Wind, Waves).Z;
+}
+
+float FMOcean::InversionResidual(const FVector2f& P, float Time, float SeaState, const FVector2f& Wind, const TArray<FFMWaveComponent>& Waves, int32 Iterations)
+{
+	const FVector2f Source = SourceOf(P, Time, SeaState, Wind, Waves, Iterations);
+	const FVector3f D = Displace(Source, Time, SeaState, Wind, Waves);
+	return (Source + FVector2f(D.X, D.Y) - P).Size();
 }
 
 FVector2f FMOcean::WindFromAngle(float Degrees)

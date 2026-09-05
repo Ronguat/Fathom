@@ -219,7 +219,9 @@ asynchronous**, so poll `is_in_play_in_editor` or drive the previous session; **
 start transform** and the level holds two `PlayerStart`s, so the pawn spawns at one at random;
 **fixed time step changes what wall clock means**, so restore it before reading a wall-time number;
 **and `get_editor_world()` answers None during play** *(Python, 2026-09-05)*, logging
-`The Editor is currently in a play mode`, so read the level's package before play starts.
+`The Editor is currently in a play mode`, so read the level's package before play starts;
+**and a client's server call made from a script callback between ticks is dropped without a
+word** *(PIE, 2026-09-05)*, so queue it for the actor's own tick.
 
 **Never duplicate a World Partition level to make a new map** — the external actor packages do not
 re-path and actors silently go missing. Use File → New Level → Empty.
