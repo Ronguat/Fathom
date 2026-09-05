@@ -1,0 +1,3 @@
+# Engine-side warnings the universal set tolerates. One line per allowed substring, with the reason
+# directly above it. An entry is a claim that the line is understood, never a dismissal; adding one
+# is a visible edit, the same shape as Tools/CommentCheck/baseline.txt.
