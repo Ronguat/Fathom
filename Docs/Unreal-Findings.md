@@ -339,7 +339,7 @@ asking the user to open the graph is a convenience rather than the only way.
 
 ## Older tooling entries in TheDream's log
 
-Findings predating this file stayed in TheDream's `Docs/Combat-Decisions.md`, in that repository;
+Findings predating this file stayed in TheDream's `Docs/Decisions.md`, in that repository;
 the dated entries below name them where they matter. **New tooling findings land here.** An entry
 that happens to name a tool stays in `Docs/Decisions.md`; a finding *about a surface* belongs here.
 
