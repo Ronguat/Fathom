@@ -176,6 +176,13 @@ first rung lands code.
 
 ## 2026-09-04 — The wind-down closes the editor
 
+### Next session's brief
+
+Unchanged from the bootstrap entry below: **pick up at the Harness rung**, write its plan entry
+first — the frame source before Deck, the smoke rows, the pre-registered bar — then build. No
+budget is set; the designer winds sessions down manually. The editor is closed, the tree is clean,
+and every commit is on the remote.
+
 **Decision**, the designer's, asked as a question and ruled the same evening. TheDream leaves its
 editor open at closedown because a session winding down there does not end the designer's own;
 Fathom's sessions are unattended and sequential, so the closedown ends by quitting the editor
