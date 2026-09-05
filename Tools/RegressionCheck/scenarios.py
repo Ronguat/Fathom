@@ -19,6 +19,7 @@ A scenario entry:
         golden=dict(keep=["x", "y"]),              # optional: skeleton fields beside frame, world, tag
         allow=[],                                  # engine-warning substrings this row tolerates
         injection_tolerance=1,                     # optional: frames the injection pairing may move
+        settle_frames=30,                          # optional: frames after the last applied input before a ship row asserts
     )
 
 Plan frames are sixtieths of server game time from the row's start. A row runs once per latency
@@ -41,7 +42,7 @@ MOVE_ACTIONS = dict(forward="move_forward", back="move_back", left="move_left", 
 OPS = ("tap", "press", "release", "hold", "move", "stop_move", "face", "teleport", "mark", "ship")
 
 # The ship's stations, which the ship op drives from a role's client.
-SHIP_INPUTS = ("wheel", "sail_length", "sail_angle", "anchor")
+SHIP_INPUTS = ("wheel", "sail_length", "sail_angle", "anchor", "ladder")
 
 # The mechanics a row may claim to cover. The coverage map in Docs/Debug-Instruments.md is
 # generated from these, so a claim outside the list fails at load rather than drifting.
@@ -50,8 +51,8 @@ MECHANICS = ("two worlds", "cost", "injection latency", "determinism")
 # Rung order, which is the order the matrix lists families in.
 FAMILIES = ("harness", "ocean", "ship", "deck", "melee", "ship-combat", "ship-to-ship")
 
-# The harness floor's half-extent; a placement beyond it fails before PIE.
-FLOOR_LIMIT = 5000.0
+# The ocean plane's half-extent; a placement beyond it fails before PIE.
+FLOOR_LIMIT = 20000.0
 
 # One mutation every harness row carries: the server's POSE positions zeroed, which the
 # determinism assertion must catch.
@@ -96,8 +97,8 @@ SCENARIOS = {
     "ship.sail": dict(
         family="ship", covers=["determinism", "cost"],
         worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
-        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
-                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
         cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
         plan=[(60, "p1", "ship", "sail_length", 1.0)],
         stop=dict(duration=12.0),
@@ -107,10 +108,10 @@ SCENARIOS = {
     "ship.turn": dict(
         family="ship", covers=["determinism", "cost"],
         worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
-        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
-                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
         cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
-        plan=[(60, "p1", "ship", "sail_length", 1.0), (240, "p1", "ship", "wheel", 1.0), (480, "p1", "ship", "wheel", 0.0)],
+        plan=[(60, "p1", "ship", "sail_length", 1.0), (240, "p2", "ship", "wheel", 1.0), (480, "p2", "ship", "wheel", 0.0)],
         stop=dict(duration=12.0),
         mutations=[SHIP_SERVER_ZERO, ("set", "SHIP", "yaw", "0.00")],
         allow=[],
@@ -118,24 +119,69 @@ SCENARIOS = {
     "ship.turn-loss": dict(
         family="ship", covers=["determinism", "cost"],
         worlds=("S", "C1", "C2"), latencies=(0, 100), loss=5.0,
-        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
-                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
         cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
-        plan=[(60, "p1", "ship", "sail_length", 1.0), (240, "p1", "ship", "wheel", 1.0), (480, "p1", "ship", "wheel", 0.0)],
+        plan=[(60, "p1", "ship", "sail_length", 1.0), (240, "p2", "ship", "wheel", 1.0), (480, "p2", "ship", "wheel", 0.0)],
         stop=dict(duration=12.0),
         mutations=[SHIP_SERVER_ZERO, ("set", "SHIP", "yaw", "0.00")],
         allow=[],
         injection_tolerance=3,
+        settle_frames=60,
     ),
     "ship.stop": dict(
         family="ship", covers=["determinism", "cost"],
         worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
-        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
-                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (1000.0, 15000.0, 320.0), 180.0)),
         cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
-        plan=[(60, "p1", "ship", "sail_length", 1.0), (360, "p1", "ship", "anchor", 1.0)],
+        plan=[(60, "p1", "ship", "sail_length", 1.0), (360, "p2", "ship", "anchor", 1.0)],
         stop=dict(duration=10.0),
         mutations=[SHIP_SERVER_ZERO, ("set", "SHIP", "speed", "999.00")],
+        allow=[],
+    ),
+    "deck.stand": dict(
+        family="deck", covers=["determinism", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (300, "p2", "ship", "wheel", 0.5)],
+        stop=dict(duration=14.0),
+        mutations=[("regex", r"(\[S\] POSE pid=\d+ sf=\d+ .*? bx=)[-\d.]+", r"\g<1>999.00"), ("set", "POSE", "base", "0")],
+        allow=[],
+    ),
+    "deck.walk": dict(
+        family="deck", covers=["determinism", "cost", "injection latency"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (300, "p2", "ship", "wheel", 0.5), (420, "p1", "move", 0.0, 1.0, 90)],
+        stop=dict(duration=14.0),
+        mutations=[("regex", r"(\[S\] POSE pid=\d+ sf=\d+ .*? bx=)[-\d.]+", r"\g<1>999.00"), ("drop", "INPUT", 1)],
+        allow=[],
+    ),
+    "deck.station": dict(
+        family="deck", covers=["two worlds", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 100), loss=0.0,
+        roles=dict(p1=("C1", (-1000.0, 15000.0, 320.0), 0.0),
+                   p2=("C2", (1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
+        plan=[(120, "p2", "ship", "wheel", 1.0), (180, "p1", "ship", "wheel", 1.0), (240, "p1", "ship", "wheel", 0.0)],
+        stop=dict(duration=6.0),
+        mutations=[("drop", "SHIPIN", 1), ("regex", r"SHIPNO", r"SHIPNIL")],
+        allow=[],
+    ),
+    "deck.swim": dict(
+        family="deck", covers=["determinism", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15700.0, 200.0), 90.0),
+                   p2=("C2", (0.0, 15200.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
+        plan=[(360, "p1", "ship", "ladder", 1.0)],
+        stop=dict(duration=10.0),
+        mutations=[("regex", r"(\[S\] POSE .*? mode=)Swimming", r"\g<1>Walking"), ("set", "POSE", "base", "0")],
         allow=[],
     ),
     "ocean.agree": dict(

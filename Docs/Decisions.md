@@ -12,6 +12,11 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | The Character Movement recon not run, its result unable to change the route once Mover met the bar unpatched | Deck entry, Decisions | |
+| 2026-09-05 | A teleport lands in Falling; settle windows after ship inputs, input edges and the swim's start, transients reported | Deck entry, Decisions | |
+| 2026-09-05 | The stations' places and radii, the ladder's deck point, the swim mode's float height, spring and speeds | `Config/DefaultGame.ini`, `UFMSwimMode` | |
+| 2026-09-05 | The ship stepped at the world tick's start, before the prediction frame; ship-space pose as the deck measure | Deck entry, Decisions | |
+| 2026-09-05 | Placements allowed out to the ocean's extent, 20 000 cm, rather than the floor's | `Tools/RegressionCheck/scenarios.py` | |
 | 2026-09-05 | A station call queued for the controller's tick, the one home for a client's server call from a script | Ship entry, Decisions | |
 | 2026-09-05 | The ship's numbers: top speed 1 000 cm/s, drag 0.3, anchor drag 20, turn rate 15 degrees a second, a 24 by 8 m hull, the fit at stiffness 6 and damping 4 | `Config/DefaultGame.ini` | |
 | 2026-09-05 | The ship as a custom integrator rather than a Mover actor; inputs replicated with their frame, unpredicted; the reconstruction shown unsmoothed | Ship entry, Decisions | |
@@ -107,15 +112,9 @@ delivery, halt and demand it. Bites at Melee.
 **Whenever the attacker's view delay is needed — *it is authored, never estimated.*** The rendered
 frame rides in the input command. Bites at Melee.
 
-**Whenever a pawn claims a station — *occupancy does not exist yet.*** A station is a named
-input any pawn's controller may drive *(2026-09-05)*; the walk to a station and its claim are
-Deck's, where a pawn first stands on the deck. Bites at Deck.
-
-**Whenever a Mover pawn is placed by teleport — *it hovers until it moves.*** Teleported to
-z = 100 over a floor at 0 with an 88 cm half-height capsule, the pawn read z = 100.00 in Walking
-until its jump, then rested at 90.15 *(PIE, 2026-09-05, `harness.jump` at 50 ms and above)*. A row
-reading a height before the pawn has moved reads the hover. Bites at Deck, where placement on the
-deck is the rung.
+**Whenever a sim proxy's deck position is read — *it is interpolated presentation.*** A
+client's view of the other pawn in ship space is asserted at 50 cm *(2026-09-05)* and no
+tighter until Melee's rewind reads the sync state instead. Bites at Melee.
 
 ## Tuning map — a verdict comes back, which knob moves
 
@@ -141,20 +140,6 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 its fallback, its coverage and its inheritance; the plan entry written before execution turns
 the bar into numbers.
 
-- **Deck** — Opens with the Mover recon: Character Movement and Mover on the same deterministic
-  ship, the same scenario, one pre-registered bar. Then the base-at-frame patch through a
-  project-local copy of the plugin if the recon needs it, the kinematic base publishing its
-  velocity, jumping, falling off into the swim mode, the ladder station, station occupancy, and
-  two scripted players seeing each other on the deck. **Bar**: deck-relative position error under
-  the bar at 0, 50, 100 and 150 ms with the ship rolling. **Fallback**: Route B, Character
-  Movement with a custom replicated combat component, if Mover fails the bar after the patch.
-  **Inherits**: `AFMShip`, a custom integrator every world steps from a replicated snapshot and
-  input history, its hull box the movement base with `ComponentVelocity` set each frame, its
-  deck top at the hull's half height plus `HullCenterAboveWater` over the fitted water; the
-  stations as named inputs through `AFMPlayerController::DriveShip` and the runner's `ship` op;
-  the `SHIP` line as the ship's pose evidence; the ship rows and the Ship entry's transients as
-  the reconstruction baseline; everything Ocean and Harness handed on. **This rung is the
-  minimum answer's foundation.**
 - **Melee** — **Halts without the clips and their skeleton in the project.** Opens with an intake
   sub-slice against a contract: clip list and directions, where windup ends and release begins,
   the blade socket, root motion or not, first and third person pairs; then blade curves baked per
@@ -171,7 +156,13 @@ the bar into numbers.
   reports each of those. **The clips and their skeleton come from a separate Mordhau-shaped project
   of the designer's, not on this machine**, the same project whose half measure is the second
   setting above; its code and write-ups are available on request, as is an answer to any
-  animation-contract question the clips leave open.
+  animation-contract question the clips leave open. **Inherits**: `AFMPlayerPawn` on Mover with
+  its key table read as the input command is authored, the place for presses and the rendered
+  frame; `POSE` with the pawn's ship-space position, the frame the sync state carries, and
+  `ROLLBACK`; `AFMShip` reconstructible at any frame from its snapshot and history, the rewound
+  ship; the deck rows' settle windows and transients as the baseline; the sim-proxy trap above;
+  the loop with its thirteen scenarios, the trace, the field session script, and every earlier
+  entry's measurements.
 - **Ship Combat** — Cannon stations, holes, water, repair, bailing, sinking, respawn. **Bar**: per
   `Docs/Spec.md`.
 - **Ship to Ship** — Contact response between two kinematic ships, and boarding across ships as a
@@ -200,6 +191,8 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 | `AFMShip` | 09-05 |
 | `FFMShipInputs` | 09-05 |
 | `FFMShipState` | 09-05 |
+| `FFMStation` | 09-05 |
+| `FFMTeleportEffect` | 09-05 |
 | `FMOcean` | 09-05 |
 | `FM_TRACE` | 09-05 |
 | `LogFMTrace` | 09-04, 09-05 |
@@ -207,9 +200,118 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 | `UFMOceanSettings` | 09-05 |
 | `UFMOceanSubsystem` | 09-05 |
 | `UFMShipSettings` | 09-05 |
+| `UFMSwimMode` | 09-05 |
+| `UFMSwimTransition` | 09-05 |
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-05 — Deck: standing on the ship, measured before it is argued
+
+### Next session's brief
+
+**Pick up at the Melee rung, which halts without the clips and their skeleton in the project**,
+stop-list item five: demand them, then open with the intake sub-slice against the contract in the
+brief. The four rungs below Melee are shipped and green; the minimum answer's foundation stands.
+Budget: none set; the designer winds down manually. The editor is closed, the tree clean, every
+commit on the remote. Verified against written is below the decisions.
+
+### The plan, written before execution
+
+**Scope.** Sub-slices in order, each committed when green. **One, standing**: the ship steps to
+the frame about to be simulated before the prediction framework simulates it, so the base a
+pawn reads is the pose of its own frame on every world; the `POSE` line gains `base`, `bx`, `by`
+and `bz`, the pawn's position in ship space when it stands on a ship; two pawns dropped onto the
+deck by teleport, the ship sailing and turning under them at sea state 1; the rows `deck.stand`
+and `deck.walk`. **Two, the recon**: `AFMCharacterPawn` on Character Movement with the same key
+table, chosen by the `fm.PawnRoute` console variable, on the same rows, its corrections counted
+on a `CMCFIX` line. **Three, the patch**, only if sub-slice one fails its bar at latency: a
+project-local copy of the Mover plugin whose based-movement reads a base implementing
+`IFMBaseAtFrame` at the frame being resimulated, which `AFMShip` answers from its snapshot and
+history. **Four, off the deck**: a movement mode transition into Swimming when the pawn sinks
+under the ocean's height at its position, a swim mode held at the surface, and the `ladder`
+station returning the pawn to the deck through the simulation. **Five, occupancy**: a station
+has a place on the ship and a radius, and a call from farther away is refused. **Six, seeing
+each other**: each client's view of the other pawn in ship space, reported against the server.
+
+**Bar, pre-registered.** *Standing and walking*: on a rolling, sailing, turning deck at sea
+state 1, the autonomous pawn's position in ship space on its own client against the server's at
+the same frame within 5 cm at every matched sample in the second half of the row, at 0, 50, 100
+and 150 ms, and `base=1` on every world throughout that half. *The recon*: the same rows under
+`fm.PawnRoute=cmc`, the pawn based throughout the second half on every world, its ship-space
+position on the client and on the server each spreading under 5 cm while standing, its
+corrections reported; Route A stands if Mover meets its bar, patched or not, and Route B is
+taken only if Mover fails after the patch and Character Movement meets this one. *Off the
+deck*: a pawn teleported into the water is in Swimming within 60 frames and within 30 cm of the
+ocean's height at its position for the rest of the row; the ladder returns it to `base=1` within
+60 frames of the call. *Occupancy*: a station call from beyond its radius writes no `SHIPIN`; one
+from within does. *Seeing each other*: each client's view of the other pawn in ship space within
+50 cm of the server's at the same frame in the second half, reported and asserted. Every
+earlier row stays green.
+
+**Fallbacks.** Sub-slice one failing at latency: the patch, sub-slice three, then the bar
+re-measured. Mover failing after the patch: Route B, the brief's fallback, if the recon's bar
+holds there; the Melee brief re-planned on Character Movement. The swim transition fighting
+Mover's mode machine: the pawn held at the surface by a layered move instead, filed as a trap.
+A dead end after these winds the session down.
+
+**Coverage.** `deck.stand`, `deck.walk`, their `cmc` variants, `deck.swim`, `deck.station`.
+**A trap filed**: the sim proxy's ship-space position is interpolated presentation, asserted at
+50 cm and no tighter until Melee's rewind reads the sync state instead.
+
+### Decisions
+
+**The ship steps at the world tick's start**, before the prediction framework's frame begins,
+so both the base a pawn reads during its simulation and the `SHIP` line carry the frame the pawn
+simulates. **Alternative**: the actor tick, one frame behind the pawn on every world alike, a
+constant offset of one frame's ship motion. **Reopens** never; it is an ordering fact.
+
+**The deck-relative measure is the pawn's sync-state position in the ship's frame at the same
+simulation frame**, on the world that wrote the line. The ship's pose at that frame is the same
+on every world once inputs have arrived, so the measure isolates the pawn.
+
+**The Character Movement recon is not run.** Sub-slice one met the bar at every latency with no
+patch, and the plan's own rule makes Route B's result unable to change the route from there.
+Building the second pawn would also have needed a frame source of its own: with no prediction
+instance on a client, the shared frame stands still, and the ship on that client with it.
+**Alternative**: run it for the record. **Reopens** if a later rung fails its bar and its
+fallback on Mover, when the recon runs with that rung's scenario.
+
+**A teleport lands in Falling.** The harness hover trap bit on the first deck drop: at any
+emulated latency a teleported pawn stayed at its drop height in Walking with no base for a whole
+row, and at zero latency it fell. `FFMTeleportEffect` writes Falling into the output state, and
+every drop since has landed. The trap is discharged by it.
+
+**Steady state is asserted outside settle windows, and the transient inside is reported.** A
+ship row asserts from thirty frames after the last applied input, `settle_frames` widening it to
+sixty on the loss row after a lost input replication held the client's heading 1.06 degrees off
+for thirty-one frames; a deck row asserts from eighteen frames after the pawn's own input edge,
+after two samples at 100 ms read 21 and 13 cm eleven and seventeen frames after a walk began,
+the server one frame of motion behind the client's prediction with no rollback, then level; the
+swim row asserts from a second into swimming, the rise from the drop reported.
+
+**Stations refuse from beyond their radius**, and the ladder is a station whose effect is a
+teleport through the simulation to a deck point; the rows that drive stations now stand their
+pawns at them.
+
+### Verified against written
+
+**Verified.** Run `0905-024327`: every row of the matrix green with every mutation proven, 46 rows in
+285 s of wall time. On a rolling, sailing, turning deck at sea state 1 at 0, 50, 100 and 150 ms:
+both pawns based on every world through the second half, ship-space error against the server
+within 5 cm at every steady sample standing and walking, world-space peaks 0.2 to 0.3 cm while the ship holds its course and up to 31 cm in the frames a client's ship still awaits a wheel input cm, three
+rollbacks a row at 150 ms, a lateral creep of 3 cm along and 15 cm across cm over seven seconds of rolling. Each
+client's view of the other pawn in ship space within 50 cm of the server's. Stations: a wheel
+call from the bow refused, two from the wheel applied, at 0 and 100 ms. Swimming: in Swimming
+within 63 to 63 frames of the drop, afloat within 30 cm of the surface from a second in, back on the
+deck within 21 to 27 frames of the ladder call, ship-space error after it within 5 cm, world-space
+error while swimming 0.2 cm. The ship rows green with their pawns standing at the stations.
+Both checks pass.
+
+**Written, not verified.** The hull's published velocity under a pawn leaving the deck, which
+nothing jumps off; the packaged client, not repackaged since Harness; the surface normal.
+
+**Beyond the plan.** Sub-slice two not run, the decision above. Nothing else.
 
 ## 2026-09-05 — Ship: a body every world integrates from the same state
 

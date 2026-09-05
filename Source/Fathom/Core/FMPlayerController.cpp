@@ -81,7 +81,7 @@ void AFMPlayerController::ServerDriveShip_Implementation(FName Input, float Valu
 {
 	if (AFMShip* Ship = AFMShip::Find(GetWorld()))
 	{
-		Ship->Apply(Input, Value);
+		Ship->Apply(Input, Value, GetPawn());
 	}
 }
 

@@ -52,8 +52,11 @@ drive one ship input: wheel, sail length, sail angle, anchor, ladder, and later 
 
 ## The deck
 
-Based movement on the ship's deck collision, with jumping. Falling off enters a swim mode in the
-world frame; a ladder station returns the player to the deck and to ship space.
+Based movement on the ship's hull box, with jumping; the pawn's position in the ship's frame is
+what the loop measures and Melee rewinds. Falling off enters Swimming when the pawn sinks under
+the ocean's height at its position, a mode that holds it near the surface at a capped swim speed;
+the ladder station, called from within its radius, returns the player to the deck through the
+simulation. A station is driven only from within its radius on the ship.
 
 ## Combat
 

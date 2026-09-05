@@ -5,13 +5,34 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/FMPlayerController.h"
+#include "Deck/FMSwimMode.h"
 #include "DefaultMovementSet/CharacterMoverComponent.h"
-#include "DefaultMovementSet/InstantMovementEffects/BasicInstantMovementEffects.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/PlayerState.h"
 #include "MoverDataModelTypes.h"
 #include "Net/FMTrace.h"
+#include "Ocean/FMOceanSubsystem.h"
 #include "UObject/ConstructorHelpers.h"
+
+bool FFMTeleportEffect::ApplyMovementEffect(FApplyMovementEffectParams& ApplyEffectParams, FMoverSyncState& OutputState)
+{
+	const bool bApplied = FTeleportEffect::ApplyMovementEffect(ApplyEffectParams, OutputState);
+	if (bApplied)
+	{
+		OutputState.MovementMode = DefaultModeNames::Falling;
+	}
+	return bApplied;
+}
+
+FInstantMovementEffect* FFMTeleportEffect::Clone() const
+{
+	return new FFMTeleportEffect(*this);
+}
+
+UScriptStruct* FFMTeleportEffect::GetScriptStruct() const
+{
+	return FFMTeleportEffect::StaticStruct();
+}
 
 AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -44,12 +65,15 @@ AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
 	Camera->bUsePawnControlRotation = true;
 
 	Mover = CreateDefaultSubobject<UCharacterMoverComponent>(TEXT("Mover"));
+	Mover->MovementModes.Add(DefaultModeNames::Swimming, CreateDefaultSubobject<UFMSwimMode>(TEXT("SwimMode")));
+	Mover->Transitions.Add(CreateDefaultSubobject<UFMSwimTransition>(TEXT("SwimTransition")));
 }
 
 void AFMPlayerPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	Mover->OnPostFinalize.AddDynamic(this, &AFMPlayerPawn::HandlePostFinalize);
+	Mover->OnPostSimulationRollback.AddDynamic(this, &AFMPlayerPawn::HandleRollback);
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if (PC->PlayerCameraManager)
@@ -90,7 +114,7 @@ FString AFMPlayerPawn::RoleName() const
 
 void AFMPlayerPawn::HarnessTeleport(FVector Location, float Yaw)
 {
-	TSharedPtr<FTeleportEffect> Effect = MakeShared<FTeleportEffect>();
+	TSharedPtr<FFMTeleportEffect> Effect = MakeShared<FFMTeleportEffect>();
 	Effect->TargetLocation = Location;
 	Effect->bUseActorRotation = false;
 	Effect->TargetRotation = FRotator(0.0f, Yaw, 0.0f);
@@ -165,19 +189,36 @@ void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdC
 
 void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const FMoverAuxStateContext& AuxState)
 {
+	const APlayerState* Player = GetPlayerState();
+	if (PendingRollbackTo >= 0 && Player)
+	{
+		FM_TRACE(this, TEXT("ROLLBACK pid=%d n=%d to=%d from=%d"), Player->GetPlayerId(), Rollbacks, PendingRollbackTo, PendingRollbackFrom);
+		PendingRollbackTo = PendingRollbackFrom = -1;
+	}
 	const int32 SimFrame = Mover->GetLastTimeStep().ServerFrame;
 	if (SimFrame < 0 || PoseEveryFrames <= 0 || SimFrame % PoseEveryFrames != 0)
 	{
 		return;
 	}
 	const FMoverDefaultSyncState* State = SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
-	const APlayerState* Player = GetPlayerState();
 	if (!State || !Player)
 	{
 		return;
 	}
 	const FVector Location = State->GetLocation_WorldSpace();
-	FM_TRACE(this, TEXT("POSE pid=%d sf=%d x=%.2f y=%.2f z=%.2f yaw=%.1f mode=%s"),
+	const bool bBased = State->GetMovementBase() != nullptr;
+	const FVector BaseSpace = bBased ? State->GetLocation_BaseSpace() : FVector::ZeroVector;
+	const UFMOceanSubsystem* Ocean = UFMOceanSubsystem::Get(this);
+	const float Water = GetDefault<UFMOceanSettings>()->PlaneZ + (Ocean ? Ocean->HeightAt(FVector2f(Location.X, Location.Y), SimFrame) : 0.0f);
+	FM_TRACE(this, TEXT("POSE pid=%d sf=%d x=%.2f y=%.2f z=%.2f yaw=%.1f mode=%s base=%d bx=%.2f by=%.2f bz=%.2f wz=%.2f"),
 		Player->GetPlayerId(), SimFrame, Location.X, Location.Y, Location.Z,
-		State->GetOrientation_WorldSpace().Yaw, *SyncState.MovementMode.ToString());
+		State->GetOrientation_WorldSpace().Yaw, *SyncState.MovementMode.ToString(),
+		bBased ? 1 : 0, BaseSpace.X, BaseSpace.Y, BaseSpace.Z, Water);
+}
+
+void AFMPlayerPawn::HandleRollback(const FMoverTimeStep& CurrentTimeStep, const FMoverTimeStep& ExpungedTimeStep)
+{
+	++Rollbacks;
+	PendingRollbackTo = CurrentTimeStep.ServerFrame;
+	PendingRollbackFrom = FMath::Max(PendingRollbackFrom, ExpungedTimeStep.ServerFrame);
 }

@@ -226,7 +226,9 @@ def ship_reconstruction(ctx, r, s, settle_after):
     start; the transient before it reported."""
     server = ship_lines(ctx, "S")
     band(r, "SHIP lines on S", [len(server)], 10, 10 ** 6, "")
-    start = begin_frame(ctx) + settle_after
+    applied = [int(ln.fields["sf"]) for ln in ctx.lines("SHIPIN", "S") if "sf" in ln.fields]
+    settle = int(s.get("settle_frames", 30))
+    start = (max(applied) + settle) if applied else (begin_frame(ctx) + settle_after)
     for world in s["worlds"]:
         if world == "S":
             continue
@@ -288,6 +290,123 @@ def ship_stop(ctx, r, s):
     moving, stopped = server_at(ctx, 350), server_at(ctx, 480)
     band(r, "speed before the anchor (cm/s)", [moving.fields["speed"]] if moving else [], 300.0, 1100.0, "cm/s")
     band(r, "speed two seconds after the anchor (cm/s)", [stopped.fields["speed"]] if stopped else [], 0.0, 20.0, "cm/s")
+    cost_sane(ctx, r)
+
+
+# --- the deck assertions ----------------------------------------------------------
+
+def based_poses(ctx, world, pid):
+    """sf -> the POSE line of one pawn in one world when it stands on a base."""
+    return dict((sf, ln) for sf, ln in poses(ctx, world, pid).items() if ln.fields.get("base") == 1.0)
+
+
+INPUT_SETTLE_FRAMES = 18
+
+
+def deck_relative(ctx, r, s, tolerance_cm=5.0):
+    """Each role's pawn in ship space on its client against the server at the same frame, second
+    half, outside INPUT_SETTLE_FRAMES after the role's own input edges; based on every world
+    throughout that half; the transient after an edge and the world-space error reported."""
+    pids = role_pids(ctx)
+    for role, (world, _loc, _yaw) in sorted(s["roles"].items()):
+        pid = pids.get(role, -1)
+        server_all, client_all = poses(ctx, "S", pid), poses(ctx, world, pid)
+        matched = sorted(set(server_all) & set(client_all))
+        later = matched[len(matched) // 2:]
+        edges = [ln.frame for ln in ctx.lines("INPUT", world, "role=%s " % role)]
+        after_edge = lambda f: any(0 <= f - e <= INPUT_SETTLE_FRAMES for e in edges)
+        ship_err = lambda f: sum((server_all[f].fields.get(k, 0.0) - client_all[f].fields.get(k, 0.0)) ** 2 for k in ("bx", "by", "bz")) ** 0.5
+        band(r, "%s POSE frames matched on S and %s" % (role, world), [len(later)], 10, 10 ** 6, "")
+        equal(r, "%s based on S, second half" % role, [server_all[f].fields.get("base") for f in later], 1.0)
+        equal(r, "%s based on %s, second half" % (role, world), [client_all[f].fields.get("base") for f in later], 1.0)
+        both = [f for f in later if server_all[f].fields.get("base") == 1.0 and client_all[f].fields.get("base") == 1.0]
+        band(r, "%s ship-space error S vs %s, second half (cm)" % (role, world), [ship_err(f) for f in both if not after_edge(f)], 0.0, tolerance_cm, "cm")
+        edge_err = [ship_err(f) for f in both if after_edge(f)]
+        r.add(True, "%s ship-space error within %d frames of an input edge" % (role, INPUT_SETTLE_FRAMES),
+              "peak %.1f cm over %d sample(s)" % (max(edge_err) if edge_err else 0.0, len(edge_err)))
+        world_err = [distance(server_all[f], client_all[f]) for f in later]
+        r.add(True, "%s world-space error S vs %s, second half" % (role, world),
+              "peak %.1f cm over %d sample(s)" % (max(world_err) if world_err else 0.0, len(world_err)))
+        rollbacks = [ln.fields.get("n", 0.0) for ln in ctx.lines("ROLLBACK", world) if int(ln.fields.get("pid", -1)) == pid]
+        r.add(True, "%s rollbacks on %s" % (role, world), "%d" % int(max(rollbacks) if rollbacks else 0))
+        for other, (other_world, _l, _y) in sorted(s["roles"].items()):
+            if other == role:
+                continue
+            seen = poses(ctx, other_world, pid)
+            seen_later = [f for f in sorted(set(server_all) & set(seen)) if f >= (later[0] if later else 0)]
+            seen_deck = [sum((server_all[f].fields.get(k, 0.0) - seen[f].fields.get(k, 0.0)) ** 2 for k in ("bx", "by", "bz")) ** 0.5
+                         for f in seen_later if server_all[f].fields.get("base") == 1.0 and seen[f].fields.get("base") == 1.0]
+            band(r, "%s as %s sees it, ship-space error vs S, second half (cm)" % (role, other_world), seen_deck, 0.0, 50.0, "cm")
+
+
+def ship_turned(ctx, r):
+    before, after = server_at(ctx, 300), server_at(ctx, 700)
+    band(r, "the ship turned under the pawns (deg)", [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 15.0, 180.0, "deg")
+
+
+@row("deck.stand")
+def deck_stand(ctx, r, s):
+    deck_relative(ctx, r, s)
+    pids = role_pids(ctx)
+    for role in sorted(s["roles"]):
+        based = sorted(based_poses(ctx, "S", pids.get(role, -1)).items())
+        later = based[len(based) // 2:]
+        for k in ("bx", "by"):
+            vals = [ln.fields[k] for _sf, ln in later]
+            band(r, "%s creep on the deck, %s spread on S (cm)" % (role, k), [max(vals) - min(vals)] if vals else [], 0.0, 50.0, "cm")
+    ship_turned(ctx, r)
+    cost_sane(ctx, r)
+
+
+@row("deck.walk")
+def deck_walk(ctx, r, s):
+    deck_relative(ctx, r, s)
+    pids = role_pids(ctx)
+    based = sorted(based_poses(ctx, "S", pids.get("p1", -1)).items())
+    start = begin_frame(ctx)
+    before = [ln for sf, ln in based if sf <= start + 420]
+    after = [ln for sf, ln in based if sf >= start + 560]
+    if before and after:
+        moved = ((after[0].fields["bx"] - before[-1].fields["bx"]) ** 2 + (after[0].fields["by"] - before[-1].fields["by"]) ** 2) ** 0.5
+        band(r, "p1 walked across the deck on the server (cm)", [moved], 300.0, 1500.0, "cm")
+    else:
+        r.add(False, "p1 walked across the deck on the server (cm)", "no based POSE before and after the walk")
+    count(r, "p1 INPUT edges on C1", len(ctx.lines("INPUT", "C1", "role=p1 ")), 2)
+    ship_turned(ctx, r)
+    cost_sane(ctx, r)
+
+
+@row("deck.station")
+def deck_station(ctx, r, s):
+    count(r, "wheel calls refused by distance", len(ctx.lines("SHIPNO", "S", "input=wheel")), 1)
+    count(r, "wheel calls applied from the wheel", len(ctx.lines("SHIPIN", "S", "input=wheel")), 2)
+    cost_sane(ctx, r)
+
+
+@row("deck.swim")
+def deck_swim(ctx, r, s):
+    pids = role_pids(ctx)
+    pid = pids.get("p1", -1)
+    start = begin_frame(ctx)
+    server = poses(ctx, "S", pid)
+    swimming = sorted(sf for sf, ln in server.items() if ln.fields.get("mode") == "Swimming")
+    band(r, "p1 swims on the server within a second (frames after the drop)",
+         [swimming[0] - start] if swimming else [], 0, 120, "f")
+    settled = [sf for sf in swimming if sf >= swimming[0] + 60] if swimming else []
+    afloat = [abs(server[sf].fields["z"] - server[sf].fields["wz"] - 40.0) for sf in settled if "wz" in server[sf].fields]
+    band(r, "p1 floats at the surface a second into swimming (cm off)", afloat, 0.0, 30.0, "cm")
+    rise = [abs(server[sf].fields["z"] - server[sf].fields["wz"] - 40.0) for sf in swimming[:10] if "wz" in server[sf].fields]
+    r.add(True, "p1 rising to the surface, first second", "peak %.1f cm off over %d sample(s)" % (max(rise) if rise else 0.0, len(rise)))
+    back = sorted(sf for sf, ln in server.items() if sf >= start + 360 and ln.fields.get("base") == 1.0)
+    band(r, "p1 back on the deck within a second of the ladder (frames after the call)",
+         [back[0] - (start + 360)] if back else [], 0, 60, "f")
+    client = poses(ctx, "C1", pid)
+    later = [sf for sf in sorted(set(server) & set(client)) if sf >= start + 450]
+    deck = [sum((server[f].fields.get(k, 0.0) - client[f].fields.get(k, 0.0)) ** 2 for k in ("bx", "by", "bz")) ** 0.5
+            for f in later if server[f].fields.get("base") == 1.0 and client[f].fields.get("base") == 1.0]
+    band(r, "p1 ship-space error S vs C1 after the ladder (cm)", deck, 0.0, 5.0, "cm")
+    swim_err = [distance(server[f], client[f]) for f in sorted(set(server) & set(client)) if server[f].fields.get("mode") == "Swimming"]
+    r.add(True, "p1 world-space error S vs C1 while swimming", "peak %.1f cm over %d sample(s)" % (max(swim_err) if swim_err else 0.0, len(swim_err)))
     cost_sane(ctx, r)
 
 

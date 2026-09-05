@@ -2,6 +2,7 @@
 
 #include "Components/BoxComponent.h"
 #include "Components/DynamicMeshComponent.h"
+#include "Deck/FMPlayerPawn.h"
 #include "EngineUtils.h"
 #include "GeometryScript/MeshPrimitiveFunctions.h"
 #include "Net/FMTrace.h"
@@ -16,6 +17,7 @@ namespace
 	const FName InputSailLength(TEXT("sail_length"));
 	const FName InputSailAngle(TEXT("sail_angle"));
 	const FName InputAnchor(TEXT("anchor"));
+	const FName InputLadder(TEXT("ladder"));
 
 	float MoveToward(float Value, float Target, float MaxDelta)
 	{
@@ -31,8 +33,7 @@ namespace
 
 AFMShip::AFMShip()
 {
-	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.TickGroup = TG_PrePhysics;
+	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 	bAlwaysRelevant = true;
 	SetReplicatingMovement(false);
@@ -61,6 +62,7 @@ AFMShip* AFMShip::Find(const UWorld* World)
 void AFMShip::BeginPlay()
 {
 	Super::BeginPlay();
+	TickStartHandle = FWorldDelegates::OnWorldTickStart.AddUObject(this, &AFMShip::OnWorldTickStart);
 	const UFMShipSettings* K = GetDefault<UFMShipSettings>();
 	Hull->SetBoxExtent(FVector(K->HalfLength, K->HalfWidth, K->HullHeight * 0.5f));
 	if (UDynamicMesh* Target = Mesh->GetDynamicMesh())
@@ -96,10 +98,31 @@ int32 AFMShip::CurrentFrame() const
 	return TraceSubsystem ? TraceSubsystem->GetFrame() : 0;
 }
 
-void AFMShip::Apply(FName Input, float Value)
+void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 {
 	if (!HasAuthority())
 	{
+		return;
+	}
+	const UFMShipSettings* K = GetDefault<UFMShipSettings>();
+	const FFMStation* Station = K->Stations.FindByPredicate([&](const FFMStation& S) { return S.Name == Input; });
+	if (Station)
+	{
+		const FVector Local = Caller ? GetActorTransform().InverseTransformPosition(Caller->GetActorLocation()) : FVector(1.0e6, 1.0e6, 0.0);
+		const float Distance = FVector2D(Local.X - Station->Local.X, Local.Y - Station->Local.Y).Size();
+		if (Distance > Station->Radius)
+		{
+			FM_TRACE(this, TEXT("SHIPNO id=%d sf=%d input=%s dist=%.0f"), ShipId, State.Frame, *Input.ToString(), Distance);
+			return;
+		}
+	}
+	if (Input == InputLadder)
+	{
+		if (AFMPlayerPawn* Pawn = Cast<AFMPlayerPawn>(Caller))
+		{
+			Pawn->HarnessTeleport(GetActorTransform().TransformPosition(K->LadderDeckPoint), State.Heading);
+			FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d input=ladder value=%.2f"), ShipId, State.Frame, Value);
+		}
 		return;
 	}
 	FFMShipInputs Next = Inputs;
@@ -227,15 +250,19 @@ void AFMShip::Reintegrate(int32 ToFrame)
 	Advance(ToFrame);
 }
 
-void AFMShip::Tick(float DeltaSeconds)
+void AFMShip::EndPlay(const EEndPlayReason::Type Reason)
 {
-	Super::Tick(DeltaSeconds);
-	if (!bHasState)
+	FWorldDelegates::OnWorldTickStart.Remove(TickStartHandle);
+	Super::EndPlay(Reason);
+}
+
+void AFMShip::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaSeconds)
+{
+	if (World != GetWorld() || !bHasState)
 	{
 		return;
 	}
-	const int32 Frame = CurrentFrame();
-	Advance(Frame);
+	Advance(CurrentFrame() + 1);
 	if (HasAuthority())
 	{
 		const UFMShipSettings* K = GetDefault<UFMShipSettings>();

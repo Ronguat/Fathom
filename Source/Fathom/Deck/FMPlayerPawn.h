@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DefaultMovementSet/InstantMovementEffects/BasicInstantMovementEffects.h"
 #include "GameFramework/Pawn.h"
 #include "MoverSimulationTypes.h"
 #include "FMPlayerPawn.generated.h"
@@ -9,6 +10,17 @@ class UCameraComponent;
 class UCapsuleComponent;
 class UCharacterMoverComponent;
 class UStaticMeshComponent;
+
+/** A teleport that lands in Falling, so a pawn dropped over a deck or a floor settles onto it. */
+USTRUCT()
+struct FFMTeleportEffect : public FTeleportEffect
+{
+	GENERATED_BODY()
+
+	virtual bool ApplyMovementEffect(FApplyMovementEffectParams& ApplyEffectParams, FMoverSyncState& OutputState) override;
+	virtual FInstantMovementEffect* Clone() const override;
+	virtual UScriptStruct* GetScriptStruct() const override;
+};
 
 /**
  * The player's pawn: a capsule driven by a Character Mover component on the Network Prediction
@@ -57,6 +69,9 @@ protected:
 	UFUNCTION()
 	void HandlePostFinalize(const FMoverSyncState& SyncState, const FMoverAuxStateContext& AuxState);
 
+	UFUNCTION()
+	void HandleRollback(const FMoverTimeStep& CurrentTimeStep, const FMoverTimeStep& ExpungedTimeStep);
+
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<UCapsuleComponent> Capsule;
 
@@ -74,5 +89,8 @@ private:
 
 	FName HarnessRole;
 	bool bJumpWasDown = false;
+	int32 Rollbacks = 0;
+	int32 PendingRollbackTo = -1;
+	int32 PendingRollbackFrom = -1;
 	TMap<FName, bool> KeyWasDown;
 };

@@ -9,6 +9,22 @@ class UBoxComponent;
 class UDynamicMeshComponent;
 class UFMOceanSubsystem;
 
+/** A station: a named input, its place in ship space, and how near a pawn must stand to drive it. */
+USTRUCT()
+struct FFMStation
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category="Station")
+	FName Name;
+
+	UPROPERTY(EditAnywhere, Category="Station")
+	FVector2D Local = FVector2D::ZeroVector;
+
+	UPROPERTY(EditAnywhere, Category="Station")
+	float Radius = 300.0f;
+};
+
 /** The ship's knobs; Config/DefaultGame.ini is their home. Speeds in cm/s, rates per second, angles in degrees. */
 UCLASS(config=Game, defaultconfig, meta=(DisplayName="Fathom Ship"))
 class FATHOM_API UFMShipSettings : public UDeveloperSettings
@@ -16,6 +32,9 @@ class FATHOM_API UFMShipSettings : public UDeveloperSettings
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(config, EditAnywhere, Category="Stations") TArray<FFMStation> Stations;
+	UPROPERTY(config, EditAnywhere, Category="Stations") FVector LadderDeckPoint = FVector(0.0, 250.0, 270.0);
+
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float MaxSpeed = 1000.0f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float Drag = 0.3f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorDrag = 20.0f;
@@ -92,15 +111,15 @@ public:
 
 	static AFMShip* Find(const UWorld* World);
 
-	/** Applies a station input on the server at the current frame. */
-	void Apply(FName Input, float Value);
+	/** Applies a station input on the server at the current frame, if the caller stands within the station's radius. */
+	void Apply(FName Input, float Value, AActor* Caller);
 
 	const FFMShipState& GetState() const { return State; }
 
 	static void Step(FFMShipState& S, const FFMShipInputs& In, const UFMShipSettings& K, const UFMOceanSubsystem* Ocean, float Dt);
 
-	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
@@ -126,6 +145,7 @@ protected:
 	TObjectPtr<UDynamicMeshComponent> Mesh;
 
 private:
+	void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaSeconds);
 	int32 CurrentFrame() const;
 	const FFMShipInputs& InputsAt(int32 Frame) const;
 	void RecordInput(const FFMShipInputs& In);
@@ -137,6 +157,7 @@ private:
 	FFMShipState State;
 	TArray<FFMShipInputs> History;
 	FVector LastLocation = FVector::ZeroVector;
+	FDelegateHandle TickStartHandle;
 	bool bHasState = false;
 	int32 LastTraceFrame = -1;
 	int32 LastSnapshotFrame = -1;

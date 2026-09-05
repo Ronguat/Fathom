@@ -235,6 +235,15 @@ read before play starts.
 **The engine ships no capsule among its basic shapes** *(engine content, 2026-09-05)*:
 `/Engine/BasicShapes/` holds Cone, Cube, Cylinder, Plane and Sphere.
 
+**A teleported Mover pawn hovers in Walking until something changes its input** *(PIE,
+2026-09-05)*: dropped by a teleport effect 270 cm above a deck it stayed at the drop height with
+no base for a whole row under any emulated latency, and fell at once at zero; a teleport effect
+that also writes `Falling` into the output sync state lands every time. Mover's mode classes
+are `MinimalAPI` with generated constructors, so a C++ mode derives from `UBaseMovementMode` and
+uses the exported `UMovementUtils` statics rather than subclassing `UFlyingMode`; a mode's
+`GetWorld()` reaches the world subsystems, where a context lookup through the mover component
+returned nothing inside the simulation.
+
 **A server call made from the Slate post-tick callback never reaches the server** *(PIE,
 2026-09-05)*: `ServerDriveShip`, a reliable server function on the client's pawn and then on its
 player controller, called from the runner's callback between world ticks, produced no server
