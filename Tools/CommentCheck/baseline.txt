@@ -12,12 +12,12 @@
 Source/Fathom/Core/FMGameMode.h	1	20
 Source/Fathom/Core/FMGameState.h	5	47
 Source/Fathom/Core/FMPlayerController.h	9	108
-Source/Fathom/Deck/FMPlayerPawn.h	11	140
+Source/Fathom/Deck/FMPlayerPawn.h	11	188
 Source/Fathom/Fathom.h	3	24
 Source/Fathom/Net/FMTrace.h	20	190
 Source/Fathom/Ocean/FMOcean.h	7	106
 Source/Fathom/Ocean/FMOceanActor.h	1	20
-Source/Fathom/Ocean/FMOceanSubsystem.h	8	102
+Source/Fathom/Ocean/FMOceanSubsystem.h	8	125
 Source/Fathom/Ship/FMShip.h	12	174
 Source/FathomEditor/Private/FMInputTools.cpp	4	29
 Source/FathomEditor/Public/FMInputTools.h	23	218
