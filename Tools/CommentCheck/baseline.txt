@@ -1,0 +1,20 @@
+# comment-check baseline -- comment lines and words per file, as of the last deliberate
+# reset. C7 warns when a file grows more than 10 percent past its line count, or the
+# baselined corpus more than 2 percent; C8 warns on the same shape for words.
+#
+# Raising one number here is the sanctioned way to add comment volume: the diff names
+# what grew and the commit message carries the reason. Regenerate wholesale only after a
+# pass that deliberately re-set the standard, never to make a run green.
+#
+#   ./Tools/CommentCheck/comment-check.sh --baseline
+#
+# file<TAB>comment lines<TAB>comment words
+Source/Fathom/Core/FMGameMode.h	9	25
+Source/Fathom/Core/FMPlayerController.h	12	37
+Source/Fathom/Fathom.h	2	9
+Source/FathomEditor/Private/FMInputTools.cpp	4	29
+Source/FathomEditor/Public/FMInputTools.h	23	217
+Source/FathomEditor/Public/FMTimeTools.h	9	65
+Tools/DocsCheck/docs-check.sh	127	1316
+Tools/GitHooks/install-hooks.sh	5	32
+Tools/McpBridge/ue-mcp.sh	12	88

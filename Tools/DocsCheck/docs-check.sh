@@ -1,0 +1,437 @@
+#!/usr/bin/env bash
+# docs-check.sh -- integrity checks for the standing docs, in regression-check's image.
+#
+# Every serious documentation failure this project has had was a maintenance failure at
+# an edit boundary, and most are mechanically checkable. Each check below states the
+# invariant it asserts and the failure shape it catches. Judgment stays human -- this
+# script owns only what a grep can own.
+#
+#   ./Tools/DocsCheck/docs-check.sh              # check the repo's standing docs
+#   ./Tools/DocsCheck/docs-check.sh --self-test  # prove the instrument can fail
+#
+# Exit 0 = all checks passed (WARNs allowed), 1 = a check failed, 2 = usage.
+# Run at closedown, and after any edit that moves text between docs.
+
+set -u
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$ROOT" || exit 2
+
+STANDING_DOCS=(CLAUDE.md Docs/Spec.md Docs/Decisions.md Docs/Reference-Model.md
+  Docs/Working-In-Unreal.md Docs/Unreal-Findings.md Docs/Debug-Instruments.md Docs/Closing-Down.md)
+
+FAILS=0; WARNS=0
+row()  { printf '%-22s %-6s %s\n' "$1" "$2" "$3"; }
+ok()   { row "$1" "PASS" "$2"; }
+fail() { row "$1" "FAIL" "$2"; FAILS=$((FAILS+1)); }
+warn() { row "$1" "WARN" "$2"; WARNS=$((WARNS+1)); }
+
+# --- C1: terminal punctuation ------------------------------------------------
+# Catches a truncated or spliced tail, which a content re-read misses because it checks
+# fitness rather than integrity. A standing doc's last non-blank line must end like an
+# ending: sentence punctuation (optionally wrapped in emphasis/quotes), a table row, a
+# fence, or a rule.
+check_terminal() { # $1=file -> 0 ok, 1 fail
+  local last
+  last=$(awk 'NF{l=$0} END{print l}' "$1")
+  printf '%s' "$last" | grep -qE '([.!?][)"*_`'"'"']*[[:space:]]*$)|(\|[[:space:]]*$)|(^```[[:space:]]*$)|(^---[[:space:]]*$)'
+}
+
+# --- C2: table integrity -----------------------------------------------------
+# Catches a row detached from its header, which renders as raw text, and blank lines
+# splitting a table into runs GFM does not render as tables at all. Every maximal run
+# of '|' lines must be at least two lines with a delimiter row second.
+check_tables() { # $1=file -> prints offending line numbers, rc 1 if any
+  awk '
+    /^\|/ { if (run==0) start=NR; run++; if (run==2) second=$0; next }
+    { if (run==1) print "orphan row at line " start;
+      else if (run>1 && second !~ /^\|[-: |]+\|?[[:space:]]*$/) print "no delimiter row at line " start;
+      run=0 }
+    END { if (run==1) print "orphan row at line " start;
+          else if (run>1 && second !~ /^\|[-: |]+\|?[[:space:]]*$/) print "no delimiter row at line " start }
+  ' "$1" | { grep . && return 1 || return 0; }
+}
+
+# --- C3: pointer manifest ----------------------------------------------------
+# Catches a cross-file pointer whose target moved. Each row asserts a literal a doc
+# points at; a miss means the target moved and the pointer did not.
+# Format: file:::literal:::which pointer relies on it.
+ENGINE_PY="/c/Program Files (x86)/UE_5.8/Engine/Binaries/ThirdParty/Python3/Win64/python.exe"
+
+MANIFEST='
+CLAUDE.md:::### When a rung ships:::Closing-Down routes a shipped rung by this section
+CLAUDE.md:::## Working Rules:::Debug-Instruments points the coverage rule here
+CLAUDE.md:::## The protocols:::the spec and the briefs point at the numbered protocols
+Docs/Spec.md:::## Authority and frames:::CLAUDE.md network section defers the model to this section
+Docs/Spec.md:::## The basic set:::the review queue first row names this table
+Docs/Decisions.md:::## Review queue:::CLAUDE.md working rules send every unattended WHAT here
+Docs/Decisions.md:::## Known traps:::CLAUDE.md loop step greps this section
+Docs/Decisions.md:::## Tuning map:::CLAUDE.md routing table sends knob rows here
+Docs/Decisions.md:::## What has been superseded:::the supersession check reads this table
+Docs/Decisions.md:::## Symbol index:::CLAUDE.md names it as a working section
+Docs/Decisions.md:::## Rung briefs:::CLAUDE.md sends every rung pickup here
+Docs/Decisions.md:::- **Harness**:::CLAUDE.md Current Focus points at this brief -- MOVE THIS ROW when a rung ships
+Docs/Reference-Model.md:::Status: :::the ownership check reads this line
+Docs/Debug-Instruments.md:::## The trace:::Working-In-Unreal sends log readers here
+Tools/CommentCheck/comment-check.sh:::--self-test:::CLAUDE.md names the script; Closing-Down runs it
+Tools/CommentCheck/comment-check.sh:::--baseline:::Closing-Down names the flag as the sanctioned reset
+Tools/CommentCheck/baseline.txt:::comment lines:::comment-check reads its memory from this file
+Docs/Toolset-Snapshot.tsv:::list_toolsets:::Working-In-Unreal diffs the registry against this file
+Tools/DocsCheck/claim-scan.pl:::engine behaviour:::Working-In-Unreal names the no-surface categories the scanner must accept
+Tools/DocsCheck/claim-scan.pl:::--working-only:::the flag that excludes the append-only archive of dated entries
+Docs/Working-In-Unreal.md:::claim-scan.pl:::the method section names the scanner that enforces surface-and-date
+Docs/Working-In-Unreal.md:::Docs/Unreal-Findings.md:::the pre-read points at the lookup half it was split from
+Docs/Unreal-Findings.md:::Working-In-Unreal.md:::the lookup half points back at the pre-read that governs it
+CLAUDE.md:::Docs/Unreal-Findings.md:::the doc list carries the file and its trigger
+Tools/GitHooks/pre-push:::non-fast-forward:::CLAUDE.md push rule names what the hook refuses
+Tools/Editor/run-in-editor.py:::remote_execution:::Working-In-Unreal names the editor Python route
+'
+check_manifest() { # $1=manifest-string -> prints misses, rc 1 if any
+  local bad=0 line f pat why
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    f=${line%%:::*}; rest=${line#*:::}; pat=${rest%%:::*}; why=${rest#*:::}
+    if [ ! -f "$f" ] || ! grep -qF -- "$pat" "$f"; then
+      echo "missing in $f: \"$pat\" ($why)"; bad=1
+    fi
+  done <<EOF
+$1
+EOF
+  return $bad
+}
+
+# --- C4: symbol-index freshness ---------------------------------------------
+# Catches the index falling behind its own archive, which is undetectable from inside it.
+# The index preamble carries "Current through **2026-MM-DD**"; the newest dated
+# entry may not be newer than it. Regeneration updates the line.
+check_index() { # $1=decisions-file -> rc 1 if stale, prints detail
+  local arch cur
+  arch=$(grep -oE '^## 2026-[0-9]{2}-[0-9]{2}' "$1" | sed 's/^## 2026-//' | sort | tail -1)
+  cur=$(grep -oE 'Current through \*\*2026-[0-9]{2}-[0-9]{2}\*\*' "$1" | grep -oE '2026-[0-9]{2}-[0-9]{2}' | sed 's/^2026-//' | head -1)
+  if [ -z "$cur" ]; then echo "no 'Current through' line in index preamble"; return 1; fi
+  if [ -z "$arch" ]; then echo "no dated entries found"; return 1; fi
+  if [ "$arch" \> "$cur" ]; then echo "newest entry $arch outruns index (current through $cur) -- regenerate"; return 1; fi
+  return 0
+}
+
+# --- C5 (WARN): trap-body shortlist ------------------------------------------
+# Catches an orphaned trap body -- an edit that replaced a header instead of inserting
+# before it leaves the body reading as prose belonging to the previous trap. Orphans
+# cannot be told from continuation paragraphs mechanically, so this shortlists
+# paragraphs in the traps section that open unformatted and are not yet judged; the
+# closedown eye judges a new one, then allowlists its opening prefix below so the
+# same paragraph is never re-judged.
+TRAP_OPENER_ALLOW=$(cat <<'ALLOW'
+These are not design questions. Nothing here needs play to
+ALLOW
+)
+check_trap_shortlist() { # $1=decisions-file -> prints unjudged openers (never fails)
+  sed -n '/^## Known traps/,/^## Tuning map/p' "$1" |
+  awk -v allow="$TRAP_OPENER_ALLOW" '
+    BEGIN { m=split(allow, a, "\n") }
+    prev_blank && /^[A-Za-z]/ && !/^[A-Z][a-z]+:/ {
+      ok=0; for (i=1; i<=m; i++) if (length(a[i]) && index($0, a[i]) == 1) { ok=1; break }
+      if (!ok) { n++; if (n<=8) printf "  line ~%d: %.60s\n", NR, $0 }
+    }
+    {prev_blank = (NF==0)} END {if (n>8) printf "  ...and %d more\n", n-8; if (n>0) exit 1}'
+}
+
+# --- C5b: unqualified capability claims --------------------------------------
+# Catches the failure this project kept hitting from the other side: a claim that something
+# cannot be done, naming a callable but neither the surface it was tried on nor the date. An
+# MCP-only result then reads identically to one tested across MCP, editor Python and C++, so
+# nothing invites a re-test and the claim becomes permanent. Detection lives in claim-scan.pl.
+check_claims() { # $1..=files -> prints shortlist, rc 1 if any unqualified
+  perl "$ROOT/Tools/DocsCheck/claim-scan.pl" "$@"
+}
+
+# --- C6: always-read duplication ---------------------------------------------
+# Catches text duplicated between the two always-read files, which is pure double-pay
+# every session. Any 10-word normalized shingle shared by both fails unless allowlisted
+# here with a reason.
+NGRAM_ALLOW='
+'
+check_ngrams() { # $1=fileA $2=fileB -> prints shared shingles, rc 1 if any
+  perl -e '
+    use strict; use warnings;
+    my %allow = map { $_ => 1 } grep { length } split /\n/, q('"$NGRAM_ALLOW"');
+    sub shingles {
+      my ($f) = @_;
+      open my $h, "<", $f or die $!;
+      local $/; my $t = lc <$h>; close $h;
+      $t =~ s/[`*_#>|"\x27]|—|–/ /g; $t =~ s/[[:punct:]]/ /g;
+      my @w = split /\s+/, $t; my %s;
+      for my $i (0 .. $#w - 9) { $s{ join " ", @w[$i .. $i+9] } = 1 }
+      return \%s;
+    }
+    my $a = shingles($ARGV[0]); my $b = shingles($ARGV[1]);
+    my @hit = grep { $b->{$_} && !$allow{$_} } keys %$a;
+    # collapse overlapping shingles into one report each run of hits
+    my $bad = 0;
+    my %seen;
+    for my $h (sort @hit) {
+      my @w = split / /, $h;
+      my $key = join " ", @w[0..4];
+      next if $seen{$key}++;
+      print "shared 10-gram: \"$h\"\n"; $bad = 1;
+    }
+    exit $bad;
+  ' "$1" "$2"
+}
+
+# --- C7 (WARN): trailer audit ------------------------------------------------
+# Catches a missing Co-Authored-By trailer. Parses real trailers rather than string-
+# matching, which a message that merely *discusses* the trailer defeats.
+# A flagged commit is not automatically wrong -- one you did not author says so
+# in its message instead (20121e3 is the model) -- so this warns, never fails.
+check_trailers() { # -> prints trailer-less commits since origin/main
+  git rev-parse --verify -q origin/main >/dev/null 2>&1 || { echo "  (no origin/main)"; return 0; }
+  git log origin/main..HEAD --format='%h%x09%(trailers:key=Co-Authored-By,valueonly)' 2>/dev/null |
+    awk -F'\t' '$1!="" && $2=="" {print "  " $1 " has no parsed Co-Authored-By trailer"; n++} END {exit (n>0)}'
+}
+
+# --- C8 (WARN): budgets ------------------------------------------------------
+# Backstops, never gates: the criterion is the closedown questions. A line count is
+# checkable in a second and fitness is not, so the number crowds out the criterion
+# unless it is explicitly demoted.
+#
+# The two files are policed for different things, which is why the numbers differ by
+# more than their sizes do. CLAUDE.md is read in full every session, so its number is
+# a real cost and stays tight. Working-In-Unreal is triggered, and it is *expected* to
+# grow -- every engine limit re-measured lands in it. Its number is therefore a prompt
+# to subdivide rather than a request to cut: the file has clean seams (driving the
+# editor, building C++, writing assets, what is scriptable, measuring, git), and
+# crossing the line means it is time to consider splitting one out, not to trim prose
+# that earned its place.
+check_budget() { # $1=file $2=limit $3=what crossing it means
+  local n; n=$(wc -l < "$1")
+  [ "$n" -le "$2" ] && return 0
+  echo "  $1 at $n lines against ~$2 -- $3"; return 1
+}
+
+# --- C9: bridge-table order ---------------------------------------------------
+# Catches the supersession table drifting off its own contract -- sorted by the
+# superseded entry's date, one entry's rows adjacent. Insertions landed mid-table
+# for two weeks and split one entry's rows, which permits exactly the early-stop
+# the sort exists to prevent: scan to your date, miss the fourth row.
+check_sup_order() { # $1=decisions-file -> prints violations, rc 1 if any
+  sed -n '/^## What has been superseded/,/^## Known traps/p' "$1" |
+  awk -F'|' '
+    /^\| 2026-/ {
+      d=substr($0,3,10); t=$2;
+      if (pd != "" && d < pd)   { printf "  date order broken at: %.55s\n", $0; bad=1 }
+      if (t != pt && seen[t]++) { printf "  entry rows split: %.55s\n", $0; bad=1 }
+      pd=d; pt=t
+    } END { exit bad }'
+}
+
+# --- C10: symbol-index order --------------------------------------------------
+# Catches a hand insertion landing mid-table, and duplicate symbol rows. The index
+# is generated and byte-sorted, so either deviation means an edit bypassed
+# regeneration -- the row is then invisible to a reader scanning alphabetically.
+check_index_order() { # $1=decisions-file -> prints violations, rc 1 if any
+  sed -n '/^## Symbol index/,/^## 2026-/p' "$1" |
+  LC_ALL=C awk -F'|' '
+    /^\| `/ {
+      if (pl != "" && $0 < pl) { printf "  out of order: %.50s\n", $0; bad=1 }
+      if (seen[$2]++)          { printf "  duplicate row: %.50s\n", $0; bad=1 }
+      pl=$0
+    } END { exit bad }'
+}
+
+# --- C11: standing-doc coverage -----------------------------------------------
+# Catches the next Anim-Pipeline.md: a doc added to CLAUDE.md's Project
+# Documentation list but not to STANDING_DOCS, so C1 and C2 silently never run on
+# it while the green table implies they do.
+check_doc_coverage() { # $1=claude-md $2..=standing docs -> prints missing, rc 1
+  local f=$1; shift
+  local d bad=0 listed
+  listed=$(sed -n '/^## Project Documentation/,/^## Communication/p' "$f" |
+           grep -oE '`Docs/[A-Za-z-]+\.md`' | tr -d '\140' | sort -u)
+  [ -z "$listed" ] && { echo "  no docs found in $f's Project Documentation section"; return 1; }
+  for d in $listed; do
+    case " $* " in *" $d "*) ;; *) echo "  $d listed in $f, absent from STANDING_DOCS"; bad=1 ;; esac
+  done
+  return $bad
+}
+
+# --- C12 (WARN): section backstops --------------------------------------------
+# C8's philosophy scoped to the two working sections that grow by accretion and
+# have no file of their own. Crossing one prompts eviction to the archive -- route
+# what is discharged or shipped, never trim what still binds -- and the number
+# ratchets DOWN when a slice ships and its material routes out. The briefs are
+# counted in words because their paragraphs live on single unwrapped lines.
+check_section() { # $1=file $2=start-re $3=end-re $4=wc-flag $5=limit $6=label
+  local n; n=$(sed -n "/$2/,/$3/p" "$1" | wc "$4"); n=$((n))
+  [ "$n" -le "$5" ] && return 0
+  echo "  $6 at $n against ~$5 -- evict to the archive, do not trim"; return 1
+}
+
+# --- C13: reference-model ownership -------------------------------------------
+# Catches an agent commit touching the owner-held reference model. The file status
+# line sets the severity: while it reads "Status: open" such commits are listed as a WARN
+# for the owner to review; once it reads "Status: hardened YYYY-MM-DD", an agent commit
+# dated after that day FAILs. An agent commit is one carrying a Claude Co-Authored-By trailer.
+REFMODEL="Docs/Reference-Model.md"
+refmodel_status() { # $1=file -> prints "open" or the hardened date; rc 1 without a status line
+  local s; s=$(grep -m1 -oE '^Status: (open|hardened [0-9]{4}-[0-9]{2}-[0-9]{2})' "$1") || return 1
+  case "$s" in "Status: open") echo open ;; *) echo "${s#Status: hardened }" ;; esac
+}
+judge_ownership() { # $1=open|date; stdin "sha<TAB>date<TAB>trailer" -> prints hits; rc 1 fail, 2 warn
+  awk -F'\t' -v st="$1" '
+    $3 ~ /Claude/ {
+      if (st == "open") { printf "  %s (%s) agent commit while open -- review\n", $1, $2; w=1 }
+      else if ($2 > st) { printf "  %s (%s) agent commit after hardening on %s\n", $1, $2, st; f=1 }
+    }
+    END { if (f) exit 1; if (w) exit 2; exit 0 }'
+}
+judge_from_string() { printf '%s\n' "$2" | judge_ownership "$1"; }
+check_ownership() { # $1=file -> rc 0 clean, 1 fail, 2 warn
+  local st; st=$(refmodel_status "$1") || { echo "  $1 has no Status line"; return 1; }
+  git log --format='%h%x09%ad%x09%(trailers:key=Co-Authored-By,valueonly)' --date=short -- "$1" 2>/dev/null | judge_ownership "$st"
+}
+
+# ==== self-test ===============================================================
+self_test() {
+  local t; t=$(mktemp -d) || exit 2
+  local bad=0
+  expect() { # $1=desc $2=want(0|1) ; runs "$@" from $3...
+    local desc=$1 want=$2; shift 2
+    "$@" >/dev/null 2>&1; local got=$?
+    [ "$got" -eq "$want" ] && return 0
+    echo "SELF-TEST FAIL: $desc (wanted rc $want, got $got)"; bad=1
+  }
+  printf 'A doc that ends properly.\n' > "$t/good.md"
+  printf 'A doc that ends mid-sen\n'   > "$t/trunc.md"
+  printf '| a | b |\n|---|---|\n| 1 | 2 |\n' > "$t/table.md"
+  printf 'text\n\n| lonely row |\n\ntext.\n'  > "$t/orphan.md"
+  printf '| head |\n| data |\n'               > "$t/nodelim.md"
+  printf '## 2026-08-18 — entry\nCurrent through **2026-08-18**.\n' > "$t/fresh.md"
+  printf '## 2026-08-19 — entry\nCurrent through **2026-08-18**.\n' > "$t/stale.md"
+  printf 'the quick brown fox jumps over the lazy sleeping dog twice\n' > "$t/ng1.md"
+  printf 'again the quick brown fox jumps over the lazy sleeping dog twice\n' > "$t/ng2.md"
+  printf 'nothing shared here at all beyond ordinary short words\n' > "$t/ng3.md"
+  printf 'The MCP layer cannot call `save_dirty_packages` *(2026-08-27)*.\n' > "$t/claim_ok.md"
+  printf 'There is no way to call `save_dirty_packages` at all.\n'          > "$t/claim_bare.md"
+  printf 'Python cannot call `save_dirty_packages` on this asset.\n'        > "$t/claim_nodate.md"
+  printf 'Enumerate before concluding `save_dirty_packages` cannot be run.\n' > "$t/claim_meta.md"
+
+  expect "terminal: proper ending passes"      0 check_terminal "$t/good.md"
+  expect "terminal: truncation fails"          1 check_terminal "$t/trunc.md"
+  expect "tables: proper table passes"         0 check_tables "$t/table.md"
+  expect "tables: orphan row fails"            1 check_tables "$t/orphan.md"
+  expect "tables: missing delimiter fails"     1 check_tables "$t/nodelim.md"
+  expect "manifest: present literal passes"    0 check_manifest "$t/good.md:::properly:::fixture"
+  expect "manifest: absent literal fails"      1 check_manifest "$t/good.md:::absent-string:::fixture"
+  expect "index: current date passes"          0 check_index "$t/fresh.md"
+  expect "index: newer entry fails"            1 check_index "$t/stale.md"
+  expect "ngrams: shared shingle fails"        1 check_ngrams "$t/ng1.md" "$t/ng2.md"
+  expect "ngrams: no shared shingle passes"    0 check_ngrams "$t/ng1.md" "$t/ng3.md"
+  expect "claims: qualified claim passes"      0 check_claims "$t/claim_ok.md"
+  expect "claims: no surface, no date fails"   1 check_claims "$t/claim_bare.md"
+  expect "claims: surface without date fails"  1 check_claims "$t/claim_nodate.md"
+  expect "claims: meta discussion passes"      0 check_claims "$t/claim_meta.md"
+
+  printf '## What has been superseded\n| 2026-08-09 — A | x | y |\n| 2026-08-10 — B | x | y |\n## Known traps\n' > "$t/sup_good.md"
+  printf '## What has been superseded\n| 2026-08-10 — B | x | y |\n| 2026-08-09 — A | x | y |\n## Known traps\n' > "$t/sup_date.md"
+  printf '## What has been superseded\n| 2026-08-09 — A | x | y |\n| 2026-08-09 — B | x | y |\n| 2026-08-09 — A | z | y |\n## Known traps\n' > "$t/sup_split.md"
+  printf '## Symbol index\n| `alpha` | 08-01 |\n| `beta` | 08-01 |\n## 2026-08-28 — entry\n' > "$t/sym_good.md"
+  printf '## Symbol index\n| `beta` | 08-01 |\n| `alpha` | 08-01 |\n## 2026-08-28 — entry\n' > "$t/sym_order.md"
+  printf '## Symbol index\n| `alpha` | 08-01 |\n| `alpha` | 08-02 |\n## 2026-08-28 — entry\n' > "$t/sym_dupe.md"
+  printf '## Project Documentation\n- **`Docs/A.md`** — x.\n## Communication\n' > "$t/cl.md"
+  printf '## Known traps\n\nThese are not design questions. Nothing here needs play to settle here.\n\n## Tuning map\n' > "$t/trap_ok.md"
+  printf '## Known traps\n\nSome fresh unformatted opener nobody has judged yet.\n\n## Tuning map\n' > "$t/trap_new.md"
+
+  expect "sup: sorted and adjacent passes"     0 check_sup_order "$t/sup_good.md"
+  expect "sup: broken date order fails"        1 check_sup_order "$t/sup_date.md"
+  expect "sup: split entry rows fail"          1 check_sup_order "$t/sup_split.md"
+  expect "index-order: sorted passes"          0 check_index_order "$t/sym_good.md"
+  expect "index-order: unsorted fails"         1 check_index_order "$t/sym_order.md"
+  expect "index-order: duplicate fails"        1 check_index_order "$t/sym_dupe.md"
+  expect "coverage: listed and checked passes" 0 check_doc_coverage "$t/cl.md" Docs/A.md
+  expect "coverage: listed unchecked fails"    1 check_doc_coverage "$t/cl.md" Docs/B.md
+  expect "shortlist: judged opener passes"     0 check_trap_shortlist "$t/trap_ok.md"
+  expect "shortlist: new opener lists"         1 check_trap_shortlist "$t/trap_new.md"
+  expect "section: inside backstop passes"     0 check_section "$t/trap_ok.md" '^## Known traps' '^## Tuning map' -l 50 "fixture"
+  expect "section: over backstop fails"        1 check_section "$t/trap_ok.md" '^## Known traps' '^## Tuning map' -l 2 "fixture"
+  printf 'Status: open\n' > "$t/rm_open.md"
+  expect "ownership: open status parses"                 0 refmodel_status "$t/rm_open.md"
+  expect "ownership: missing status fails"               1 refmodel_status "$t/good.md"
+  expect "ownership: agent commit while open warns"      2 judge_from_string open "$(printf 'abc\t2026-09-05\tClaude Fable <noreply@anthropic.com>')"
+  expect "ownership: agent commit after hardening fails" 1 judge_from_string 2026-10-01 "$(printf 'abc\t2026-10-02\tClaude Fable <noreply@anthropic.com>')"
+  expect "ownership: designer commit passes"             0 judge_from_string 2026-10-01 "$(printf 'abc\t2026-10-02\t')"
+  rm -rf "$t"
+  if [ "$bad" -eq 0 ]; then echo "SELF-TEST PASSED (32 assertions)"; exit 0; fi
+  exit 1
+}
+
+# ==== main ====================================================================
+case "${1:-}" in
+  --self-test) self_test ;;
+  "") ;;
+  *) echo "usage: docs-check.sh [--self-test]"; exit 2 ;;
+esac
+
+echo "docs-check -- standing-doc integrity ($(date +%F))"
+echo
+
+for f in "${STANDING_DOCS[@]}"; do
+  if check_terminal "$f"; then ok "terminal-punct" "$f"; else fail "terminal-punct" "$f ends mid-thought"; fi
+done
+
+for f in "${STANDING_DOCS[@]}"; do
+  out=$(check_tables "$f") && ok "tables" "$f" || fail "tables" "$f: $out"
+done
+
+out=$(check_manifest "$MANIFEST") && ok "pointer-manifest" "all $(printf '%s\n' "$MANIFEST" | grep -c ':::') pointers resolve" || fail "pointer-manifest" "$out"
+
+out=$(check_index Docs/Decisions.md) && ok "index-freshness" "index current" || fail "index-freshness" "$out"
+
+# The scenario matrix is generated from the fixtures once the loop exists; until then this is skipped.
+if [ -f Tools/RegressionCheck/gen-matrix.py ]; then
+	if "$ENGINE_PY" Tools/RegressionCheck/gen-matrix.py --check >/dev/null 2>&1; then
+		ok "matrix-freshness" "the generated matrix matches scenarios.py"
+	else
+		fail "matrix-freshness" "run Tools/RegressionCheck/gen-matrix.py -- scenarios.py has moved"
+	fi
+fi
+
+out=$(check_sup_order Docs/Decisions.md) && ok "bridge-order" "supersession table sorted, entry rows adjacent" || fail "bridge-order" "$out"
+
+out=$(check_index_order Docs/Decisions.md) && ok "index-order" "symbol index sorted, no duplicate rows" || fail "index-order" "$out"
+
+out=$(check_doc_coverage CLAUDE.md "${STANDING_DOCS[@]}") && ok "doc-coverage" "every doc CLAUDE.md lists is checked" || fail "doc-coverage" "$out"
+
+out=$(check_trap_shortlist Docs/Decisions.md) && ok "trap-shortlist" "no unjudged paragraph openers" || { warn "trap-shortlist" "review these openers:"; printf '%s\n' "$out"; }
+
+# Scoped to the docs where tooling-capability claims live. The spec's "cannot" is a gameplay rule,
+# the decision log is code behaviour and the reference model is its owner speaking; none is a
+# claim about a scripting surface. Unreal-Findings is scanned --working-only: its dated findings
+# are append-only and already sit under dated headers.
+claims_rc=0
+out=$(check_claims CLAUDE.md Docs/Working-In-Unreal.md Docs/Debug-Instruments.md) || claims_rc=1
+out2=$(check_claims --working-only Docs/Unreal-Findings.md) || claims_rc=1
+out="$out$out2"
+[ "$claims_rc" -eq 0 ] \
+  && ok "claim-qualification" "every capability claim names a surface and a date" \
+  || { fail "claim-qualification" "unqualified capability claims:"; printf '%s\n' "$out"; }
+
+out=$(check_ngrams CLAUDE.md Docs/Working-In-Unreal.md) && ok "always-read-dup" "no shared 10-grams" || fail "always-read-dup" "$out"
+
+out=$(check_trailers) && ok "trailers" "all commits since origin/main carry parsed trailers" || { warn "trailers" "confirm these are not Claude-authored:"; printf '%s\n' "$out"; }
+
+out=$(check_ownership "$REFMODEL"); rc=$?
+case $rc in
+  0) ok "ref-model-owner" "no agent commit on the reference model" ;;
+  2) warn "ref-model-owner" "agent commits on the open reference model, for the designer's review:"; printf '%s\n' "$out" ;;
+  *) fail "ref-model-owner" "the reference model is hardened:"; printf '%s\n' "$out" ;;
+esac
+
+out=$(check_budget CLAUDE.md 280 "read in full every session; audit it against the closedown questions") && ok "budget" "CLAUDE.md inside backstop" || warn "budget" "$out"
+out=$(check_budget Docs/Working-In-Unreal.md 650 "the lookup half belongs in Docs/Unreal-Findings.md, not here") && ok "budget" "Working-In-Unreal.md inside backstop" || warn "budget" "$out"
+out=$(check_section Docs/Decisions.md '^## Known traps' '^## Tuning map' -l 300 "traps section") && ok "budget" "traps section inside backstop" || warn "budget" "$out"
+out=$(check_section Docs/Decisions.md '^## Rung briefs' '^## Symbol index' -w 3000 "rung briefs") && ok "budget" "rung briefs inside backstop" || warn "budget" "$out"
+
+echo
+if [ "$FAILS" -gt 0 ]; then echo "RESULT: $FAILS FAIL, $WARNS WARN"; exit 1; fi
+echo "RESULT: all passed, $WARNS WARN"
+exit 0
