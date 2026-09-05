@@ -57,8 +57,8 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Entry | Superseded by | What changed |
 |---|---|---|
-| 2026-09-05 — Ship: a body every world integrates from the same state, its Stretch deferral of smoothed presentation | 2026-09-05 — Presentation between frames | The deferral, built on the designer's ruling that presentation never relies on a render cap |
 | 2026-09-04 — Fathom is bootstrapped: the spine, the regime and the inheritance | 2026-09-04 — The repository stands alone, and forgets its parent | The reference model's ownership: the file is dissolved into its homes and the ownership check removed; the Harness brief builds on the loop skeleton here rather than a reference elsewhere |
+| 2026-09-05 — Ship: a body every world integrates from the same state, its Stretch deferral of smoothed presentation | 2026-09-05 — Presentation between frames | The deferral, built on the designer's ruling that presentation never relies on a render cap |
 
 ## Known traps, indexed by what sets them off
 
