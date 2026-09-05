@@ -12,6 +12,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | No ability system in the simulation spine, the manufactured constraint re-decided on the designer's word that the choice is the agent's | The repository stands alone entry, Decisions | |
 | 2026-09-04 | The reference model dissolved into its homes rather than kept as the verbatim source | The repository stands alone entry | |
 | 2026-09-04 | What the findings archive dropped as useless to this project | The commit that trimmed `Docs/Unreal-Findings.md` | |
 | 2026-09-04 | The trace's log category `LogFMTrace`, its `COST`, `INPUT` and `MARK` tags, and the `REGRESSION` marker vocabulary the loop reads | `Docs/Debug-Instruments.md`, The trace | |
@@ -164,8 +165,10 @@ the bar into numbers.
   hits up to that ping, windups effectively faster by the ping up to the cap, hits landing early by
   half the ping, and false positives at high latency; an advance of half the round trip capped at
   50 ms gave some hit delay at higher ping and no competitive advantage at any ping. The measurement
-  reports each of those. **On request from the designer**: the previous combat project's code and
-  write-ups, and an answer to any animation-contract question the clips leave open.
+  reports each of those. **The clips and their skeleton come from a separate Mordhau-shaped project
+  of the designer's, not on this machine**, the same project whose half measure is the second
+  setting above; its code and write-ups are available on request, as is an answer to any
+  animation-contract question the clips leave open.
 - **Ship Combat** — Cannon stations, holes, water, repair, bailing, sinking, respawn. **Bar**: per
   `Docs/Spec.md`.
 - **Ship to Ship** — Contact response between two kinematic ships, and boarding across ships as a
@@ -239,6 +242,19 @@ dropped.
 What it is: the orchestrator, the in-editor runner, the evaluator, the preflight, the matrix
 generator, the scenario schema and its validator, written against this project's trace shape.
 What it is not: proven. It has driven no frame.
+
+**No ability system in the simulation spine.** The designer's word, 2026-09-05: the constraint in
+`CLAUDE.md` was manufactured, the Gameplay Ability System is welcome, and the choice is the agent's.
+Taken on the spine's terms. Combat state lives in the Mover sync state so that a feint is a rollback
+and every timing is a frame; GAS predicts by prediction key against wall time and confirms by RPC,
+a second prediction model on a second clock, and every protocol timing would have to be bridged
+between them. The stripped combat carries one attribute and no effect worth a framework.
+**Alternatives.** GAS for the whole of combat with hand-rolled rewind, the Lyra shape; or a hybrid,
+attributes, effects and cues in GAS applied on the server as the result of a hit the simulation
+resolved, the timing-critical core staying in the sync state. **Reopens** with Route B at the Deck
+recon, where Character Movement and a timestamp-keyed combat component are GAS's own ground, or
+when a rung's plan finds the hybrid cheaper than hand-rolled attributes. The findings the trim
+dropped about GAS's scripting surfaces are in git history before `fa7ba94`.
 
 ### Verified against written
 

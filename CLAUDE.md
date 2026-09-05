@@ -46,7 +46,8 @@ Binding on all work; the model itself is `Docs/Spec.md`'s "Authority and frames"
 
 ## Technical Preferences
 - **C++** for core systems; Blueprint where it speeds iteration.
-- **Mover with Network Prediction** for everything that moves. **No ability system.**
+- **Mover with Network Prediction** for everything that moves. **No ability system in the simulation
+  spine**; the decision and what reopens it are in `Docs/Decisions.md`.
 - **Every tuning value is a UPROPERTY** or lives in data.
 - **Placeholders throughout**, made with Geometry Script. Nothing is bought for looks.
 

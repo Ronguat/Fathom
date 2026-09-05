@@ -456,7 +456,7 @@ type** — a broken one usually looks fine alone.
   the error names the reason. **Empty it, then write it whole**, as two calls.
   `FGameplayTagContainer`'s array is `gameplayTags`.
 - **TMap keys** — the misleading `added key ... not found in map` log **no longer reproduces**
-  *(2026-08-21)*; a key added to `abilityInputActions` landed silently and read back.
+  *(2026-08-21)*; a key added to a TMap property landed silently and read back.
 - **`AssetTools` path functions answer `false` while PIE is running** *(cause isolated 2026-08-24)*.
   `exists`, `is_dirty`, `get_asset_class` and **named `save_assets`** all fail during a play session
   — `exists` returning a bare `false`, the rest *"Asset does not exist"* — and every one answers
