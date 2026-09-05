@@ -12,6 +12,10 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | A per-scenario injection tolerance, three frames on the loss rows | Ocean entry, Decisions | |
+| 2026-09-05 | The comment extractor retries an unterminated quote as text | The commit that fixed it | |
+| 2026-09-05 | The ocean as this project's own plane and material rather than the Water plugin's body; the engine's Gerstner shape; amplitude and steepness scaling with the sea state, wavelengths and direction offsets fixed | Ocean entry, Decisions | |
+| 2026-09-05 | The GPU read through a probe material into a float render target, once a second | Ocean entry, Decisions | |
 | 2026-09-05 | The field session as a script: the editor with `-server`, one packaged client, the hotkey pressed into its window, a fixed wait for the server | `Tools/RegressionCheck/field-session.sh` | |
 | 2026-09-05 | An asset-manager rule for game-feature data so the cook counts no error | `Config/DefaultGame.ini` | |
 | 2026-09-05 | The injection pairing may move one frame within a row; the runner counts in the server's simulation frame; the frame rate is capped at the fixed rate during a run | Harness entry, Decisions | |
@@ -101,6 +105,11 @@ delivery, halt and demand it. Bites at Melee.
 **Whenever the attacker's view delay is needed — *it is authored, never estimated.*** The rendered
 frame rides in the input command. Bites at Melee.
 
+**Whenever the hull fit reads the ocean — *the inversion and the normal are unasserted.***
+`FMOcean::HeightAt` inverts the horizontal displacement by three fixed-point steps, written
+2026-09-05 and read by nothing; the `ocean.agree` row asserts the forward function only. Bites
+at Ship, whose plan adds the row that measures it.
+
 **Whenever a Mover pawn is placed by teleport — *it hovers until it moves.*** Teleported to
 z = 100 over a floor at 0 with an 88 cm half-height capsule, the pawn read z = 100.00 in Walking
 until its jump, then rested at 90.15 *(PIE, 2026-09-05, `harness.jump` at 50 ms and above)*. A row
@@ -120,6 +129,8 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | The net update rate | `NetServerMaxTickRate`, at the engine default | The simulation rate |
 | Inbound bytes per player | The client's frame rate, `t.MaxFPS`; a packaged client ran uncapped at 30 000 B/s against 10 000 capped at 60 *(2026-09-05)* | The simulation rate |
 | The sea | The sea-state scalar | Any single wave component |
+| A component's shape | Its row in `Config/DefaultGame.ini` under the ocean settings | The formulation, which two evaluators share |
+| The probe's cost | `ProbeEveryFrames` and `ProbeCells` in the ocean settings; the readback is synchronous | The trace cadence |
 | Ship handling | The speed curve, the rudder rate, the anchor drag | The hull sample points, which shape the fit rather than the handling |
 
 ## Rung briefs — read the one you are picking up
@@ -128,21 +139,17 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 its fallback, its coverage and its inheritance; the plan entry written before execution turns
 the bar into numbers.
 
-- **Ocean** — The wave function in C++, the matching material function, the surface itself, the
-  sea-state scalar and wind vector replicated once, wave time driven from server time. **Bar**:
-  server, client and GPU agree on height at sampled points and frames within a pre-registered
-  epsilon, one centimetre proposed; the ocean is visible in PIE. **Fallback**: a plane and a
-  material sharing the function if the plugin's ocean body fights the open sea. **Coverage**: the
-  determinism row, protocol two. **Inherits**: the loop with its four harness rows and the run
-  report, the trace with `POSE` as the pose evidence, the field session script and the bundle
-  ingest, `AFMPlayerPawn` as the player on foot, and the Harness entry's measurements as the
-  cost baseline.
 - **Ship** — The kinematic hull fit, the sail, wind, rudder and anchor model, the compact
   replicated state and its history, the stations, a placeholder hull from Geometry Script with
   deck collision, spawned at runtime. Whether the ship is itself a Mover actor or a custom
   integrator follows from Harness's frame decision. **Bar**: a client reconstructs the ship's pose
   within a pre-registered error at 100 ms and five percent loss; the ship sails, turns and stops.
-  **Coverage**: ship-motion rows at every latency.
+  **Coverage**: ship-motion rows at every latency, and the row that measures the ocean's
+  inversion, the trap above. **Inherits**: `UFMOceanSubsystem` with `Displace` and `HeightAt`
+  by frame, the sea state and wind on `AFMGameState` and the `fm.SeaState` and `fm.WindAngle`
+  console variables for rows, the `OCEAN` row as the standing determinism row, the loop with its
+  five rows, the trace, the field session script, `AFMPlayerPawn`, and the Harness and Ocean
+  entries' measurements as the cost baseline.
 - **Deck** — Opens with the Mover recon: Character Movement and Mover on the same deterministic
   ship, the same scenario, one pre-registered bar. Then the base-at-frame patch through a
   project-local copy of the plugin if the recon needs it, the kinematic base publishing its
@@ -187,14 +194,118 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 
 | Symbol | Entries |
 |---|---|
+| `AFMGameState` | 09-05 |
+| `AFMOceanActor` | 09-05 |
 | `AFMPlayerController` | 09-05 |
 | `AFMPlayerPawn` | 09-05 |
+| `FMOcean` | 09-05 |
 | `FM_TRACE` | 09-05 |
 | `LogFMTrace` | 09-04, 09-05 |
 | `UFMInputTools` | 09-04 |
+| `UFMOceanSettings` | 09-05 |
+| `UFMOceanSubsystem` | 09-05 |
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-05 — Ocean: one function, three evaluators
+
+### Next session's brief
+
+**Pick up at the Ship rung.** Write its plan entry first: the kinematic hull fit on
+`UFMOceanSubsystem::HeightAt`, the sail, wind, rudder and anchor model, the compact replicated
+state and its history, the stations, a Geometry Script hull with deck collision spawned at
+runtime; whether the ship is a Mover actor or a custom integrator, decided in the entry; the
+pre-registered reconstruction error at 100 ms and 5 percent loss; the ship-motion rows at every
+latency. Budget: none set; the designer winds down manually. The editor is closed, the tree
+clean, every commit on the remote. Verified against written is below the decisions.
+
+### The plan, written before execution
+
+**Scope.** The ocean as a function of position and server time, evaluated three ways and proven
+equal. **One**: the wave function, a four-component Gerstner sum in `Source/Fathom/Ocean/` and
+the same formulation in `Shaders/FMOcean.ush`, which a material custom node includes; the sea
+state and wind derived into the components' amplitude, steepness and direction, the constants in
+`UFMOceanSettings`. **Two**: a game state replicating the sea-state scalar and the wind vector
+once, set on the server from the settings or the `fm.SeaState` and `fm.WindAngle` console
+variables. **Three**: a world subsystem that feeds the material parameter collection every tick
+with the frame's time, spawns a Geometry Script plane wearing the ocean material on every world
+that renders, and once a second draws a probe material into a float render target, reads it back,
+and writes an `OCEAN` line: the CPU displacement at four fixed points, the GPU's at the same
+points, and the GPU-against-CPU error over a grid. **Four**: the assets, a parameter collection
+and two materials, authored by an editor Python script and committed; the `ocean.agree` scenario
+and its row.
+
+**Bar, pre-registered.** `ocean.agree` at 0, 50, 100 and 150 ms at sea state 1: on every client,
+the server's CPU displacement and the client's GPU displacement at the same four points and the
+same frame within 1 cm at every matched sample, at least four matched samples per row; the
+client's GPU-against-CPU grid error within 1 cm on every line; the replicated sea state read back
+as 1 on every world; the ocean visible in PIE, a client viewport's screenshot read. The fourteen
+harness rows stay green.
+
+**Fallbacks.** The float render target reading back nothing: a half-float target, whose
+precision is a tenth of the bar at the amplitudes here. The Python-authored material failing to
+compile: the Water plugin's ocean body, the brief's first route, with its clock overridden from
+the frame. A dead end after these winds the session down.
+
+**Coverage.** `ocean.agree`, covering determinism. **A trap filed**: the height-at-a-point
+inversion and the surface normal, written for the Ship rung, are unasserted until the hull fit
+uses them.
+
+### Decisions
+
+**A plane and a material of this project's own, not the Water plugin's ocean body**, taking the
+brief's fallback first. The plugin's body wants a zone and an island spline, keeps a locally
+accumulated wave clock, and evaluates its waves from a parameter texture; every one fights a
+function of position and server time. **Alternative**: the plugin, for its shoreline, underwater
+and buoyancy work. **Reopens** when a Stretch line needs one of those.
+
+**The formulation is the engine's Gerstner shape**: wavenumber `2π/λ`, angular speed
+`sqrt(980·k)`, phase `k·(P·d) − ω·t` wrapped by `frac` before the sine on both sides so a
+long session's phase keeps its precision in single floats, horizontal displacement
+`−Q·A·d·sin`, height `A·cos`. Amplitude and steepness scale linearly with the sea state;
+wavelengths and the direction offsets from the wind are fixed per component. Time is the
+shared frame over sixty as a single float.
+
+**The GPU is read through a probe material**: a pixel's UV names a sample point on a grid, the
+material writes the displacement plus an offset into a float target, and the CPU reads the
+target back in the same tick it set the time. Identity is asserted by that readback, never by
+the shared file. The probe takes its parameters as its own vector parameters on a dynamic
+instance, set in the tick that draws it; the surface reads the collection, whose render state
+the world flushes on its own schedule.
+
+**A row may declare how far its injection pairing may move.** Under 5 percent loss at 100 ms the
+pairing moved two frames within a row; `injection_tolerance` on the scenario, one frame by
+default, three on the loss rows. **Alternative**: one tolerance for every row, which would have
+loosened the lossless rows for the loss rows' sake.
+
+### Verified against written
+
+**Verified.** `ocean.agree` at 0, 50, 100 and 150 ms: on both clients, the server's CPU
+displacement and the client's GPU displacement at four points and the same frame agree to the
+two decimals printed, and the client's GPU against its own CPU over the 16 by 16 grid reads a
+largest error of 0.001 cm and a mean of 0.0004 cm on every line; the replicated sea state read
+back as 1 on every world; every mutation proven. The surface is visible: a client screenshot
+from the floor's edge, `Saved/Screenshots/WindowsEditor/ocean_edge.png`, shows the displaced
+plane with crests along its horizon. The fourteen harness rows green on the same binary, the
+loss rows under a declared tolerance of three frames. Both checks pass.
+
+**Written, not verified.** `FMOcean::HeightAt`, the inversion, and any normal: unasserted until
+the Ship rung's hull fit reads them, the trap below. The ocean in a packaged client, which was
+not repackaged after this rung. The collection's time reaching the surface material in the
+same frame the probe measured; the probe reads its own parameters, and the surface is
+presentation.
+
+**Measured beside the bar.** The ocean rows' inbound bytes ran 12 000 to 14 000 B/s per
+connection against 10 000 on the harness rows, the OCEAN relay lines added; measured lag on the
+ocean rows ran 54, 95 and 133 ms at 50, 100 and 150, against 44, 77 and 108 on the harness rows,
+the probe's synchronous readback once a second on each client the suspect, unconfirmed.
+
+**Beyond the plan.** The comment checker's extractor blanked quoted strings before it looked for
+comment markers, so an apostrophe inside a comment swallowed its closing marker and forty-five
+lines after it; an unterminated quote is now retried as text. A per-scenario injection
+tolerance, since 5 percent loss moved the pairing two frames within a row. The trace parser
+accepts field names with digits. Nothing else.
 
 ## 2026-09-05 — Harness: the loop drives its first frames
 

@@ -24,8 +24,12 @@ changed, and pairs with the runner's `INJECT` marker; the universal set allows t
 by one frame within a row, the prediction framework's client throttle, and fails on two. `POSE
 pid=<player id> sf=<frame> x= y= z= yaw= mode=` is written by every world for every pawn every
 sixth finalized frame, `sf` the frame the pawn last finalized and the position its sync state's,
-which the determinism rows compare across worlds. `MARK category=<c>` is the marker hotkey, `M`,
-and the console command `FM.Mark <category>`. Everything else is a rung's own vocabulary.
+which the determinism rows compare across worlds. `OCEAN sf=<frame> sea=<s> h0..h3=<cm>
+g0..g3=<cm> gpu_max=<cm> gpu_mean=<cm>` is written once a second by every world: the CPU's
+displacement height at four fixed points, the GPU's at the same points read back from the probe
+material, and the GPU-against-CPU error over a 16 by 16 grid; a dedicated server writes the CPU
+and `gpu=none`. `MARK category=<c>` is the marker hotkey, `M`, and the console command
+`FM.Mark <category>`. Everything else is a rung's own vocabulary.
 
 **Clients relay their trace to the server** once a second over a reliable call, into the
 server's session file, and into its log only outside PIE, where the process log already carries
@@ -116,6 +120,7 @@ what is now untested. A loop that lags the surface still prints green.
 | `harness.jump` | S C1 C2 | 0, 50, 100, 150 | f60 p1 tap jump | 6 s | two worlds, cost, injection latency, determinism |
 | `harness.walk` | S C1 C2 | 0, 50, 100, 150 | f60 p1 move 0.0 1.0 120 | 6 s | two worlds, cost, injection latency, determinism |
 | `harness.walk-loss` | S C1 C2 | 0, 100 | f60 p1 move 0.0 1.0 120 | 6 s | two worlds, cost, injection latency, determinism |
+| `ocean.agree` | S C1 C2 | 0, 50, 100, 150 | - | 8 s | determinism, cost |
 
 *Generated from `Tools/RegressionCheck/scenarios.py` by `Tools/RegressionCheck/gen-matrix.py`. Edit the fixtures there, never this table.*
 <!-- matrix:end -->
@@ -127,9 +132,9 @@ what is now untested. A loop that lags the surface still prints green.
 | Mechanic | Rows asserting it |
 |---|---|
 | two worlds | `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
-| cost | `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
+| cost | `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `ocean.agree` |
 | injection latency | `harness.jump`, `harness.walk`, `harness.walk-loss` |
-| determinism | `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
+| determinism | `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `ocean.agree` |
 
 *Generated from each row's `covers` in `Tools/RegressionCheck/scenarios.py` by `Tools/RegressionCheck/gen-matrix.py`.*
 <!-- coverage:end -->

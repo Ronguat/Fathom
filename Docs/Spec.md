@@ -33,11 +33,14 @@ question, never a fix. Every value here is a knob unless the tuning map says oth
 
 ## The ocean
 
-A Gerstner sum of a handful of components. One sea-state scalar in [0, 1], fixed for a session,
-derives every component's amplitude, wavelength and steepness; the wind vector, also fixed for a
-session, gives their direction. The CPU function and the GPU material function share one
-formulation, and a standing regression row asserts that server, client and GPU agree at the same
-point and frame.
+A Gerstner sum of four components. One sea-state scalar in [0, 1], fixed for a session, scales
+every component's amplitude and steepness; wavelengths and each component's direction offset from
+the wind are fixed per component, and the wind vector, also fixed for a session, gives the
+direction. Wave time is the shared frame over the fixed rate. The CPU function and the GPU
+material function share one formulation, `Shaders/FMOcean.ush` mirrored in
+`Source/Fathom/Ocean/FMOcean.cpp`, and a standing regression row asserts that server, client and
+GPU agree at the same point and frame within one centimetre. The components' constants live in
+`Config/DefaultGame.ini`.
 
 ## The ship
 

@@ -181,9 +181,9 @@ plan time; a loop that lags the surface still prints green.
 
 ## Current Focus
 
-> **~~Bootstrap~~ → ~~Harness~~ → Ocean → Ship → Deck → Melee → Ship Combat → Ship to Ship → Stretch**
+> **~~Bootstrap~~ → ~~Harness~~ → ~~Ocean~~ → Ship → Deck → Melee → Ship Combat → Ship to Ship → Stretch**
 
-**Pick up at Ocean.** Its brief is in `Docs/Decisions.md`, and the handoff at the top of the
+**Pick up at Ship.** Its brief is in `Docs/Decisions.md`, and the handoff at the top of the
 newest dated entry there is the session brief. Deck opens with the Mover recon and carries Route B
 as its fallback; Melee opens only with the clips and their skeleton in the project.
 

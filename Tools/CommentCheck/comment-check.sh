@@ -45,12 +45,12 @@ sources() { # every scanned file, self excluded
 # a date in code is not read as a date in a comment.
 extract() {
   awk '
-    function blank(s,   out,i,c,q) {
+    function blank(s, ignore,   out,i,c,q) {
       out=""; q=""
       for (i=1; i<=length(s); i++) {
         c=substr(s,i,1)
         if (q=="") {
-          if (c=="\"" || c=="\047") { q=c; out=out " "; continue }
+          if ((c=="\"" || c=="\047") && index(ignore, c)==0) { q=c; out=out " "; continue }
           out=out c
         } else {
           if (c=="\\") { i++; out=out "  "; continue }
@@ -58,6 +58,7 @@ extract() {
           out=out " "
         }
       }
+      if (q!="") return blank(s, ignore q)
       return out
     }
     function emit(t) { printf "%s\t%d\t%s\n", FILENAME, FNR, t }

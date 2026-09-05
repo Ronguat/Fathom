@@ -15,7 +15,13 @@ public class Fathom : ModuleRules
 			"NetCore",
 			"Mover",
 			"NetworkPrediction",
-			"Json"
+			"Json",
+			"DeveloperSettings",
+			"RenderCore",
+			"RHI",
+			"GeometryCore",
+			"GeometryFramework",
+			"GeometryScriptingCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

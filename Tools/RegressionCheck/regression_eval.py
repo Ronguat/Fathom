@@ -44,7 +44,7 @@ class Line(object):
 
 def fields(text):
     out = {}
-    for k, v in re.findall(r"([A-Za-z_]+)=([^\s]+)", text or ""):
+    for k, v in re.findall(r"([A-Za-z_][A-Za-z0-9_]*)=([^\s]+)", text or ""):
         try:
             out[k] = float(v)
         except ValueError:
@@ -101,7 +101,7 @@ class Result(object):
             print("%s%-6s %-34s %s" % (indent, status, label, detail))
 
 
-def universal(trace, markers, raw, bad, r, allow=()):
+def universal(trace, markers, raw, bad, r, allow=(), injection_tolerance=INJECTION_SPREAD_TOL):
     roles = roles_from(markers)
     worlds = sorted(set(["S"] + list(roles.values())), key=lambda w: (w != "S", w))
 
@@ -131,7 +131,7 @@ def universal(trace, markers, raw, bad, r, allow=()):
     deltas = injection_deltas(trace, markers)
     if deltas:
         span = max(deltas) - min(deltas)
-        r.add(span <= INJECTION_SPREAD_TOL, "injection latency constant",
+        r.add(span <= injection_tolerance, "injection latency constant",
               "%d injection(s), %d frame(s)%s" % (len(deltas), deltas[0],
                                                   "" if span == 0 else ", spread %d" % span))
     else:
@@ -441,6 +441,8 @@ def main():
     ap.add_argument("--id")
     ap.add_argument("--accept", action="store_true")
     ap.add_argument("--allow", default="", help="warning substrings this row tolerates")
+    ap.add_argument("--injection-tolerance", type=int, default=INJECTION_SPREAD_TOL,
+                    help="frames the injection pairing may move within the row")
     ap.add_argument("--keep", default="", help="fields the skeleton keeps")
     ap.add_argument("--mutate", help="kind:arg:arg, written to --out")
     ap.add_argument("--out")
@@ -464,7 +466,7 @@ def main():
         print("%s %s" % (status, detail))
         return 0
     r = Result()
-    universal(trace, markers, raw, bad, r, [x for x in a.allow.split(",") if x])
+    universal(trace, markers, raw, bad, r, [x for x in a.allow.split(",") if x], a.injection_tolerance)
     r.show()
     return 1 if r.failed else 0
 

@@ -235,6 +235,21 @@ read before play starts.
 **The engine ships no capsule among its basic shapes** *(engine content, 2026-09-05)*:
 `/Engine/BasicShapes/` holds Cone, Cube, Cylinder, Plane and Sphere.
 
+**Materials are authored from Python** *(Python, 2026-09-05, `Tools/Editor/make-ocean-assets.py`)*:
+`AssetTools.create_asset` with `MaterialFactoryNew` and `MaterialParameterCollectionFactoryNew`,
+`MaterialEditingLibrary.create_material_expression`, `connect_material_expressions` by output and
+input name, `connect_material_property`, `recompile_material` returning the compile errors,
+`EditorAssetLibrary.save_loaded_asset`. A custom node takes `code`, `output_type`, `inputs` as
+`CustomInput` structs and `include_file_paths`. A vector parameter's four-float output is named
+`RGBA`; its unnamed-looking main pin is `RGB`, three floats. A collection parameter's output is
+four floats already. Two materials compiled and rendered from this route; the compile errors read
+back through the return value named the file and line.
+
+**`/Project` is already a shader directory** *(engine source and a crash, 2026-09-05)*:
+`LaunchEngineLoop.cpp` line 2557 maps it to `<project>/Shaders` when that folder exists, so a
+material custom node includes `/Project/FMOcean.ush` with no module code, and a module mapping it
+again asserts at startup. The module's loading phase stays Default.
+
 ## 2026-09-03 — The clock, PIE and the shipping input path are all scriptable
 
 **A fixed time step is a function library away** *(C++ headers then an editor module, 2026-09-03)*.

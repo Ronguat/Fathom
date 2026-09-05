@@ -10,10 +10,14 @@
 #
 # file<TAB>comment lines<TAB>comment words
 Source/Fathom/Core/FMGameMode.h	1	13
+Source/Fathom/Core/FMGameState.h	5	47
 Source/Fathom/Core/FMPlayerController.h	8	80
 Source/Fathom/Deck/FMPlayerPawn.h	15	120
 Source/Fathom/Fathom.h	3	24
 Source/Fathom/Net/FMTrace.h	20	190
+Source/Fathom/Ocean/FMOcean.h	5	83
+Source/Fathom/Ocean/FMOceanActor.h	1	20
+Source/Fathom/Ocean/FMOceanSubsystem.h	8	102
 Source/FathomEditor/Private/FMInputTools.cpp	4	29
 Source/FathomEditor/Public/FMInputTools.h	23	218
 Source/FathomEditor/Public/FMTimeTools.h	9	65

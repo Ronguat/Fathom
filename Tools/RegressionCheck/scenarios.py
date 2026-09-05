@@ -18,6 +18,7 @@ A scenario entry:
         mutations=[("drop", "COST", 1)],           # each must turn the row red
         golden=dict(keep=["x", "y"]),              # optional: skeleton fields beside frame, world, tag
         allow=[],                                  # engine-warning substrings this row tolerates
+        injection_tolerance=1,                     # optional: frames the injection pairing may move
     )
 
 Plan frames are sixtieths of server game time from the row's start. A row runs once per latency
@@ -85,6 +86,18 @@ SCENARIOS = {
         plan=[(60, "p1", "move", 0.0, 1.0, 120)],
         stop=dict(duration=6.0),
         mutations=[("drop", "INPUT", 1), POSE_SERVER_ZERO],
+        allow=[],
+        injection_tolerance=3,
+    ),
+    "ocean.agree": dict(
+        family="ocean", covers=["determinism", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (0.0, 200.0, 100.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[],
+        stop=dict(duration=8.0),
+        mutations=[("regex", r"(\[S\] OCEAN .*? h0=)[-\d.]+", r"\g<1>999.00"), ("set", "OCEAN", "gpu_max", "9.000")],
         allow=[],
     ),
     "harness.jump": dict(
@@ -177,6 +190,9 @@ def validate(resolve_action=None):
         for m in s.get("mutations", []):
             if not (isinstance(m, tuple) and m and m[0] in ("shift", "drop", "dup", "set", "regex")):
                 problems.append(where + "mutation %r is not shift, drop, dup, set or regex" % (m,))
+        tol = s.get("injection_tolerance", 1)
+        if not isinstance(tol, int) or tol < 0:
+            problems.append(where + "injection_tolerance must be a non-negative frame count")
     return problems
 
 

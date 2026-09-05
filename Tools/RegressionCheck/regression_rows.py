@@ -203,6 +203,30 @@ def harness_jump(ctx, r, s):
     cost_sane(ctx, r)
 
 
+# --- the ocean assertions -----------------------------------------------------------
+
+@row("ocean.agree")
+def ocean_agree(ctx, r, s):
+    server = dict((int(ln.fields["sf"]), ln) for ln in ctx.lines("OCEAN", "S") if "sf" in ln.fields)
+    band(r, "OCEAN lines on S", [len(server)], 4, 10 ** 6, "")
+    equal(r, "sea state 1 on S", [round(ln.fields.get("sea", -1.0), 2) for ln in server.values()], 1.0)
+    band(r, "waves exist on S, largest |h| (cm)",
+         [max([abs(ln.fields["h%d" % k]) for ln in server.values() for k in range(4)] or [0.0])], 20.0, 10 ** 6, "cm")
+    for world in s["worlds"]:
+        if world == "S":
+            continue
+        client = dict((int(ln.fields["sf"]), ln) for ln in ctx.lines("OCEAN", world) if "sf" in ln.fields)
+        matched = sorted(set(server) & set(client))
+        band(r, "%s OCEAN frames matched with S" % world, [len(matched)], 4, 10 ** 6, "")
+        equal(r, "sea state 1 on %s" % world, [round(ln.fields.get("sea", -1.0), 2) for ln in client.values()], 1.0)
+        errors = [abs(server[f].fields["h%d" % k] - client[f].fields.get("g%d" % k, 10 ** 6))
+                  for f in matched for k in range(4)]
+        band(r, "S CPU vs %s GPU at four points (cm)" % world, errors, 0.0, 1.0, "cm")
+        band(r, "%s GPU vs its own CPU over the grid, max (cm)" % world,
+             [ln.fields.get("gpu_max", 10 ** 6) for ln in client.values()], 0.0, 1.0, "cm")
+    cost_sane(ctx, r)
+
+
 # --- self-test --------------------------------------------------------------------
 
 SELF_TEST_SLICE = """\

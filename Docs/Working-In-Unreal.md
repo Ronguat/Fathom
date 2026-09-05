@@ -317,7 +317,9 @@ filter did not match — and here the filter did not even run.
 endings, `grep -c $'\r'` returned 0, and the same pattern inside a command substitution once counted
 every line, an empty pattern; `-P` is refused in this locale. The line-ending check is
 `git ls-files --eol` or `od -c`. The working tree here is LF and git stores LF. A backslash-r
-in a Bash tool command can arrive as a bare CR byte; build one from its code where it matters.
+in a Bash tool command can arrive as a bare CR byte, and a backslash-octal such as `\047` as the
+character it names *(2026-09-05)*; build one from its code where it matters, or write the script
+through the Write tool, which passes backslashes untouched.
 
 **A single Bash tool command near ~14 KB can arrive mangled** *(reported once, 2026-08-19)* —
 a quoted heredoc died with a shell parse error mid-content, while the same content in ~5 KB

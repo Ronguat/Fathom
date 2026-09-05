@@ -181,7 +181,8 @@ def evaluate(run, rid, slice_path, args):
     out["detail"] = tail[-1].strip() if tail else (r.stdout or r.stderr).strip()[-120:]
 
     allow = ",".join(s.get("allow", []))
-    u = sh([PY, EVAL, slice_path, "--universal", "--allow", allow])
+    tolerance = str(s.get("injection_tolerance", 1))
+    u = sh([PY, EVAL, slice_path, "--universal", "--allow", allow, "--injection-tolerance", tolerance])
     bad = [ln.strip() for ln in u.stdout.splitlines() if ln.strip().startswith("FAIL")]
     out["universal"] = "clean" if u.returncode == 0 else "; ".join(bad)
     if u.returncode != 0:
@@ -201,13 +202,13 @@ def evaluate(run, rid, slice_path, args):
     if args.no_mutate or out["rc"] not in (0, None):
         out["mutations"] = "skipped"
     else:
-        out["mutations"] = prove_mutations(rid, slice_path, s, allow)
+        out["mutations"] = prove_mutations(rid, slice_path, s, allow, tolerance)
         if out["mutations"].startswith("UNPROVEN"):
             out["rc"] = 1
     return out
 
 
-def prove_mutations(rid, slice_path, s, allow):
+def prove_mutations(rid, slice_path, s, allow, tolerance="1"):
     """Each mutation must turn the row or the universal set red."""
     proven, unproven = 0, []
     for mut in s.get("mutations", []):
@@ -219,7 +220,7 @@ def prove_mutations(rid, slice_path, s, allow):
             continue
         red = row_eval(rid, dst).returncode != 0
         if not red:
-            red = sh([PY, EVAL, dst, "--universal", "--allow", allow]).returncode != 0
+            red = sh([PY, EVAL, dst, "--universal", "--allow", allow, "--injection-tolerance", tolerance]).returncode != 0
         if red:
             proven += 1
         else:

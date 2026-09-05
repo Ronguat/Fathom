@@ -4,7 +4,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "FMGameMode.generated.h"
 
-/** The harness game mode: the player controller and pawn classes, nothing else. */
+/** The harness game mode: the player controller, pawn and game state classes, nothing else. */
 UCLASS()
 class FATHOM_API AFMGameMode : public AGameModeBase
 {

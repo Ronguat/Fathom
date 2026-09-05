@@ -1,0 +1,43 @@
+#pragma once
+// The ocean function on the GPU: a Gerstner sum in centimetres and seconds.
+// Source/Fathom/Ocean/FMOcean.cpp carries the same formulation; the OCEAN trace line asserts they agree.
+
+#define FM_PI 3.14159265358979f
+#define FM_GRAVITY 980.0f
+#define FM_PROBE_OFFSET 5000.0f
+
+// W: wavelength, amplitude at sea state 1, steepness at sea state 1, direction offset from the wind in degrees.
+float3 FMOceanWave(float2 P, float Time, float SeaState, float2 Wind, float4 W)
+{
+	float Amplitude = W.y * SeaState;
+	float Steepness = W.z * SeaState;
+	float Angle = W.w * (FM_PI / 180.0f);
+	float SinA = sin(Angle);
+	float CosA = cos(Angle);
+	float2 D = float2(Wind.x * CosA - Wind.y * SinA, Wind.x * SinA + Wind.y * CosA);
+	float K = 2.0f * FM_PI / W.x;
+	float Omega = sqrt(FM_GRAVITY * K);
+	float Phase = (P.x * D.x + P.y * D.y) * K - Omega * Time;
+	float Turns = Phase / (2.0f * FM_PI);
+	Phase = (Turns - floor(Turns)) * (2.0f * FM_PI);
+	float S = sin(Phase);
+	float C = cos(Phase);
+	return float3(-Steepness * Amplitude * D.x * S, -Steepness * Amplitude * D.y * S, Amplitude * C);
+}
+
+// G: sea state, wind x, wind y, time in seconds.
+float3 FMOceanDisplace(float2 P, float4 G, float4 W0, float4 W1, float4 W2, float4 W3)
+{
+	float3 Out = FMOceanWave(P, G.w, G.x, G.yz, W0);
+	Out += FMOceanWave(P, G.w, G.x, G.yz, W1);
+	Out += FMOceanWave(P, G.w, G.x, G.yz, W2);
+	Out += FMOceanWave(P, G.w, G.x, G.yz, W3);
+	return Out;
+}
+
+// Probe: origin x, origin y, extent, unused. A pixel's UV names its sample point; the offset keeps every channel positive.
+float3 FMOceanProbe(float2 UV, float4 G, float4 W0, float4 W1, float4 W2, float4 W3, float4 Probe)
+{
+	float2 P = Probe.xy + UV * Probe.z;
+	return FMOceanDisplace(P, G, W0, W1, W2, W3) + FM_PROBE_OFFSET;
+}
