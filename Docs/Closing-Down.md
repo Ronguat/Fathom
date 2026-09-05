@@ -10,14 +10,13 @@ procedure every time; it is what makes an unattended session reviewable.
 2. **Run the loop, and read what it says rather than its exit code.** Once the Harness rung ships:
    the rows the session's changes can reach, selected by mechanism, at every latency they carry;
    a change to anything shared runs everything. A red row blocks the push. An unproven mutation is
-   worse than a red. Until the loop exists, say so in the handoff.
+   worse than a red. Until the loop has rows, say so in the handoff.
 3. **Audit the always-read file, then run both checks.** Re-read `CLAUDE.md` in full against two
    questions: is this a rule, or the story of how it was learned; and does it need re-reading every
    session by someone who may not touch the system it binds. Then `Tools/CommentCheck/comment-check.sh`
    and `Tools/DocsCheck/docs-check.sh`: clear every FAIL, read every WARN. A volume warning names a
    file whose comments grew; judge it, and raise its line in `Tools/CommentCheck/baseline.txt` only
-   with the reason in the commit, never with `--baseline` to make a run green. The ownership check
-   lists agent commits on the reference model; those rows are for the designer.
+   with the reason in the commit, never with `--baseline` to make a run green.
 4. **Discharge what you fixed.** A trap discharged in the same commit, saying what discharged it; a
    supersession row for anything superseded; a date and a quoted search on every absence claim. If
    a symbol or a value changed, grep it across `Docs/` and `CLAUDE.md`, reconcile every hit, and

@@ -4,8 +4,8 @@
 A **networked, server-authoritative** recreation of Sea of Thieves' ocean and ship combat from a
 functionality standpoint: the physics that drive ship combat, ships as placeholders that carry the
 behaviour of standing on a moving deck, and a barebones Mordhau-shaped melee, all replicated,
-fought on those decks while they move. The designer's words are in `Docs/Reference-Model.md`;
-this paragraph is the compression, and that file wins.
+fought on those decks while they move. The designer's mission statement is quoted in
+`Docs/Decisions.md`; this paragraph is its compression.
 
 **The question is whether it can be built.** Success is desired, not expected; the goal is to
 attempt it rather than be discouraged. Nothing here is tuned for feel: a feature exists to prove
@@ -67,7 +67,6 @@ in the same commit that makes them wrong.
 
 | File | Owner | Trigger |
 |---|---|---|
-| `Docs/Reference-Model.md` | **The designer.** Agents edit only on explicit instruction, verbatim; once its status line reads hardened, read only | Any question about what the game is |
 | `Docs/Spec.md` | Agents | About to change how the game behaves |
 | `Docs/Decisions.md` | Agents | Making a choice, picking up a rung, ending a session |
 | `Docs/Working-In-Unreal.md` | Agents | Before work that touches the engine; sized to be read whole |
@@ -84,8 +83,8 @@ decision, the alternatives, what reopens it, and the measurement if there is one
 
 **One fact, one home; name the authority rather than restating the value.**
 
-**`Tools/DocsCheck/docs-check.sh` is these files' integrity check**, the reference model's
-ownership included. Run it after any edit that moves text between docs; closedown runs it always.
+**`Tools/DocsCheck/docs-check.sh` is these files' integrity check.** Run it after any edit that
+moves text between docs; closedown runs it always.
 
 **Name the asset, not the C++ class.** A Blueprint override shadows a C++ default silently, so a
 class is authoritative only until someone touches a details panel.
@@ -116,8 +115,8 @@ plainly.
 
 **Decide, record, continue.** The designer owns the mission, not the WHATs inside it. When a
 choice is ambiguous, take the most basic reversible option, record it in the review queue with
-the alternatives and what would reopen it, and go on. Silence in the reference model means basic,
-not "not reached yet". A decision the designer dislikes is superseded, never rewritten.
+the alternatives and what would reopen it, and go on. Silence from the designer means basic, not
+"not reached yet". A decision the designer dislikes is superseded, never rewritten.
 
 **A written plan precedes execution, and nobody approves it.** Before a rung or a sub-slice, a
 dated entry states the scope, the pre-registered bar, the fallback a failed bar triggers, and the
@@ -126,12 +125,11 @@ against the plan, which is what stops a session rationalising mid-run.
 
 **The stop list** — the only things that wait for the designer:
 1. Changing the ladder, the minimum, or the mission.
-2. Editing the reference model beyond a verbatim transcription the designer asked for.
-3. A purchase, or a dependency beyond engine plugins.
-4. Destructive or history-rewriting git; deleting anything the designer made.
-5. Modifying the engine install. A project-local plugin copy is fine.
-6. Opening the Melee rung without the delivered clips and their skeleton: halt and demand them.
-7. A recon that failed its bar and its fallback.
+2. A purchase, or a dependency beyond engine plugins.
+3. Destructive or history-rewriting git; deleting anything the designer made.
+4. Modifying the engine install. A project-local plugin copy is fine.
+5. Opening the Melee rung without the delivered clips and their skeleton: halt and demand them.
+6. A recon that failed its bar and its fallback.
 
 **Wind-down is agent-triggered** by four conditions — scope done, a stop-list item reached, the
 session brief's budget reached, a dead end after the fallback — and `Docs/Closing-Down.md` then

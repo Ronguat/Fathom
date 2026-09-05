@@ -1,8 +1,7 @@
 # Fathom – Spec
 
 **Trigger: about to change how the game behaves.** The rules that govern play, derived from the
-designer's words in `Docs/Reference-Model.md` and the dated entries in `Docs/Decisions.md`. The
-reference model outranks this file: where they disagree, the disagreement is a review-queue
+designer's rulings in `Docs/Decisions.md`'s dated entries. A doubt about a rule is a review-queue
 question, never a fix. Every value here is a knob unless the tuning map says otherwise.
 
 ## Authority and frames

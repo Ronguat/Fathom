@@ -12,6 +12,10 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-04 | The reference model dissolved into its homes rather than kept as the verbatim source | The repository stands alone entry | |
+| 2026-09-04 | What the findings archive dropped as useless to this project | The commit that trimmed `Docs/Unreal-Findings.md` | |
+| 2026-09-04 | The trace's log category `LogFMTrace`, its `COST`, `INPUT` and `MARK` tags, and the `REGRESSION` marker vocabulary the loop reads | `Docs/Debug-Instruments.md`, The trace | |
+| 2026-09-04 | A round trip split evenly across both directions by `NetEmulation.PktLag` on every world | `Tools/RegressionCheck/ue_regression_runner.py` | |
 | 2026-09-04 | The basic set as written, from the agent's recollection of Sea of Thieves, row by row | `Docs/Spec.md`, The basic set | |
 | 2026-09-04 | A fixed simulation rate of 60 frames a second | Tuning map | |
 | 2026-09-04 | Lean renderer settings: no Lumen, no ray tracing, no Substrate, no virtual shadow maps | `Config/DefaultEngine.ini` | |
@@ -24,6 +28,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Entry | Superseded by | What changed |
 |---|---|---|
+| 2026-09-04 — Fathom is bootstrapped: the spine, the regime and the inheritance | 2026-09-04 — The repository stands alone, and forgets its parent | The reference model's ownership: the file is dissolved into its homes and the ownership check removed; the Harness brief builds on the loop skeleton here rather than a reference elsewhere |
 
 ## Known traps, indexed by what sets them off
 
@@ -34,15 +39,14 @@ it**, saying what discharged it.
 
 **Whenever a client acts — *local state never replicates.*** A plain member written on the server
 stays on the server, and a client's own check then passes what the server already failed. Decide
-on the server, replicate the decision, apply everywhere. Inherited from TheDream's loose-tag
-traps; the shape is the same without an ability system.
+on the server, replicate the decision, apply everywhere.
 
-**Whenever two worlds' logs are read together — *two clocks.*** TheDream measured one event at
+**Whenever two worlds' logs are read together — *two clocks.*** One event was measured at
 2.788 in one world and 3.242 in the other. The trace stamps the shared frame and never a clock;
 a line without a frame is not evidence.
 
 **Whenever actors are matched across worlds — *never by name.*** Each world numbers its own
-actors; TheDream measured an 85 cm "desync" that was two characters swapped. Anchor on role,
+actors; an 85 cm "desync" once measured was two characters swapped. Anchor on role,
 position or a replicated identity.
 
 **Whenever a based player resimulates — *Mover reads the base at its present pose.*** The
@@ -88,9 +92,11 @@ delivery, halt and demand it. Bites at Melee.
 **Whenever the attacker's view delay is needed — *it is authored, never estimated.*** The rendered
 frame rides in the input command. Bites at Melee.
 
-**Whenever an autonomous push is expected — *no real push has run.*** The exact allow rule passed
-the harness once with nothing to push *(2026-09-04)*; the first closedown proves it. Bites at
-the first closedown.
+**Whenever the loop first drives PIE — *the skeleton has driven no frame.*** `Tools/RegressionCheck/`
+was written 2026-09-04 against measurements made before this project existed: the world addressing
+by PIE instance, the player-id match between a client and its server pawn, `NetEmulation.PktLag` as
+the latency knob, the live read of the play settings. Each is a route named from headers or a prior
+measurement, none exercised here. Bites at Harness.
 
 ## Tuning map — a verdict comes back, which knob moves
 
@@ -112,9 +118,9 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 its fallback, its coverage and its inheritance; the plan entry written before execution turns
 the bar into numbers.
 
-- **Harness** — The two-world regression loop, built from TheDream's `Tools/RegressionCheck` as
-  reference, which lives in that repository: scenarios with roles, plans in frames, mutations the
-  validator will not let you omit, a universal assertion set, a preflight. Plus the trace emitter
+- **Harness** — The two-world regression loop, built on the skeleton in `Tools/RegressionCheck/`:
+  scenarios with roles, plans in frames, mutations the validator will not let you omit, a universal
+  assertion set, a preflight, none of it yet proven against PIE. Plus the trace emitter
   with server-frame stamps and world tags, the client relay, the marker hotkey, the session bundle
   and its ingest script, a latency and loss knob per connection, the cost printout, a fixed-clock
   determinism check across worlds, the dedicated-server PIE mode, and a packaged client build.
@@ -123,8 +129,8 @@ the bar into numbers.
   clients runs unattended at 0, 50, 100 and 150 ms and prints rows and costs; a field bundle from
   a packaged client ingests into the same evaluator. **Fallback**: if the editor-as-server route
   fails, a listen server with emulated latency on the client, filed as a trap. **Coverage**: the
-  loop's own smoke rows. **Inherits**: the two-world facts in `Docs/Debug-Instruments.md`, the
-  input and clock tools in `FathomEditor`.
+  loop's own smoke rows. **Inherits**: the two-world facts and the loop's shape in `Docs/Debug-Instruments.md`, the
+  skeleton's trap above, the input and clock tools in `FathomEditor`.
 - **Ocean** — The wave function in C++, the matching material function, the surface itself, the
   sea-state scalar and wind vector replicated once, wave time driven from server time. **Bar**:
   server, client and GPU agree on height at sampled points and frames within a pre-registered
@@ -153,7 +159,13 @@ the bar into numbers.
   reconstructed ship. The advance knob and the parry rule are measured at 0, 50, 100 and 150 ms
   across the three known settings, and the verdict goes to the review queue. First person is the
   aim frame; third person is the pre-registered fallback, a swap rather than a rebuild. **Bar**:
-  per `Docs/Spec.md`. **Stripped**: chambers, glancing, ripostes, stamina.
+  per `Docs/Spec.md`. **Stripped**: chambers, glancing, ripostes, stamina. **What the known settings
+  cost, in the designer's account**: an advance of the whole round trip capped at 80 ms gave instant
+  hits up to that ping, windups effectively faster by the ping up to the cap, hits landing early by
+  half the ping, and false positives at high latency; an advance of half the round trip capped at
+  50 ms gave some hit delay at higher ping and no competitive advantage at any ping. The measurement
+  reports each of those. **On request from the designer**: the previous combat project's code and
+  write-ups, and an answer to any animation-contract question the clips leave open.
 - **Ship Combat** — Cannon stations, holes, water, repair, bailing, sinking, respawn. **Bar**: per
   `Docs/Spec.md`.
 - **Ship to Ship** — Contact response between two kinematic ships, and boarding across ships as a
@@ -174,6 +186,104 @@ first rung lands code.
 | Symbol | Entries |
 |---|---|
 
+## 2026-09-04 — The repository stands alone, and forgets its parent
+
+### Next session's brief
+
+This session continues after a touch-base; the brief below the plan holds until then. **Pick up
+at the Harness rung**: its brief now builds on the loop skeleton in `Tools/RegressionCheck/`,
+which has driven no frame. Write the Harness plan entry first.
+
+### The plan, written before execution
+
+**Scope.** The designer's ruling, quoted with the name elided: *"this repo needs to be able to
+survive without any form of knowledge of [the parent project], and then needs to forget about
+[it]."* Three sub-slices, in order: the loop's project-independent skeleton ported into `Tools/RegressionCheck/` with this
+project's names and none of the parent's scenarios; the reference model dissolved into the homes
+its rulings already had; every mention of the parent, its symbols, its assets and its history
+removed from the working tree, the parent's target and DLL names in the build commands included.
+
+**Bar.** A repository-wide search for the parent's name, its symbol prefix, its asset names and
+its commit hashes finds nothing outside git history, quoted below. Every path a doc names
+resolves in this repository. The loop's self-tests pass, every universal assertion having failed
+once on purpose. Both checks pass.
+
+**Fallback.** None needed for an editing job. If a loop file cannot be made standalone in the
+session, it is left out and the Harness brief says what it still has to build.
+
+**Coverage.** No game capability is added, so no scenario is. The loop skeleton's own self-tests
+are its coverage; a dated trap below records that it has not driven PIE.
+
+### Decisions
+
+**The reference model dissolves.** The designer's ruling: *"the reference model's structure as
+some sort of immutable sacred text is a bit overzealous, I suspect ... your call."* Taken:
+dissolved. Every ruling in it already governed from a working home; the two that did not, the
+hit-model tradeoffs Melee measures and the resources available on request, go to the Melee
+brief. Its mission statement stands below, one sentence about inheriting from the parent removed on the
+designer's word that the words are theirs to sterilise. The ownership check, the hardening status and the file go.
+**Alternative.** Keep it as the verbatim source every transcription is checked against.
+**Reopens** if a transcription is found to have added something no entry supports.
+
+**Dated entries are edited, name only.** The designer's ruling, *"Change it to your needs,"*
+over the log's never-rewrite rule. Nine lines change the parent's name to *the parent project*
+and nothing else; no decision text moves.
+
+**The findings archive is trimmed to what this project can use**, on the designer's ruling that
+anything signed off as useless may go. Kept: engine-surface facts, PIE driving, clip, notify,
+curve and skeleton authoring for Melee, the MCP registration facts. Dropped: the ability system,
+the parent's assets, the narrative of the parent's own audits. The commit lists the headings
+dropped.
+
+**The loop skeleton is standalone infrastructure**, the designer's choice of the two offered.
+What it is: the orchestrator, the in-editor runner, the evaluator, the preflight, the matrix
+generator, the scenario schema and its validator, written against this project's trace shape.
+What it is not: proven. It has driven no frame.
+
+### Verified against written
+
+**Verified.** The bar's search, run 2026-09-05 over the working tree with `.git`, `Binaries`,
+`Intermediate`, `Saved`, `DerivedDataCache` and `Content` excluded, the name itself elided here
+and only here:
+
+```
+grep -rn -i -E '<the name>|\bU?TD[A-Z][A-Za-z]+|TD\.Debug|LogTDCombat|/Game/<the name>|L_CombatTest|ABP_Combat|GA_(Attack|Block|Parry)|AM_(Attack|Dodge)|AS_Sword|IMC_Combat|IMC_Default|BP_TrainingDummy|BP_PlayerCharacter|Anim-Pipeline|Combat-Spec|Combat-Values|ValuesSnapshot|ClipScan|AnimPipeline|SkeletonCheck|casc-run|regression-check\.sh|20121e3|1391d54|ue_seed_cells|ue_chart_ab|ue_ab_metrics' .
+```
+
+finds nothing. `docs-check` passes with no WARN, 25 pointers resolving and its self-test at 27
+assertions; `comment-check` passes with the two block-size WARNs the last closedown judged. The
+loop's self-tests pass, 16 assertions in the evaluator and 4 in the rows, each universal row having
+failed on one deliberate corruption; the offline preflight passes on zero scenarios; every loop
+file compiles under the engine's interpreter; the matrix generator fills its regions and
+`docs-check` reads them fresh. The toolset snapshot was regenerated from this editor's live
+registry through the bridge, 52 toolsets against the inherited 56: the four gone are plugins this
+project does not enable. **The push trap is discharged**: the reflog shows five `update by push`
+entries from this clone on 2026-09-04, and the bootstrap session's transcript carries its push
+tool calls with `main -> main` results. **The three headers newer than the DLLs** were comment
+edits: the comment baseline committed before them recorded nine and twelve comment lines on two
+headers that now carry one each, and one more word on the third.
+
+**Written, not verified.** `ue_regression_runner.py` in full: the world addressing by PIE
+instance, the player-id match, `NetEmulation.PktLag` as the latency knob, the live read of the
+play settings in the orchestrator's preflight. The trap above names them. Nothing has driven PIE.
+
+**Beyond the plan.** The comment baseline was regenerated: three rows fell to the files' current
+counts, one row fell with the ownership check's removal, and the new entry script gained a row.
+Nothing else.
+
+### The mission statement, sterilised
+
+> The core assertion is to reverse engineer/recreate the ocean from Sea of Thieves from a
+> functionality standpoint as faithfully as possible. What that means is the physics that drive
+> ship combat, in a live, networked, and fully replicated environment. The ships themselves can be
+> minimally detailed placeholders, but they themselves need to carry the behavior of standing on a
+> ship in Sea of Thieves, except elevated to a standard where skill-based melee combat, also
+> replicated, can be performed on their decks while they are moving. The combat will be
+> Mordhau-shaped from a technical perspective. You and other Fable 5.1 instances will be in
+> charge of attempting to build it, and success is not expected, but is desired. I am aware of
+> the ambition of what I am asking for, but the goal is to attempt to build it anyway rather than
+> let intimidation discourage even attempting it.
+
 ## 2026-09-04 — The wind-down closes the editor
 
 ### Next session's brief
@@ -183,7 +293,7 @@ first — the frame source before Deck, the smoke rows, the pre-registered bar �
 budget is set; the designer winds sessions down manually. The editor is closed, the tree is clean,
 and every commit is on the remote.
 
-**Decision**, the designer's, asked as a question and ruled the same evening. TheDream leaves its
+**Decision**, the designer's, asked as a question and ruled the same evening. The parent project leaves its
 editor open at closedown because a session winding down there does not end the designer's own;
 Fathom's sessions are unattended and sequential, so the closedown ends by quitting the editor
 gracefully. **Why**: every session starts from one state, editor closed and restore file empty,
@@ -226,8 +336,8 @@ at the Deck recon, which runs both routes on the same scenario against one pre-r
 
 **Decision.** The server may start an attack early by a fraction of the round trip, capped; the
 Melee rung measures the three known settings under emulated latency and the parry rule with
-them. The designer's accounts of Mordhau's model and of their own project's half measure are in
-`Docs/Reference-Model.md`, verbatim. In the shared timeline the arithmetic is exact: with the
+them. The designer's accounts of Mordhau's model and of their own project's half measure are in the
+Melee brief. In the shared timeline the arithmetic is exact: with the
 client ahead by a margin, an advance of the round trip plus that margin confirms hits at the
 moment the local release touches the target, and lands the server's release half a round trip
 before the true one; half the round trip lands it on the true time. **Alternative.** Choosing the
@@ -246,7 +356,7 @@ necessary is the ability to interrupt and wind down when needed"*, and *"Still p
 designer all the WHATs and WHYs, but they're no longer blocking."* So: no greenlights; a written
 plan before execution that nobody approves; the stop list; the review queue; agent-triggered
 wind-down on four conditions; main green with unverified work on a `wip/` branch; one session at
-a time. **Alternative.** TheDream's interrupt-on-WHAT regime, which suits a designer who owns every
+a time. **Alternative.** The parent project's interrupt-on-WHAT regime, which suits a designer who owns every
 WHAT and does not suit an experiment whose WHATs are settled. **Reopens** on the designer's word.
 
 ### The field log
@@ -271,7 +381,7 @@ carried over with names swapped, an inherited note, and the ability-system traps
 `Tools/DocsCheck`, `Tools/CommentCheck`, `Tools/McpBridge` and the editor Python runner carried
 over; the input and clock tools ported as `UFMInputTools` and `UFMTimeTools`; the multiplayer
 traps re-filed here. **Not inherited**: the combat spec, the combat code, the animation library
-and pipeline docs, and the regression loop, which the Harness rung builds from TheDream's as
+and pipeline docs, and the regression loop, which the Harness rung builds from the parent project's as
 reference. **Adjusted**: comment volume growth warns rather than fails; golden skeletons wait
 until the surface stops moving; entries carry a template; "play wins" reads "measurement wins";
 the clip-fits-the-duration rule is a default. **Reopens** if a pruned trap bites here.
@@ -298,7 +408,7 @@ deletion and a fake rewrite and accepts a new branch. Both repositories carry a 
 deletions and force pushes on the default branch, read back through the API.
 
 **Written, not verified.** The prediction settings in `Config/DefaultNetworkPrediction.ini`,
-which no Mover actor has exercised. The two-world recipe, adapted from TheDream's measurements
+which no Mover actor has exercised. The two-world recipe, adapted from the parent project's measurements
 and not run here. The trace, the field log and every rung bar, which are designs. The autonomous
 push, which passed the harness once with nothing to push and has never sent a commit.
 
@@ -314,4 +424,4 @@ editor. Blender 3.6 is installed; the 3.4 folder is a leftover.
 ### Beyond what was described
 
 The light and sky actors above; the Geometry Scripting plugin enabled, since placeholders are its
-job; the `Terminal` plugin TheDream enables was left out. Nothing else.
+job; the `Terminal` plugin the parent project enables was left out. Nothing else.

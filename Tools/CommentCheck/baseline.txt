@@ -9,12 +9,13 @@
 #   ./Tools/CommentCheck/comment-check.sh --baseline
 #
 # file<TAB>comment lines<TAB>comment words
-Source/Fathom/Core/FMGameMode.h	9	25
-Source/Fathom/Core/FMPlayerController.h	12	37
+Source/Fathom/Core/FMGameMode.h	1	13
+Source/Fathom/Core/FMPlayerController.h	1	15
 Source/Fathom/Fathom.h	2	9
 Source/FathomEditor/Private/FMInputTools.cpp	4	29
-Source/FathomEditor/Public/FMInputTools.h	23	217
+Source/FathomEditor/Public/FMInputTools.h	23	218
 Source/FathomEditor/Public/FMTimeTools.h	9	65
-Tools/DocsCheck/docs-check.sh	127	1316
+Tools/DocsCheck/docs-check.sh	118	1198
 Tools/GitHooks/install-hooks.sh	5	32
 Tools/McpBridge/ue-mcp.sh	12	88
+Tools/RegressionCheck/regression-run.sh	8	67

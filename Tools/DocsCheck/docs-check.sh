@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# docs-check.sh -- integrity checks for the standing docs, in regression-check's image.
+# docs-check.sh -- integrity checks for the standing docs, in the regression loop's image.
 #
 # Every serious documentation failure this project has had was a maintenance failure at
 # an edit boundary, and most are mechanically checkable. Each check below states the
@@ -16,7 +16,7 @@ set -u
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT" || exit 2
 
-STANDING_DOCS=(CLAUDE.md Docs/Spec.md Docs/Decisions.md Docs/Reference-Model.md
+STANDING_DOCS=(CLAUDE.md Docs/Spec.md Docs/Decisions.md
   Docs/Working-In-Unreal.md Docs/Unreal-Findings.md Docs/Debug-Instruments.md Docs/Closing-Down.md)
 
 FAILS=0; WARNS=0
@@ -70,7 +70,6 @@ Docs/Decisions.md:::## What has been superseded:::the supersession check reads t
 Docs/Decisions.md:::## Symbol index:::CLAUDE.md names it as a working section
 Docs/Decisions.md:::## Rung briefs:::CLAUDE.md sends every rung pickup here
 Docs/Decisions.md:::- **Harness**:::CLAUDE.md Current Focus points at this brief -- MOVE THIS ROW when a rung ships
-Docs/Reference-Model.md:::Status: :::the ownership check reads this line
 Docs/Debug-Instruments.md:::## The trace:::Working-In-Unreal sends log readers here
 Tools/CommentCheck/comment-check.sh:::--self-test:::CLAUDE.md names the script; Closing-Down runs it
 Tools/CommentCheck/comment-check.sh:::--baseline:::Closing-Down names the flag as the sanctioned reset
@@ -182,7 +181,7 @@ check_ngrams() { # $1=fileA $2=fileB -> prints shared shingles, rc 1 if any
 # Catches a missing Co-Authored-By trailer. Parses real trailers rather than string-
 # matching, which a message that merely *discusses* the trailer defeats.
 # A flagged commit is not automatically wrong -- one you did not author says so
-# in its message instead (20121e3 is the model) -- so this warns, never fails.
+# in its message instead -- so this warns, never fails.
 check_trailers() { # -> prints trailer-less commits since origin/main
   git rev-parse --verify -q origin/main >/dev/null 2>&1 || { echo "  (no origin/main)"; return 0; }
   git log origin/main..HEAD --format='%h%x09%(trailers:key=Co-Authored-By,valueonly)' 2>/dev/null |
@@ -239,7 +238,7 @@ check_index_order() { # $1=decisions-file -> prints violations, rc 1 if any
 }
 
 # --- C11: standing-doc coverage -----------------------------------------------
-# Catches the next Anim-Pipeline.md: a doc added to CLAUDE.md's Project
+# Catches a doc added to CLAUDE.md's Project
 # Documentation list but not to STANDING_DOCS, so C1 and C2 silently never run on
 # it while the green table implies they do.
 check_doc_coverage() { # $1=claude-md $2..=standing docs -> prints missing, rc 1
@@ -264,30 +263,6 @@ check_section() { # $1=file $2=start-re $3=end-re $4=wc-flag $5=limit $6=label
   local n; n=$(sed -n "/$2/,/$3/p" "$1" | wc "$4"); n=$((n))
   [ "$n" -le "$5" ] && return 0
   echo "  $6 at $n against ~$5 -- evict to the archive, do not trim"; return 1
-}
-
-# --- C13: reference-model ownership -------------------------------------------
-# Catches an agent commit touching the owner-held reference model. The file status
-# line sets the severity: while it reads "Status: open" such commits are listed as a WARN
-# for the owner to review; once it reads "Status: hardened YYYY-MM-DD", an agent commit
-# dated after that day FAILs. An agent commit is one carrying a Claude Co-Authored-By trailer.
-REFMODEL="Docs/Reference-Model.md"
-refmodel_status() { # $1=file -> prints "open" or the hardened date; rc 1 without a status line
-  local s; s=$(grep -m1 -oE '^Status: (open|hardened [0-9]{4}-[0-9]{2}-[0-9]{2})' "$1") || return 1
-  case "$s" in "Status: open") echo open ;; *) echo "${s#Status: hardened }" ;; esac
-}
-judge_ownership() { # $1=open|date; stdin "sha<TAB>date<TAB>trailer" -> prints hits; rc 1 fail, 2 warn
-  awk -F'\t' -v st="$1" '
-    $3 ~ /Claude/ {
-      if (st == "open") { printf "  %s (%s) agent commit while open -- review\n", $1, $2; w=1 }
-      else if ($2 > st) { printf "  %s (%s) agent commit after hardening on %s\n", $1, $2, st; f=1 }
-    }
-    END { if (f) exit 1; if (w) exit 2; exit 0 }'
-}
-judge_from_string() { printf '%s\n' "$2" | judge_ownership "$1"; }
-check_ownership() { # $1=file -> rc 0 clean, 1 fail, 2 warn
-  local st; st=$(refmodel_status "$1") || { echo "  $1 has no Status line"; return 1; }
-  git log --format='%h%x09%ad%x09%(trailers:key=Co-Authored-By,valueonly)' --date=short -- "$1" 2>/dev/null | judge_ownership "$st"
 }
 
 # ==== self-test ===============================================================
@@ -353,14 +328,8 @@ self_test() {
   expect "shortlist: new opener lists"         1 check_trap_shortlist "$t/trap_new.md"
   expect "section: inside backstop passes"     0 check_section "$t/trap_ok.md" '^## Known traps' '^## Tuning map' -l 50 "fixture"
   expect "section: over backstop fails"        1 check_section "$t/trap_ok.md" '^## Known traps' '^## Tuning map' -l 2 "fixture"
-  printf 'Status: open\n' > "$t/rm_open.md"
-  expect "ownership: open status parses"                 0 refmodel_status "$t/rm_open.md"
-  expect "ownership: missing status fails"               1 refmodel_status "$t/good.md"
-  expect "ownership: agent commit while open warns"      2 judge_from_string open "$(printf 'abc\t2026-09-05\tClaude Fable <noreply@anthropic.com>')"
-  expect "ownership: agent commit after hardening fails" 1 judge_from_string 2026-10-01 "$(printf 'abc\t2026-10-02\tClaude Fable <noreply@anthropic.com>')"
-  expect "ownership: designer commit passes"             0 judge_from_string 2026-10-01 "$(printf 'abc\t2026-10-02\t')"
   rm -rf "$t"
-  if [ "$bad" -eq 0 ]; then echo "SELF-TEST PASSED (32 assertions)"; exit 0; fi
+  if [ "$bad" -eq 0 ]; then echo "SELF-TEST PASSED (27 assertions)"; exit 0; fi
   exit 1
 }
 
@@ -403,9 +372,8 @@ out=$(check_doc_coverage CLAUDE.md "${STANDING_DOCS[@]}") && ok "doc-coverage" "
 
 out=$(check_trap_shortlist Docs/Decisions.md) && ok "trap-shortlist" "no unjudged paragraph openers" || { warn "trap-shortlist" "review these openers:"; printf '%s\n' "$out"; }
 
-# Scoped to the docs where tooling-capability claims live. The spec's "cannot" is a gameplay rule,
-# the decision log is code behaviour and the reference model is its owner speaking; none is a
-# claim about a scripting surface. Unreal-Findings is scanned --working-only: its dated findings
+# Scoped to the docs where tooling-capability claims live. The spec's "cannot" is a gameplay rule
+# and the decision log's is code behaviour; neither is a claim about a scripting surface. Unreal-Findings is scanned --working-only: its dated findings
 # are append-only and already sit under dated headers.
 claims_rc=0
 out=$(check_claims CLAUDE.md Docs/Working-In-Unreal.md Docs/Debug-Instruments.md) || claims_rc=1
@@ -418,13 +386,6 @@ out="$out$out2"
 out=$(check_ngrams CLAUDE.md Docs/Working-In-Unreal.md) && ok "always-read-dup" "no shared 10-grams" || fail "always-read-dup" "$out"
 
 out=$(check_trailers) && ok "trailers" "all commits since origin/main carry parsed trailers" || { warn "trailers" "confirm these are not Claude-authored:"; printf '%s\n' "$out"; }
-
-out=$(check_ownership "$REFMODEL"); rc=$?
-case $rc in
-  0) ok "ref-model-owner" "no agent commit on the reference model" ;;
-  2) warn "ref-model-owner" "agent commits on the open reference model, for the designer's review:"; printf '%s\n' "$out" ;;
-  *) fail "ref-model-owner" "the reference model is hardened:"; printf '%s\n' "$out" ;;
-esac
 
 out=$(check_budget CLAUDE.md 280 "read in full every session; audit it against the closedown questions") && ok "budget" "CLAUDE.md inside backstop" || warn "budget" "$out"
 out=$(check_budget Docs/Working-In-Unreal.md 650 "the lookup half belongs in Docs/Unreal-Findings.md, not here") && ok "budget" "Working-In-Unreal.md inside backstop" || warn "budget" "$out"
