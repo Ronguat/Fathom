@@ -5,11 +5,13 @@
 #include "Deck/FMPlayerPawn.h"
 #include "EngineUtils.h"
 #include "GeometryScript/MeshPrimitiveFunctions.h"
+#include "Materials/MaterialInterface.h"
 #include "Net/FMTrace.h"
 #include "Net/UnrealNetwork.h"
 #include "Ocean/FMOcean.h"
 #include "Ocean/FMOceanSubsystem.h"
 #include "UDynamicMesh.h"
+#include "UObject/ConstructorHelpers.h"
 
 namespace
 {
@@ -48,6 +50,11 @@ AFMShip::AFMShip()
 	Mesh->SetupAttachment(Hull);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Mesh->SetCanEverAffectNavigation(false);
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> HullMaterial(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+	if (HullMaterial.Succeeded())
+	{
+		Mesh->SetMaterial(0, HullMaterial.Object);
+	}
 }
 
 AFMShip* AFMShip::Find(const UWorld* World)

@@ -50,6 +50,12 @@ turns a server bundle into a slice, runs the universal set and the cost readout 
 the marks. **A field session is `Tools/RegressionCheck/field-session.sh`**, the interactive editor
 closed: the editor with `-server` on the harness map, the packaged client from
 `Saved/Packaged/Windows/` joining as `C1`, the hotkey pressed in its window, then the ingest.
+**A hands-on session is `Tools/Editor/handson.py`**, driven through `Tools/Editor/run-in-editor.py
+-c` with the editor open: two-client PIE at an emulated round trip, both pawns on the deck, the
+ship driven on request, per-frame tapes of the rendered ship, pawn and camera transforms on every
+world, and consecutive rendered frames through the `Shot` command into `Saved/Screenshots/`. A
+view mode or show flag reaches the play viewport only through the controller's console. The loop
+reads none of this; what is rendered is asserted by nothing.
 
 **The engine's replay system is the upgrade to recon**, recording the server for scrubbing in the
 editor by frame. Its compatibility with the prediction framework is unmeasured, so the text trace

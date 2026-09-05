@@ -12,6 +12,8 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | The ship's mesh carries the engine's basic shape material, the pawn's, set in the constructor | Review entry, Decisions | |
+| 2026-09-05 | The hands-on driver kept as `Tools/Editor/handson.py`; the play windows enlarged in the user ini for a human and restored after | Review entry, Decisions | |
 | 2026-09-05 | The Character Movement recon not run, its result unable to change the route once Mover met the bar unpatched | Deck entry, Decisions | |
 | 2026-09-05 | A teleport lands in Falling; settle windows after ship inputs, input edges and the swim's start, transients reported | Deck entry, Decisions | |
 | 2026-09-05 | The stations' places and radii, the ladder's deck point, the swim mode's float height, spring and speeds | `Config/DefaultGame.ini`, `UFMSwimMode` | |
@@ -58,6 +60,11 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 that makes it bite and re-read when that rung starts. These are not design questions. Nothing
 here needs play to settle; they need checking. **Discharge a trap in the same commit that fixes
 it**, saying what discharged it.
+
+**Whenever a change touches what is rendered — *the loop cannot see it.*** The rows read the
+trace and never a frame; the ship flickered against the sky through every green Deck row until
+the designer looked *(2026-09-05)*. Bites at every rung. Discharged by a row that reads a
+capture of the play viewport, or by a human looking before a rung ships.
 
 **Whenever a client acts — *local state never replicates.*** A plain member written on the server
 stays on the server, and a client's own check then passes what the server already failed. Decide
@@ -128,6 +135,7 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | Parry fairness | The parry rule, measured together with the advance | The window length |
 | The net update rate | `NetServerMaxTickRate`, at the engine default | The simulation rate |
 | Inbound bytes per player | The client's frame rate, `t.MaxFPS`; a packaged client ran uncapped at 30 000 B/s against 10 000 capped at 60 *(2026-09-05)* | The simulation rate |
+| The injection pairing's spread | The render load: the loop runs at half resolution, and the demo's full-resolution walk row read a lead of 13 then 15 frames, spread 2 against the tolerance of 1, where the same row at half resolution reads within 1 *(2026-09-05)* | The tolerance |
 | The sea | The sea-state scalar | Any single wave component |
 | A component's shape | Its row in `Config/DefaultGame.ini` under the ocean settings | The formulation, which two evaluators share |
 | The probe's cost | `ProbeEveryFrames` and `ProbeCells` in the ocean settings; the readback is synchronous | The trace cadence |
@@ -205,6 +213,58 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-05 — Review: the ship flickered, and the loop could not have seen it
+
+### Next session's brief
+
+**Pick up at the Melee rung, which halts without the clips and their skeleton in the project**,
+stop-list item five: demand them, then open with the intake sub-slice against the contract in the
+brief. The designer's review of the four rungs found one defect, fixed and verified below, and
+filed one trap: the loop reads nothing that is rendered. The review queue awaits verdicts. The
+editor is closed, the tree clean, every commit on the remote.
+
+### What the review found
+
+**The ship flickered every frame wherever the sky stood behind it**, the mast and the deck alike,
+seen by the designer in the hands-on session; the pawns and the ocean did not. Per-frame tapes of
+the rendered transforms of the ship, both pawns and both cameras on all three worlds moved no more
+than 2.6 cm or 0.6 degrees between consecutive ticks, so nothing the integrator writes was the
+cause. Consecutive captures of the play viewport showed the mesh washed toward the sky's colour
+above the horizon line and correct below it, in every captured frame. Toggled at runtime with a
+capture each, anti-aliasing, motion blur, screen-space reflections, fog and the aerial
+perspective's fast apply changed nothing; disabling the atmosphere removed the wash. The mesh
+reported no material slot; assigning one removed the wash, and the designer saw the flicker stop.
+
+**Decision: the ship's dynamic mesh is given the engine's basic shape material in its
+constructor**, the material the pawn's cylinder carries. **Alternatives**: a project material
+authored from Python as the ocean's is; the default surface material set explicitly, unmeasured.
+**Reopens** when a project material is authored for the ship. The finding is in
+`Docs/Unreal-Findings.md`.
+
+**The loop could not have seen it.** Every Deck row was green with the ship flickering, because
+the rows read the trace and never a frame. Filed as a trap; the hands-on driver that found it is
+kept as `Tools/Editor/handson.py`, with the tapes and the capture, and a paragraph in
+`Docs/Debug-Instruments.md`.
+
+**The pairing spread under a heavier render.** The demo's walk row at 100 ms, run at full
+resolution in enlarged windows, failed the universal check: the client's lead read 13 then 15
+frames, a spread of 2 against the tolerance of 1, the row's own 22 assertions green. Recorded in
+the tuning map; the loop's half resolution is a condition of its numbers.
+
+### Verified against written
+
+**Verified.** Run `0905-133237`: the deck family, 14 rows at 0, 50, 100 and 150 ms, green with
+every mutation proven and the universal set clean, 112 s of wall time. Run `0905-133650`: the
+ship family, 14 rows, the same, 106 s. A capture of the play viewport after the rebuild shows the
+mast one shade from the deck up into the sky. The designer saw the flicker stop with the material
+assigned at runtime, before the rebuild.
+
+**Written, not verified.** The harness and ocean families were not rerun; the change is one
+material on the ship, and no row reads rendering.
+
+**Beyond the plan.** The play windows were enlarged in the gitignored user ini for the demo and
+restored at closedown. Nothing else.
 
 ## 2026-09-05 — Deck: standing on the ship, measured before it is argued
 

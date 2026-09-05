@@ -221,7 +221,9 @@ start transform** and the level holds two `PlayerStart`s, so the pawn spawns at 
 **and `get_editor_world()` answers None during play** *(Python, 2026-09-05)*, logging
 `The Editor is currently in a play mode`, so read the level's package before play starts;
 **and a client's server call made from a script callback between ticks is dropped without a
-word** *(PIE, 2026-09-05)*, so queue it for the actor's own tick.
+word** *(PIE, 2026-09-05)*, so queue it for the actor's own tick; **and a view mode or show flag
+sent with a world context never reaches the play viewport** *(PIE, 2026-09-05)*, so send it
+through a player controller's `console_command`.
 
 **Never duplicate a World Partition level to make a new map** — the external actor packages do not
 re-path and actors silently go missing. Use File → New Level → Empty.
@@ -544,7 +546,10 @@ the things you would never think to look up, because nothing tells you to.
 
 **Before testing whether a symptom depends on X, test whether it depends on anything at all** — a
 strictly cheaper question that partitions the search harder. **A static defect is fully visible on a placed actor with no PIE and nothing
-running**, which makes the viewport the cheapest instrument here.
+running**, which makes the viewport the cheapest instrument here. **The loop reads the trace and
+never a frame**: what is rendered is measured by capture, `Tools/Editor/handson.py` taking
+consecutive frames of the play viewport and taping rendered transforms per Slate tick, and a human
+at the play window remains the cheapest instrument for a rendering defect *(2026-09-05)*.
 
 **A sufficient explanation is not the actual one** — manipulate-over-observe is `CLAUDE.md`'s
 standing rule. When two hypotheses are killed by evidence, file the anomaly rather than inventing

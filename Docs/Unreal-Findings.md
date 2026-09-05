@@ -216,6 +216,24 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
 
 An archive reached by search. Each entry keeps its date and the surface it measured on.
 
+## 2026-09-05 — What the designer's review found in the rendered frame
+
+**A dynamic mesh with no material assigned flickers against the sky** *(PIE, 2026-09-05)*: the
+ship's `UDynamicMeshComponent`, built by Geometry Script with no material set, reported no material
+slot and rendered through the engine's default surface material. Wherever the sky lay behind it,
+its pixels came out washed toward the sky's colour with the boundary on the horizon line, and the
+designer saw the mast and the deck flicker out every frame; the pawns' static meshes and the
+ocean's dynamic mesh, both carrying a material, were untouched. Anti-aliasing, motion blur,
+screen-space reflections, fog and the aerial perspective's fast apply made no difference toggled
+at runtime; disabling the atmosphere removed the wash; assigning any material removed it and, on
+the designer's word, the flicker. A dynamic mesh gets its material in the constructor.
+
+**A console command sent with a world context never reaches the play viewport** *(PIE,
+2026-09-05)*: `viewmode` and `show` through `SystemLibrary.execute_console_command(world, ...)`
+changed nothing in the captures; a player controller's `console_command` is the route. The `Shot`
+command captures the next viewport drawn: three times in four the play viewport the editor hosts,
+once an editor viewport showing the editor world.
+
 ## 2026-09-05 — What the loop's first drive found Python does and does not reach
 
 **Play settings are not in Python** *(Python, 2026-09-05)*: `unreal.LevelEditorPlaySettings` does
