@@ -1,10 +1,10 @@
 # Working in Unreal on this project
 
-**Inherited from TheDream on 2026-09-04.** Every measurement below was made in that project; the
-assets, maps, abilities and editor tools it names are TheDream's, and a finding is an engine fact
-regardless of which project measured it. Fathom carries two of those tools, ported as
-`UFMInputTools` and `UFMTimeTools` in `Source/FathomEditor/`; the rest exist only in TheDream's
-repository, and a route named through them is a route this project would build again.
+**Every measurement below predates this project**, made on the same engine version in the project
+this one was seeded from, and a finding is an engine fact regardless of which project measured it.
+Two of that project's tools are here, ported as `UFMInputTools` and `UFMTimeTools` in
+`Source/FathomEditor/`; an asset or tool it names that is not in this repository does not exist
+here, and a route through one is a route this project would build again.
 
 **Read this file front to back before planning or executing work that touches the engine.** It is
 not a reference for when
@@ -142,7 +142,7 @@ at the initial connect** stays failed until something reconnects it. Only the la
 **The message is a recording of session start, not a probe.** `claude mcp list` is the live check.
 
 **Unattended, go around it**: `Tools/McpBridge/ue-mcp.sh` speaks MCP to the plugin over HTTP and
-needs no registration — `casc-run.sh`'s shape, for Unreal *(Bash, confirmed 2026-08-28)*.
+needs no registration *(Bash, confirmed 2026-08-28)*.
 **Registered tools first whenever they exist**: the allowlist applies to them, and the bridge hands
 back raw JSON-RPC.
 
@@ -213,7 +213,7 @@ scripts define `run()` returning a dict and pass **full dotted names** to `execu
 **Stop PIE before compiling a Blueprint or saving an asset.** While PIE runs, actor lookups return
 the `UEDPIE_0_` world's actors — right for inspecting live state, wrong for authoring.
 
-**PIE and the tick rate are scriptable from Python** *(Python and `TheDreamEditor`, 2026-09-03;
+**PIE and the tick rate are scriptable from Python** *(Python and the editor module, 2026-09-03;
 capability in `Docs/Unreal-Findings.md`)*. Three silent failures: **both PIE requests are
 asynchronous**, so poll `is_in_play_in_editor` or drive the previous session; **begin play takes no
 start transform** and the level holds two `PlayerStart`s, so the pawn spawns at one at random;
@@ -229,7 +229,7 @@ re-path and actors silently go missing. Use File → New Level → Empty.
 
 **Python sets cvars directly, and the Slate console is the fallback rather than the only route**
 *(Python, 2026-08-27)*. `unreal.SystemLibrary.execute_console_command(None, "Cvar.Name 1")` sets one
-and `get_console_variable_int_value` reads it back — measured `TD.DebugCombatTiming` 1 → 0 → 1
+and `get_console_variable_int_value` reads it back — measured on a project cvar, 1 → 0 → 1
 through `run-in-editor.py`. `EditorAppToolset` searching but not setting is true of **MCP only**
 *(re-confirmed 2026-08-28 — its tools are `SearchCVars` and no setter, though the toolset's own
 description advertises "modifying ... console variables")*.
@@ -259,11 +259,10 @@ and Python exposes only `get_editor_subsystem` and `get_engine_subsystem`. **The
 and its handle was not** — the same shape as `SkeletalMesh::SetSkeleton` and `EdGraph::Nodes`.
 
 **`UFMInputTools` in `Source/FathomEditor/` closes it**: `InjectAction` for a tap, `StartHold` /
-`StopHold` for a held one. Measured on the real player pawn 2026-08-24 — one injection produced
-`INPUT pressed`, `ACTIVATE swing=0`, `AIM WEDGE reach=550`, `INPUT released` nine ms later and a
-`STRING` advance mark, which is a light because a one-tick press is a tap; a hold started and stopped
-from two separate script calls measured **607 ms** and escalated the ladder, `AIM WEDGE` reach
-climbing 550 → 650 → 750. **Timed defensive fixtures are scriptable from here on.**
+`StopHold` for a held one. Measured on a player pawn 2026-08-24: one injection produced the press, the action's
+activation and the release nine ms later, a one-tick press reading as a tap; a hold started and
+stopped from two separate script calls measured **607 ms** and read as a hold. **Timed fixtures are
+scriptable from here on.**
 
 **The clock, PIE and the log are all scriptable** *(2026-09-03)*: `FApp::SetUseFixedTimeStep` and
 `SetFixedDeltaTime` through `UFMTimeTools` in `FathomEditor` (no cvar or Python symbol reaches
@@ -312,6 +311,12 @@ false absence claim during the limit audit. **A stackdump file appearing is the 
 is the check. The standing rule already covers it: a filter finding nothing proves only that the
 filter did not match — and here the filter did not even run.
 
+**Bash's grep cannot see a carriage return** *(Bash, 2026-09-05)*: against a file written with CRLF
+endings, `grep -c $'\r'` returned 0, and the same pattern inside a command substitution once counted
+every line, an empty pattern; `-P` is refused in this locale. The line-ending check is
+`git ls-files --eol` or `od -c`. The working tree here is LF and git stores LF. A backslash-r
+in a Bash tool command can arrive as a bare CR byte; build one from its code where it matters.
+
 **A single Bash tool command near ~14 KB can arrive mangled** *(reported once, 2026-08-19)* —
 a quoted heredoc died with a shell parse error mid-content, while the same content in ~5 KB
 appended chunks wrote cleanly. Write large files in chunks and read the line count back.
@@ -326,8 +331,8 @@ quoting form. Call UnrealBuildTool directly, with the **bundled** dotnet (the sy
 cd "/c/Program Files (x86)/UE_5.8/Engine/Source" && \
 "/c/Program Files (x86)/UE_5.8/Engine/Binaries/ThirdParty/DotNet/10.0/win-x64/dotnet.exe" \
   "C:/Program Files (x86)/UE_5.8/Engine/Binaries/DotNET/UnrealBuildTool/UnrealBuildTool.dll" \
-  TheDreamEditor Win64 Development \
-  -project="C:/Users/rross/Documents/Unreal Projects/TheDream/Fathom.uproject" -waitmutex
+  FathomEditor Win64 Development \
+  -project="C:/Users/rross/Documents/Unreal Projects/Fathom/Fathom.uproject" -waitmutex
 ```
 
 **Verify every build, without exception** — not that it reported success, but that the DLL is newer
@@ -335,9 +340,11 @@ than every source file. The unattended close/build/reopen cycle removes the paus
 build would once have been noticed.
 
 ```bash
-# Empty output means the DLL is newer than every source. This is the check.
-find Source \( -name "*.cpp" -o -name "*.h" \) -newer Binaries/Win64/UnrealEditor-TheDream.dll -print
-ls Binaries/Win64/UnrealEditor-TheDream.patch_* 2>/dev/null || echo "no patch files"
+# Empty output means both DLLs are newer than every source. This is the check.
+for d in Fathom FathomEditor; do
+  find Source \( -name "*.cpp" -o -name "*.h" \) -newer "Binaries/Win64/UnrealEditor-$d.dll" -print
+done
+ls Binaries/Win64/UnrealEditor-Fathom*.patch_* 2>/dev/null || echo "no patch files"
 ```
 
 Use `-newer` rather than comparing timestamps by eye — `ls` and `find -printf` report in **different
@@ -375,7 +382,7 @@ several distinct ways:
   exposes `AddSample`, `DeleteSample`, `EditSampleValue` and `ReplaceSampleAnimation` as
   `ENGINE_API`. Reflection is the wrong tool here, not the wrong idea.
 - **CDO writes are property-dependent and the CDO cannot tell you** *(2026-08-13)*. Two writes to
-  `GA_Attack` seconds apart: a direct object reference did **not** reach the live instance, object
+  one Blueprint CDO seconds apart: a direct object reference did **not** reach the live instance, object
   references inside a struct array did, and both read correctly off the CDO throughout.
 
 **A Blueprint CDO property set programmatically is generally not live in the current editor
@@ -392,7 +399,7 @@ a programmatic write. **The rule is about Blueprint CDOs and does not extend to 
 *(confirmed 2026-08-12)* — an AnimSequence's `bEnableRootMotion` took effect immediately.
 
 **Staleness is per property, so an object can be *partially* live** *(confirmed 2026-08-14)* —
-`GA_Block`'s live instance had one tag container current and another empty, split by which side of
+one live instance had one tag container current and another empty, split by which side of
 the last restart each write landed on, while the CDO read correct for both. **Batch CDO writes and
 restart once**, and when a setting "is not working" **read the runtime instance before touching it**.
 
@@ -407,8 +414,8 @@ value.**
 explicitly** rather than resetting. **Detecting an override *is* scriptable** *(Python, 2026-08-27)*:
 `EditorAssetLibrary.is_editor_property_overridden(obj, "PropName")` returns `OVERRIDDEN` / `DEFAULT`
 / `NOT_FOUND` / `ACCESS_DENIED`. **It is an enum, not a bool** — the object is truthy at every value,
-so compare against the members or every property reads as overridden. Measured 2026-08-27: both
-training dummies and both PlayerStarts read `DEFAULT` on nine combat properties.
+so compare against the members or every property reads as overridden. Measured 2026-08-27: two
+placed actors and both PlayerStarts read `DEFAULT` on nine properties.
 
 **A C++ component default reaches nothing if a Blueprint or placed actor overrides it** *(confirmed
 2026-08-12)* — a mesh offset needed **three** writes, two Blueprints and the placed actor, each a
@@ -433,7 +440,7 @@ type** — a broken one usually looks fine alone.
   `EditDefaultsOnly` number can be swept without a rebuild -- but a value that *ships* belongs in
   the C++ default with no Blueprint override left behind to shadow it.
 - **An asset the registry has no entry for still saves — through the *package*, not the path**
-  *(Python, 2026-08-25)*. `AS_SwordAndShieldAnimV1_Defense_Hit_Fw_RM` answers **False** to
+  *(Python, 2026-08-25)*. A clip answered **False** to
   `does_asset_exist` while `load_asset` returns it and `set_editor_property` takes, so every
   path-based save refuses: `AssetTools.save_assets` reports *"Asset does not exist"* and
   `EditorAssetLibrary.save_asset` / `save_loaded_asset` both return False. **`save_packages` takes
@@ -441,7 +448,7 @@ type** — a broken one usually looks fine alone.
   `EditorLoadingAndSavingUtils.save_packages(list(get_dirty_content_packages()), False)` returned
   True and the `.uasset` changed on disk. `get_dirty_map_packages` is the same shape for levels.
 - **InputMappingContext** *(confirmed 2026-08-21)* — UE 5.8 reads `defaultKeyMappings.mappings`;
-  top-level `mappings` reads empty on `IMC_Combat` while its input works, which is the proof.
+  top-level `mappings` reads empty on a working context while its input works, which is the proof.
 - **Object references need the full path** *(confirmed 2026-08-21)* — `/Game/Path/Asset.Asset`. A
   short path is refused outright; this one fails loudly rather than silently.
 - **Array edits** *(confirmed 2026-08-21, corrected)* — changing an element and adding one in one
@@ -487,9 +494,8 @@ type** — a broken one usually looks fine alone.
   what makes it unmistakable — there was nothing to inherit from. **Read the placed actor after any
   CDO write, not just the CDO**, and expect to set it explicitly.
 - **A placed actor can hold stale `EditDefaultsOnly` values that silently override its Blueprint**
-  *(reflection and MCP, confirmed 2026-08-10; the detection half lifted 2026-08-27)*. The placed
-  dummy read `DefaultAbilities: []` against a populated CDO and
-  was granted nothing. The signature is the instance showing **C++ class defaults** — it was placed
+  *(reflection and MCP, confirmed 2026-08-10; the detection half lifted 2026-08-27)*. A placed
+  actor read an empty array against a populated CDO and was granted nothing. The signature is the instance showing **C++ class defaults** — it was placed
   before the Blueprint authored them. `reset_properties` fails on exactly those names while
   succeeding on `EditAnywhere` ones, which is the cheapest confirmation; `set_properties` refuses
   them too *(both confirmed 2026-08-14)*, so **delete-and-re-place is the only route**, not merely
@@ -550,7 +556,7 @@ that cannot be pushed.
 cycle returns the same phase every time, reading exactly like "the character never moves" — vary the
 spacing deliberately rather than taking more samples at the same cadence.
 
-**Prefer normal PIE for anything timed.** In `bSimulate: true` the dummy's looping timer stopped
+**Prefer normal PIE for anything timed.** In `bSimulate: true` a fixture's looping timer stopped
 after ~30 s and never resumed, unexplained *(2026-08-12)*; editor focus is **not** the variable.
 
 **The `TimeDilation` route is open** *(Python, 2026-08-24)*. Two near misses worth naming so they
@@ -558,7 +564,7 @@ are not retried: `AWorldSettings::TimeDilation` rejects reflection writes, and
 `AActor::CustomTimeDilation` does not scale world timers.
 **`GameplayStatics.set_global_time_dilation(world, x)`** is `BlueprintCallable` and works from
 Python during PIE: set to 0.15, game time advanced **0.47 s against 3.81 s of wall clock**, a
-measured 0.12 ratio. **0.04 turns a 0.55 s hitstun into nearly fourteen seconds of wall time**, which
+measured 0.12 ratio. **0.04 turns a 0.55 s window into nearly fourteen seconds of wall time**, which
 is what makes a window that short observable at all. Restore it to 1.0 before drawing any timing
 conclusion — every trace timestamp is game time.
 
@@ -568,7 +574,7 @@ commit reading `2026-08-12 17:26 -0600` are the same evening.
 ### Reading the logs
 
 **`GetLogEntries` returns a *window* from the end of the log, so a mixed-frequency pattern lies about
-absence.** `DODGE|BUFFER|DEATH|REVIVE` at `maxEntries: 60` returned 2 dodges; `DODGE` alone at
+absence.** a four-tag alternation at `maxEntries: 60` returned 2 lines of one tag; that tag alone at
 `maxEntries: 0` returned 30. **One pattern per event class, and `maxEntries: 0`, whenever the
 question is "did this ever happen".**
 
