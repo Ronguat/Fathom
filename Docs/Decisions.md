@@ -12,6 +12,10 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-05 | All eight attack types imported though the brief takes up to four; the intake chooses | Delivery entry, Decisions | |
+| 2026-09-05 | The mannequin meshes imported with materials, physics asset, post-process and animating rigs stripped | Delivery entry, Decisions | |
+| 2026-09-05 | The weapon meshes, the retargeter and the IK rig left behind; the blade length and the timings carried as numbers | Delivery entry, Decisions | |
+| 2026-09-05 | The four binaries already tracked renormalised into LFS | Delivery entry, Decisions | |
 | 2026-09-05 | Presentation one step behind the simulation, interpolated by the framework's fraction, rather than the ship extrapolated ahead | Presentation entry, Decisions | |
 | 2026-09-05 | The presentation bar judged met with one hitch frame in 219 under its letter, the fix kept | Presentation entry, Decisions | |
 | 2026-09-05 | The walk row's injection tolerance 2, after three spreads of 2 in a day with the play windows enlarged | `Tools/RegressionCheck/scenarios.py` | |
@@ -126,7 +130,11 @@ time until Deck; the Harness plan decides and the review queue carries it. Bites
 
 **Whenever the Melee rung opens — *the clips and their skeleton are the designer's delivery.*** The
 pawn starts on the engine mannequin; the intake sub-slice swaps or retargets. Without the
-delivery, halt and demand it. Bites at Melee.
+delivery, halt and demand it. Bites at Melee. Discharged 2026-09-05 by the import, the entry of
+that date: the delivery is in the project.
+
+**Whenever a delivered clip is played — *none has driven a frame here.*** Imported, loaded and
+resaved headless *(2026-09-05)*; nothing has played one on a pawn. Bites at Melee.
 
 **Whenever the attacker's view delay is needed — *it is authored, never estimated.*** The rendered
 frame rides in the input command. Bites at Melee.
@@ -163,10 +171,9 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 its fallback, its coverage and its inheritance; the plan entry written before execution turns
 the bar into numbers.
 
-- **Melee** — **Halts without the clips and their skeleton in the project.** Opens with an intake
-  sub-slice against a contract: clip list and directions, where windup ends and release begins,
-  the blade socket, root motion or not, first and third person pairs; then blade curves baked per
-  attack. Attack, parry and feint presses ride in the input command with the rendered frame;
+- **Melee** — **Opens with the intake sub-slice's second half**, against a contract the delivery
+  answers in part: clip list and directions, where windup ends and release begins, the blade
+  socket, root motion or not, first and third person pairs; then blade curves baked per attack. Attack, parry and feint presses ride in the input command with the rendered frame;
   attack state sits in the sync state; the server sweeps the blade against rewound bodies and the
   reconstructed ship. The advance knob and the parry rule are measured at 0, 50, 100 and 150 ms
   across the three known settings, and the verdict goes to the review queue. First person is the
@@ -176,10 +183,10 @@ the bar into numbers.
   hits up to that ping, windups effectively faster by the ping up to the cap, hits landing early by
   half the ping, and false positives at high latency; an advance of half the round trip capped at
   50 ms gave some hit delay at higher ping and no competitive advantage at any ping. The measurement
-  reports each of those. **The clips and their skeleton come from a separate Mordhau-shaped project
-  of the designer's, not on this machine**, the same project whose half measure is the second
-  setting above; its code and write-ups are available on request, as is an answer to any
-  animation-contract question the clips leave open. **Inherits**: `AFMPlayerPawn` on Mover with
+  reports each of those. **The clips and their skeleton are in the project** under `/Game/Fathom/Melee/`, listed in
+  `Docs/Melee-Delivery.tsv`, delivered 2026-09-05 from the designer's Mordhau-shaped project, the
+  same project whose half measure is the second setting above; its code and write-ups are
+  available on request, as is an answer to any animation-contract question the clips leave open. **Inherits**: `AFMPlayerPawn` on Mover with
   its key table read as the input command is authored, the place for presses and the rendered
   frame; `POSE` with the pawn's ship-space position, the frame the sync state carries, and
   `ROLLBACK`; `AFMShip` reconstructible at any frame from its snapshot and history, the rewound
@@ -228,6 +235,72 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project
+
+### Next session's brief
+
+**Pick up at the Melee rung, whose delivery is in the project**: the intake sub-slice's second
+half opens it, against the contract in the brief. `Docs/Melee-Delivery.tsv` lists the 123 assets
+under `/Game/Fathom/Melee/`; the release curves are among them, and the timing numbers and the
+socket list are read from the designer's material on request. **Open**: the eight attack types
+are in and the brief takes up to four, the intake chooses; the mannequin meshes carry no material
+and no physics asset; the retargeter and the IK rig stayed behind, so the pawn starts on the
+engine mannequin and the intake swaps or retargets as the brief says. The review queue awaits
+verdicts on this entry's rows and the earlier day's. Budget: none set. The editor is closed, the
+tree clean, every commit on the remote. The loop did not run: nothing it reads changed.
+
+### The plan, written before execution
+
+**Scope.** The delivery into the project, the first half of the Melee brief's intake: the
+skeleton, the mannequin body, arms and invisible body, and every sequence and release curve of
+the eight attack types, first and third person, with their parry poses and ripostes, from the
+designer's reference package; LFS for the repository, on the designer's word. **Bar**: every
+imported asset loads headless in this engine with no missing package and no load error, and its
+hard dependencies reach nothing outside the delivery and the engine. **Fallback**: an asset that
+reaches outside is stripped of the property that reaches, or left behind and named here.
+**Coverage**: no scenario; a dated trap above records that no delivered clip has driven a frame.
+
+### Decisions
+
+**The route keeps references intact.** Assets store absolute package paths, so a file copy out
+of the reference's plugin folders would arrive broken. The delivery was renamed inside the
+reference's own editor into `/Game/Fathom/Melee/`, its referencers rewritten by the rename, then
+the folder copied and resaved here. **Alternative.** A migrate, which does not rewrite imports
+across a plugin mount. **Reopens** never.
+
+**What travelled and what stayed.** In: the skeleton, three mannequin meshes with their
+materials, physics asset, post-process and animating rigs stripped, 112 sequences and 8 release
+curves. Behind: the two weapon meshes, the blade's length carried as a number from the reference;
+the precedent's per-attack data assets and stats tables, native to its module, their numbers read
+from the reference's text; the IK rig and retargeter, whose closure reaches the precedent's
+character content; the cosmetic rigs, flinches, transitions and exhausted idles. **Alternative.**
+The weapon meshes in. **Reopens** if the blade curve needs the mesh.
+
+**All eight attack types**, the brief taking up to four. **Alternative.** Four chosen now.
+**Reopens** at the intake's choice; the review queue carries it.
+
+**LFS.** The designer's ruling; the four binaries already tracked were renormalised into it, and
+the push hook hands the refs on to it after its fast-forward check.
+
+**Taken alone**, in the review queue: the eight types, the stripping, the weapon meshes and the
+retargeter left behind, the renormalisation.
+
+### Verified against written
+
+**Verified.** The reference's editor moved 123 of 123 assets and reported the closure reaching 0
+packages outside the delivery and the engine; this editor, rebuilt against 5.8.2 in 67 s with
+both DLLs newer than their sources, loaded 123 of 123, reached 0 outside, logged no error and no
+warning in the load, and resaved every package. `Docs/Melee-Delivery.tsv` holds one row per
+asset: no sequence has root motion on, none carries a notify, the attack clips carry an
+`AutoAlignment` curve, and every sequence names the delivered skeleton. `docs-check` and
+`comment-check` pass.
+
+**Written, not verified.** The sockets on the skeleton, refused to reflection here as the working
+doc records and listed in the reference's text, a weapon socket on the weapon bone among them.
+Whether a delivered clip plays on a pawn: the trap.
+
+**Beyond the plan.** Nothing.
 
 ## 2026-09-05 — Presentation between frames: the camera, the ship and the sea at the framework's fraction
 

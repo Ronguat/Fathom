@@ -7,9 +7,11 @@
 # copy fails faster and works against any remote.
 #
 # Installed into .git/hooks by Tools/GitHooks/install-hooks.sh; hooks are not versioned by git.
+# The refs are read once and handed on to git-lfs, which pushes the objects the commits need.
 set -u
 ZERO=0000000000000000000000000000000000000000
 rc=0
+refs=$(cat)
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "${local_ref:-}" ] && continue
   if [ "$local_sha" = "$ZERO" ]; then
@@ -18,5 +20,13 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   if [ "$remote_sha" != "$ZERO" ] && ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
     echo "pre-push: refusing non-fast-forward push to $remote_ref" >&2; rc=1
   fi
-done
-exit $rc
+done <<EOF
+$refs
+EOF
+[ "$rc" -eq 0 ] || exit $rc
+if command -v git-lfs >/dev/null 2>&1; then
+  printf '%s
+' "$refs" | git lfs pre-push "$@"
+  exit $?
+fi
+exit 0

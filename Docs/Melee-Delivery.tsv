@@ -1,0 +1,127 @@
+# The melee delivery as it sits under /Game/Fathom/Melee: one row per asset, written by
+# Tools/Editor/audit-melee-delivery.py after the import. Regenerate after any change there.
+#
+folder	asset	class	length_s	frames	rate_scale	root_motion	notifies	curves_or_sockets_or_materials	skeleton
+Clips/Horizontal_Left	2h_FP_Sword_L_ParryPose_L_HorizontalRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	2h_FP_Zwei_L_Horizontal_v01	AnimSequence	2.4167	145	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	2h_TP_Sword_L_ParryPose_L_HorizontalRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	2h_TP_Zwei_L_Horizontal_v01	AnimSequence	2.4167	145	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	Curve_Release_Horizontal_L	CurveFloat							
+Clips/Horizontal_Left	horizontal_L_2h_fpp	AnimSequence	2.1000	126	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	horizontal_L_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	horizontal_L_2h_tpp	AnimSequence	2.1000	126	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	horizontal_L_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	riposte_deflect_horizontal_L_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	riposte_deflect_horizontal_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	riposte_horizontal_L_2h_fpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	riposte_horizontal_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	riposte_perfect_horizontal_L_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Left	riposte_perfect_horizontal_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	2h_FP_Sword_L_ParryPose_R_HorizontalRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	2h_FP_Zwei_R_Horizontal_v01	AnimSequence	2.4167	145	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	2h_TP_Sword_L_ParryPose_R_HorizontalRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	2h_TP_Zwei_R_Horizontal_v01	AnimSequence	2.4167	145	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	Curve_Release_Horizontal_R	CurveFloat							
+Clips/Horizontal_Right	horizontal_R_2h_fpp	AnimSequence	2.1000	126	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	horizontal_R_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	horizontal_r_2h_tpp	AnimSequence	2.1000	126	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	horizontal_r_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	riposte_deflect_horizontal_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	riposte_deflect_horizontal_r_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	riposte_horizontal_R_2h_fpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	riposte_horizontal_r_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	riposte_perfect_horizontal_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Horizontal_Right	riposte_perfect_horizontal_r_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	2h_FP_Sword_L_ParryPose_L_OverheadRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	2h_FP_Zwei_L_Overhead_v01	AnimSequence	2.1667	130	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Overhead_Left	2h_TP_Sword_L_ParryPose_L_OverheadRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	2h_TP_Zwei_L_Overhead_v01	AnimSequence	2.1667	130	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	Curve_Release_Overhead_L	CurveFloat							
+Clips/Overhead_Left	overhead_L_2h_fpp	AnimSequence	1.7833	107	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Overhead_Left	overhead_L_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	overhead_L_2h_tpp	AnimSequence	1.7833	107	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	overhead_L_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	riposte_deflect_overhead_L_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	riposte_deflect_overhead_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	riposte_overhead_L_2h_fpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	riposte_overhead_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	riposte_perfect_overhead_L_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Left	riposte_perfect_overhead_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	2h_FP_Sword_L_ParryPose_R_OverheadRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	2h_FP_Zwei_R_Overhead_v01	AnimSequence	2.5833	155	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Overhead_Right	2h_TP_Sword_L_ParryPose_R_OverheadRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	2h_TP_Zwei_R_Overhead_v01	AnimSequence	2.1667	130	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	Curve_Release_Overhead_R	CurveFloat							
+Clips/Overhead_Right	overhead_R_2h_fpp	AnimSequence	1.7833	107	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Overhead_Right	overhead_R_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	overhead_R_2h_tpp	AnimSequence	1.7833	107	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	overhead_R_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	riposte_deflect_overhead_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	riposte_deflect_overhead_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	riposte_overhead_R_2h_fpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	riposte_overhead_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	riposte_perfect_overhead_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Overhead_Right	riposte_perfect_overhead_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	2h_FP_Sword_L_ParryPose_L_ThrustRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	2h_FP_Zwei_L_Thrust_v01	AnimSequence	2.0000	120	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Thrust_Left	2h_TP_Sword_L_ParryPose_L_ThrustRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	2h_TP_Zwei_L_Thrust_v01	AnimSequence	2.0000	120	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	Curve_Release_Stab_L	CurveFloat							
+Clips/Thrust_Left	riposte_deflect_thrust_L_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	riposte_deflect_thrust_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	riposte_perfect_thrust_L_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	riposte_perfect_thrust_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	riposte_thrust_L_2h_fpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	riposte_thrust_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	thrust_L_2h_fpp	AnimSequence	1.8333	110	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Thrust_Left	thrust_L_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	thrust_L_2h_tpp	AnimSequence	1.8333	110	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Left	thrust_L_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	2h_FP_Sword_L_ParryPose_R_ThrustRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	2h_FP_Zwei_R_Thrust_v01	AnimSequence	2.0000	120	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Thrust_Right	2h_TP_Sword_L_ParryPose_R_ThrustRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	2h_TP_Zwei_R_Thrust_v01	AnimSequence	2.0000	120	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	Curve_Release_Stab_R	CurveFloat							
+Clips/Thrust_Right	riposte_deflect_thrust_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	riposte_deflect_thrust_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	riposte_perfect_thrust_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	riposte_perfect_thrust_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	riposte_thrust_R_2h_fpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	riposte_thrust_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	thrust_R_2h_fpp	AnimSequence	1.8333	110	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Thrust_Right	thrust_R_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	thrust_R_2h_tpp	AnimSequence	1.8333	110	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Thrust_Right	thrust_R_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	2h_FP_Sword_L_ParryPose_L_UnderhandRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	2h_FP_Zwei_L_Underhand_v01	AnimSequence	2.3333	140	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Underhand_Left	2h_TP_Sword_L_ParryPose_L_UnderhandRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	2h_TP_Zwei_L_Underhand_v01	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	riposte_deflect_underhand_L_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	riposte_deflect_underhand_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	riposte_perfect_underhand_L_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	riposte_perfect_underhand_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	riposte_underhand_L_2h_fpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	riposte_underhand_L_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	underhand_L_2h_fpp	AnimSequence	1.7500	105	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Underhand_Left	underhand_L_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Left	underhand_L_2h_tpp	AnimSequence	1.7500	105	1.000	off	0	CombatLayering_Arm_L;CombatLayering_Arm_R;CombatLayering_Head;CombatLayering_Legs;CombatLayering_Pelvis	SKM_Mannequin_Skeleton
+Clips/Underhand_Left	underhand_L_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	2h_FP_Sword_L_ParryPose_R_UnderhandRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	2h_FP_Zwei_R_Underhand_v01	AnimSequence	2.3333	140	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Underhand_Right	2h_TP_Sword_L_ParryPose_R_UnderhandRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	2h_TP_Zwei_R_Underhand_v01	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	Curve_Release_Underhand_R1	CurveFloat							
+Clips/Underhand_Right	riposte_deflect_underhand_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	riposte_deflect_underhand_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	riposte_perfect_underhand_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	riposte_perfect_underhand_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	riposte_underhand_R_2h_fpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	riposte_underhand_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	underhand_R_2h_fpp	AnimSequence	1.7500	105	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
+Clips/Underhand_Right	underhand_R_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Underhand_Right	underhand_R_2h_tpp	AnimSequence	1.7500	105	1.000	off	0	CombatLayering_Arm_L;CombatLayering_Arm_R;CombatLayering_Head;CombatLayering_Legs;CombatLayering_Pelvis	SKM_Mannequin_Skeleton
+Clips/Underhand_Right	underhand_R_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Rig	SKM_Mannequin	SkeletalMesh						lambert4=none	SKM_Mannequin_Skeleton
+Rig	SKM_Mannequin_Arms	SkeletalMesh						lambert4=none	SKM_Mannequin_Skeleton
+Rig	SKM_Mannequin_Invis	SkeletalMesh						lambert4=none	SKM_Mannequin_Skeleton
+Rig	SKM_Mannequin_Skeleton	Skeleton							

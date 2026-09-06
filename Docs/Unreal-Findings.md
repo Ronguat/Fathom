@@ -216,6 +216,21 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
 
 An archive reached by search. Each entry keeps its date and the surface it measured on.
 
+## 2026-09-05 — A delivery moves between projects by a rename in the source editor
+
+**A file copy across a plugin mount breaks imports** *(engine behaviour, 2026-09-05)*: packages
+store absolute package paths, so an asset copied from a plugin's content folder into `/Game/` on
+disk resolves none of its references. `EditorAssetLibrary.rename_asset` inside the source
+project's editor rewrites every referencer and leaves redirectors behind; a folder renamed that
+way and then copied resolved every reference in the receiving editor, 123 of 123 *(Python,
+2026-09-05)*, and `EditorAssetLibrary.save_directory` with `only_if_is_dirty` false resaved them
+as this engine's packages. `AssetRegistry.get_dependencies` with hard package references only
+walks the closure without play, and a native class reached through a physics asset showed there
+as its `/Script/` module. A clip's contract reads from `AnimationLibrary`: `get_sequence_length`,
+`get_num_frames`, `get_rate_scale`, `get_animation_notify_events`, `get_animation_curve_names`
+*(Python, 2026-09-05)*; `SkeletalMesh.materials` writes whole as a list of `SkeletalMaterial`, and
+`physics_asset`, `post_process_anim_blueprint` and `default_animating_rig` clear to None.
+
 ## 2026-09-05 — What the designer's review found in the rendered frame
 
 **A dynamic mesh with no material assigned flickers against the sky** *(PIE, 2026-09-05)*: the

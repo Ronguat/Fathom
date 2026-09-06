@@ -184,8 +184,8 @@ plan time; a loop that lags the surface still prints green.
 > **~~Bootstrap~~ → ~~Harness~~ → ~~Ocean~~ → ~~Ship~~ → ~~Deck~~ → Melee → Ship Combat → Ship to Ship → Stretch**
 
 **Pick up at Melee.** Its brief is in `Docs/Decisions.md`, and the handoff at the top of the
-newest dated entry there is the session brief. Melee opens only with the clips and their skeleton
-in the project; without them the session halts at the stop list.
+newest dated entry there is the session brief. The clips and their skeleton are in the project
+under `/Game/Fathom/Melee/`; the intake's contract check is the rung's first sub-slice.
 
 ### When a rung ships
 
