@@ -12,6 +12,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-06 | Unplanned input filed as a trap and a rule rather than a universal assertion built | Demonstration entry, Decisions | |
 | 2026-09-05 | All eight attack types imported though the brief takes up to four; the intake chooses | Delivery entry, Decisions | |
 | 2026-09-05 | The mannequin meshes imported with materials, physics asset, post-process and animating rigs stripped | Delivery entry, Decisions | |
 | 2026-09-05 | The weapon meshes, the retargeter and the IK rig left behind; the blade length and the timings carried as numbers | Delivery entry, Decisions | |
@@ -144,6 +145,13 @@ client's view of the other pawn in ship space is asserted at 50 cm *(2026-09-05)
 tighter until Melee's rewind reads the sync state instead; its rendering is placed from ship
 space and asserted at 10 cm standing *(2026-09-05)*, and the staleness stays. Bites at Melee.
 
+**Whenever a run's play window has focus — *a hand on the keyboard is input the loop cannot
+see.*** The mechanism and the rule are in `Docs/Debug-Instruments.md`, the shape of a run. Seven
+consecutive rows of the 2026-09-06 demonstration run carried key edges no plan injected, the
+designer's, and its one red, `ship.stop@150`, was a jump at the anchor frame lifting the caller
+out of the station's radius; rerun three times untouched, green *(2026-09-06)*. Bites at every
+run. Discharged by a universal assertion failing a slice on an `INPUT` no `INJECT` accounts for.
+
 ## Tuning map — a verdict comes back, which knob moves
 
 **Every row is a warning with a reason, never a lock.** A row opening *"nothing, without
@@ -210,7 +218,7 @@ the bar into numbers.
 
 ## Symbol index — which entries discuss this thing
 
-Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
+Current through **2026-09-06**. Regenerated, byte-sorted, one row per symbol.
 
 | Symbol | Entries |
 |---|---|
@@ -235,6 +243,41 @@ Current through **2026-09-05**. Regenerated, byte-sorted, one row per symbol.
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-06 — The loop demonstrated: 45 of 46 green, and a hand on the keyboard is invisible to it
+
+### Next session's brief
+
+**Pick up at the Melee rung**, as the delivery entry's brief below says; nothing there changed.
+This session ran the loop once, for demonstration, and changed no code. **Open**: the universal
+assertion the new trap names, and the review queue's verdicts. Budget: none set. The editor is
+closed, the tree clean, every commit on the remote.
+
+### Measured
+
+The full matrix, 46 rows in 360 s of wall. 39 rows untouched, every one green with every
+mutation proven. Seven consecutive rows, `ship.sail@150` through `ship.turn@50`, carried the
+designer's keys in the play windows, on their word: six green, and `ship.stop@150` red, the
+anchor refused at frame 373 with the caller 439 cm from the station after a jump at frame 359.
+Those seven are discarded; the red rerun three times untouched, green three times. They stay in
+`Saved/Regression/history.tsv` under run `0906-152133`, so a band read across runs skips them.
+Across the clean rows: server tick 0.30 to 0.45 ms per player, inbound 10.4 to 17.3 kB/s per
+client, measured lag 8 to 11, 56 to 68, 90 to 112 and 126 to 155 ms at the four round trips.
+
+### Decisions
+
+**The blind spot is filed, not closed.** The universal set pairs `INJECT` to `INPUT` and flags no
+`INPUT` without one, so a human's keys in a focused play window read exactly as injected ones.
+**Alternative.** A universal assertion failing a slice on an unpaired `INPUT`, with its self-test
+and a mutation per row; a loop change, outside a demonstration. **Reopens** at the next loop
+change. Taken alone, in the review queue.
+
+### Verified against written
+
+**Verified.** The 46 slices and their evaluation; the red slice's trace, read line by line; the
+census of injected against observed edges over every slice of the run and the reruns; both
+checks pass. **Written, not verified.** Nothing. **Beyond the plan.** No plan preceded the run;
+the trap, the rule and this entry are what it produced beyond itself.
 
 ## 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project
 

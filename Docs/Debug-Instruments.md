@@ -132,7 +132,10 @@ splits the round trip across both directions with `NetEmulation.PktLag`, places 
 the simulation, counts frames in the server's own simulation frame, drives keys through
 `UFMInputTools` on each role's own player controller, and writes a tape of every role's pose in
 its own world and on the server. *First driven 2026-09-05: twelve rows in under a minute of wall
-time, four seconds of play each.*
+time, four seconds of play each.* **Hands off the keyboard while a run drives the play windows**:
+the pawn polls key state, so a focused client window feeds a human's keys into a row exactly as
+injected ones, and the universal set pairs `INJECT` to `INPUT` and flags no `INPUT` without one;
+the trap is in `Docs/Decisions.md` *(2026-09-06)*.
 
 **Coverage binds at plan time.** A rung's plan lists the rows it adds or files a dated trap naming
 what is now untested. A loop that lags the surface still prints green.
