@@ -325,9 +325,10 @@ in a Bash tool command can arrive as a bare CR byte, and a backslash-octal such 
 character it names *(2026-09-05)*; build one from its code where it matters, or write the script
 through the Write tool, which passes backslashes untouched.
 
-**A single Bash tool command near ~14 KB can arrive mangled** *(reported once, 2026-08-19)* —
-a quoted heredoc died with a shell parse error mid-content, while the same content in ~5 KB
-appended chunks wrote cleanly. Write large files in chunks and read the line count back.
+**A single Bash tool command near ~14 KB can arrive mangled** *(reported once, 2026-08-19; three
+times 2026-09-05 at 5 to 9 KB, each a quoted heredoc with apostrophes inside it)* — a quoted
+heredoc died with a shell parse error mid-content, while the same content in ~5 KB appended
+chunks wrote cleanly. Write large files, and any script with apostrophes, through the Write tool.
 
 `Build.bat` cannot be called from Git Bash *(Bash, 2026-08-19; not re-tested since — it is a
 quoting fact about the shell rather than a claim about the engine)* — the space in
