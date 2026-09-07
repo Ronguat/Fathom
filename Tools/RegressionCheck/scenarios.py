@@ -20,6 +20,7 @@ A scenario entry:
         allow=[],                                  # engine-warning substrings this row tolerates
         injection_tolerance=1,                     # optional: frames the injection pairing may move
         settle_frames=30,                          # optional: frames after the last applied input before a ship row asserts
+        pose_every=6,                              # optional: frames between POSE lines on every simulated proxy
     )
 
 Plan frames are sixtieths of server game time from the row's start. A row runs once per latency
@@ -30,7 +31,8 @@ it lists, as `<id>@<ms>`; the round trip is split evenly between the two directi
 
 # Actions a plan may name. The runner resolves each to its key from the controller's key table,
 # KEY_TABLE_CLASS's ActionKeys, at arm time; an action with no key fails validation there.
-ACTIONS = ("move_forward", "move_back", "move_left", "move_right", "jump", "mark")
+ACTIONS = ("move_forward", "move_back", "move_left", "move_right", "jump", "mark",
+           "attack_horizontal", "attack_overhead", "attack_thrust", "parry", "feint")
 KEY_TABLE_CLASS = "FMPlayerController"
 
 # What the move op holds for a direction: X right, Y forward.
@@ -46,13 +48,17 @@ SHIP_INPUTS = ("wheel", "sail_length", "sail_angle", "anchor", "ladder")
 
 # The mechanics a row may claim to cover. The coverage map in Docs/Debug-Instruments.md is
 # generated from these, so a claim outside the list fails at load rather than drifting.
-MECHANICS = ("two worlds", "cost", "injection latency", "determinism")
+MECHANICS = ("two worlds", "cost", "injection latency", "determinism", "combat", "rewind", "parry", "advance")
 
 # Rung order, which is the order the matrix lists families in.
 FAMILIES = ("harness", "ocean", "ship", "deck", "melee", "ship-combat", "ship-to-ship")
 
 # The ocean plane's half-extent; a placement beyond it fails before PIE.
 FLOOR_LIMIT = 20000.0
+
+# Every project console variable a row may set, with the value that reads the settings; the
+# runner restores these before each row, so nothing a row sets reaches the next.
+CVAR_DEFAULTS = {"fm.SeaState": "-1", "fm.WindAngle": "-1000", "fm.MeleeAdvanceFraction": "-1", "fm.MeleeAdvanceCapMs": "-1"}
 
 # One mutation every harness row carries: the server's POSE positions zeroed, which the
 # determinism assertion must catch.
@@ -207,6 +213,140 @@ SCENARIOS = {
         mutations=[("drop", "INPUT", 1), POSE_SERVER_ZERO],
         allow=[],
     ),
+    "melee.swing": dict(
+        family="melee", covers=["combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (300, "p2", "ship", "wheel", 0.5), (400, "p1", "face", 1.0), (420, "p1", "tap", "attack_overhead")],
+        stop=dict(duration=12.0),
+        mutations=[("drop", "COMBAT", 1), ("set", "COMBAT", "start", "0"), ("dup", "INPUT", 1)],
+        allow=[],
+    ),
+    "melee.feint": dict(
+        family="melee", covers=["combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (300, "p2", "ship", "wheel", 0.5),
+              (400, "p1", "face", 1.0), (420, "p1", "tap", "attack_horizontal"), (430, "p1", "tap", "feint")],
+        stop=dict(duration=12.0),
+        mutations=[("regex", r"(\[S\] COMBAT pid=\d+ sf=\d+ phase=)idle", r"\g<1>release"), ("dup", "INPUT", 1)],
+        allow=[],
+        injection_tolerance=2,
+    ),
+    "melee.feint-loss": dict(
+        family="melee", covers=["combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 100), loss=5.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (300, "p2", "ship", "wheel", 0.5),
+              (400, "p1", "face", 1.0), (420, "p1", "tap", "attack_horizontal"), (430, "p1", "tap", "feint")],
+        stop=dict(duration=12.0),
+        mutations=[("regex", r"(\[S\] COMBAT .*? attack=)horizontal", r"\g<1>vertical")],
+        allow=[],
+        injection_tolerance=3,
+        settle_frames=60,
+    ),
+    "melee.direction": dict(
+        family="melee", covers=["combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 100), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (300, "p2", "ship", "wheel", 0.5),
+              (400, "p1", "face", -20.0), (420, "p1", "tap", "attack_horizontal"),
+              (600, "p1", "face", 20.0), (620, "p1", "tap", "attack_horizontal")],
+        stop=dict(duration=14.0),
+        mutations=[("regex", r"horizontal_l", "horizontal_r")],
+        allow=[],
+    ),
+    "melee.hit": dict(
+        family="melee", covers=["rewind", "combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (150.0, 15200.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (340, "p1", "face", 1.0), (360, "p1", "tap", "attack_overhead")],
+        stop=dict(duration=10.0),
+        mutations=[("drop", "HIT", 1), ("set", "HIT", "tx", "999.0"), ("regex", r"(\[C2\] SCORE pid=\d+ taken=)1", r"\g<1>0")],
+        allow=[],
+    ),
+    "melee.hit-calm": dict(
+        family="melee", covers=["rewind", "combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (150.0, 15200.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "0.0", "fm.WindAngle": "0"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (340, "p1", "face", 1.0), (360, "p1", "tap", "attack_overhead")],
+        stop=dict(duration=10.0),
+        mutations=[("drop", "HIT", 1), ("set", "HIT", "x", "999.0"), ("regex", r"(\[C2\] SCORE pid=\d+ taken=)1", r"\g<1>0")],
+        allow=[],
+    ),
+    # The walker crosses a thrust's line 110 cm ahead, along the ship's length; the thrust reaches
+    # past the walker for its whole release, so the rewound body meets the blade for view lags
+    # of 11 to 26 frames and some frames either side.
+    "melee.hit-walk": dict(
+        family="melee", covers=["rewind", "combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 14900.0, 320.0), 90.0),
+                   p2=("C2", (421.0, 15010.0, 320.0), 270.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (340, "p1", "face", 89.0),
+              (355, "p2", "move", -1.0, 0.0, 100), (360, "p1", "tap", "attack_thrust")],
+        stop=dict(duration=10.0),
+        mutations=[("drop", "HIT", 1), ("set", "HIT", "tx", "999.0"), ("regex", r"(\[C2\] SCORE pid=\d+ taken=)1", r"\g<1>0")],
+        allow=[],
+        pose_every=1,
+        injection_tolerance=2,
+    ),
+    "melee.parry": dict(
+        family="melee", covers=["parry", "combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (150.0, 15200.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (340, "p1", "face", 1.0), (360, "p1", "tap", "attack_overhead"), (372, "p2", "tap", "parry")],
+        stop=dict(duration=10.0),
+        mutations=[("drop", "PARRY", 1), ("regex", r"(\[C1\] SCORE pid=\d+ taken=\d+ dealt=\d+ parries=)1", r"\g<1>0")],
+        allow=[],
+    ),
+    "melee.parry-late": dict(
+        family="melee", covers=["parry", "combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (150.0, 15200.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (340, "p1", "face", 1.0), (360, "p1", "tap", "attack_overhead"), (412, "p2", "tap", "parry")],
+        stop=dict(duration=10.0),
+        mutations=[("drop", "HIT", 1), ("regex", r"(\[C2\] SCORE pid=\d+ taken=)1", r"\g<1>0")],
+        allow=[],
+    ),
+    "melee.advance-half": dict(
+        family="melee", covers=["advance", "combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (150.0, 15200.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30", "fm.MeleeAdvanceFraction": "0.5", "fm.MeleeAdvanceCapMs": "50"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (340, "p1", "face", 1.0), (360, "p1", "tap", "attack_overhead"), (372, "p2", "tap", "parry")],
+        stop=dict(duration=10.0),
+        mutations=[("regex", r"\[S\] (HIT|PARRY) ", r"[S] NONE "), ("regex", r"(\[C2\] SCORE pid=\d+ taken=)\d+", r"\g<1>9")],
+        allow=[],
+    ),
+    "melee.advance-whole": dict(
+        family="melee", covers=["advance", "combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (150.0, 15200.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30", "fm.MeleeAdvanceFraction": "1.0", "fm.MeleeAdvanceCapMs": "80"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (340, "p1", "face", 1.0), (360, "p1", "tap", "attack_overhead"), (372, "p2", "tap", "parry")],
+        stop=dict(duration=10.0),
+        mutations=[("regex", r"\[S\] (HIT|PARRY) ", r"[S] NONE "), ("regex", r"(\[C2\] SCORE pid=\d+ taken=)\d+", r"\g<1>9")],
+        allow=[],
+    ),
 }
 
 
@@ -294,6 +434,12 @@ def validate(resolve_action=None):
         tol = s.get("injection_tolerance", 1)
         if not isinstance(tol, int) or tol < 0:
             problems.append(where + "injection_tolerance must be a non-negative frame count")
+        every = s.get("pose_every", 6)
+        if not isinstance(every, int) or every <= 0:
+            problems.append(where + "pose_every must be a positive frame count")
+        for name in s.get("cvars", {}):
+            if name not in CVAR_DEFAULTS:
+                problems.append(where + "cvar %s has no default in CVAR_DEFAULTS, so it would leak into the next row" % name)
     return problems
 
 

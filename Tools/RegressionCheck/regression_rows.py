@@ -31,6 +31,7 @@ def row(sid):
 
 class Context(object):
     def __init__(self, slice_path, tape_path=None):
+        self.path = slice_path
         self.trace, self.markers, self.raw, self.bad = read(slice_path)
         self.roles = roles_from(self.markers)
         self.latency = 0
@@ -437,6 +438,277 @@ def ocean_agree(ctx, r, s):
         band(r, "%s GPU vs its own CPU over the grid, max (cm)" % world,
              [ln.fields.get("gpu_max", 10 ** 6) for ln in client.values()], 0.0, 1.0, "cm")
     cost_sane(ctx, r)
+
+
+# --- the melee assertions ---------------------------------------------------------
+
+def combat(ctx, world, pid):
+    """One pawn's COMBAT lines in one world, in order."""
+    return [ln for ln in ctx.lines("COMBAT", world) if int(ln.fields.get("pid", -1)) == pid]
+
+
+def phase_key(lines):
+    return [(ln.fields.get("phase"), ln.frame, int(ln.fields.get("start", -1)), ln.fields.get("attack")) for ln in lines]
+
+
+def phase_text(lines):
+    return " ".join("%s@%d" % (ln.fields.get("phase"), ln.frame) for ln in lines) or "none"
+
+
+def rollbacks_reported(ctx, r, world, pid, role):
+    n = [ln.fields.get("n", 0.0) for ln in ctx.lines("ROLLBACK", world) if int(ln.fields.get("pid", -1)) == pid]
+    r.add(True, "%s rollbacks on %s" % (role, world), "%d" % int(max(n) if n else 0))
+
+
+def command_frame(press):
+    """The frame a press's command runs at: an INPUT line stamps the pending frame, and the
+    command it authors runs at the next."""
+    return press.frame + 1
+
+
+@row("melee.swing")
+def melee_swing(ctx, r, s):
+    pid = role_pids(ctx).get("p1", -1)
+    press = ctx.first("INPUT", "C1", "action=attack_overhead edge=pressed")
+    server, client, other = combat(ctx, "S", pid), combat(ctx, "C1", pid), combat(ctx, "C2", pid)
+    want = ["windup", "release", "recovery", "idle"]
+    r.add([ln.fields.get("phase") for ln in server] == want, "p1 phases on S", phase_text(server))
+    starts = [int(ln.fields.get("start", -1)) for ln in server[:3]]
+    r.add(bool(press) and bool(starts) and all(st == command_frame(press) for st in starts),
+          "p1 attack start on S is the press's command frame", "press %s, start %s" % (press.frame if press else "none", starts))
+    band(r, "p1 windup on S (frames)", [server[1].frame - server[0].frame] if len(server) > 1 else [], 20, 60, "f")
+    band(r, "p1 release on S (frames)", [server[2].frame - server[1].frame] if len(server) > 2 else [], 5, 40, "f")
+    band(r, "p1 attack length on S (frames)", [server[3].frame - server[0].frame] if len(server) > 3 else [], 60, 160, "f")
+    r.add(bool(server) and phase_key(client) == phase_key(server), "p1 phases on C1 match S frame for frame", phase_text(client))
+    r.add([ln.fields.get("phase") for ln in other] == want and [int(ln.fields.get("start", -1)) for ln in other[:3]] == starts,
+          "p1 phases as C2 sees them, in order with the same start", phase_text(other))
+    r.add(True, "C2 sees each phase after S (frames)", "%s" % [ln.frame - srv.frame for ln, srv in zip(other, server)])
+    rollbacks_reported(ctx, r, "C1", pid, "p1")
+    cost_sane(ctx, r)
+
+
+@row("melee.feint")
+def melee_feint(ctx, r, s):
+    pid = role_pids(ctx).get("p1", -1)
+    feint = ctx.first("INPUT", "C1", "action=feint edge=pressed")
+    for world in s["worlds"]:
+        lines = combat(ctx, world, pid)
+        r.add([ln.fields.get("phase") for ln in lines] == ["windup", "idle"], "p1 feinted in windup on %s" % world, phase_text(lines))
+    server = combat(ctx, "S", pid)
+    band(r, "p1 idle after the feint on S (frames after the press)",
+         [server[1].frame - feint.frame] if feint and len(server) > 1 else [], 0, 1, "f")
+    swings, hits = len(ctx.lines("SWING", "S")), len(ctx.lines("HIT", "S"))
+    r.add(swings == 0 and hits == 0, "no swing on S", "%d SWING, %d HIT" % (swings, hits))
+    rollbacks_reported(ctx, r, "C1", pid, "p1")
+    cost_sane(ctx, r)
+
+
+@row("melee.feint-loss")
+def melee_feint_loss(ctx, r, s):
+    pid = role_pids(ctx).get("p1", -1)
+    server, client = combat(ctx, "S", pid), combat(ctx, "C1", pid)
+    seen = lambda lines: set((ln.fields.get("phase"), int(ln.fields.get("start", -1)), ln.fields.get("attack")) for ln in lines)
+    r.add(bool(server) and seen(server) <= seen(client) and phase_key(server)[-1][::2] == phase_key(client)[-1][::2],
+          "p1 on C1 saw every state S held and ends in the same one", "S %s; C1 %s" % (phase_text(server), phase_text(client)))
+    took = "release" not in [ln.fields.get("phase") for ln in server]
+    r.add(True, "the feint took on S", "yes" if took else "no, the swing went through")
+    rollbacks_reported(ctx, r, "C1", pid, "p1")
+    cost_sane(ctx, r)
+
+
+@row("melee.direction")
+def melee_direction(ctx, r, s):
+    pid = role_pids(ctx).get("p1", -1)
+    for world in s["worlds"]:
+        names = [ln.fields.get("attack") for ln in combat(ctx, world, pid) if ln.fields.get("phase") == "windup"]
+        r.add(names == ["horizontal_l", "horizontal_r"], "p1 sides from the last turn on %s" % world, " ".join(names) or "none")
+    cost_sane(ctx, r)
+
+
+def hits(ctx, attacker, target):
+    return [ln for ln in ctx.lines("HIT", "S")
+            if int(ln.fields.get("pid", -1)) == attacker and int(ln.fields.get("target", -1)) == target]
+
+
+def scores_agree(ctx, r, s):
+    """The last SCORE per pawn on every world reads the same tallies as the server's; a pawn whose
+    tallies never changed has none anywhere."""
+    pids = role_pids(ctx)
+    for role in sorted(s["roles"]):
+        pid = pids.get(role, -1)
+        last = {}
+        for world in s["worlds"]:
+            lines = [ln for ln in ctx.lines("SCORE", world) if int(ln.fields.get("pid", -1)) == pid]
+            last[world] = (lines[-1].fields.get("taken"), lines[-1].fields.get("dealt"), lines[-1].fields.get("parries")) if lines else None
+        r.add(all(v == last["S"] for v in last.values()),
+              "%s tallies agree on every world" % role,
+              "no tallies" if last["S"] is None else " ".join("%s=%s" % (w, v) for w, v in sorted(last.items())))
+
+
+def reference_hit(ctx, s):
+    """The 0 ms row's HIT line from the same run, when this is a later latency of it."""
+    if ctx.latency == 0:
+        return None
+    base = os.path.basename(ctx.path).split("@")[0]
+    ref = os.path.join(os.path.dirname(ctx.path), "%s@0.slice.log" % base)
+    if not os.path.exists(ref):
+        return None
+    pids = role_pids(ctx)
+    other = Context(ref)
+    lines = hits(other, role_pids(other).get("p1", -1), role_pids(other).get("p2", -1))
+    press = other.first("INPUT", "C1", "edge=pressed")
+    return (lines[0], press) if lines and press else None
+
+
+def still_target(ctx, r, s, contact_cm):
+    """One hit on a standing target: the rewound body's ship-space centre against the 0 ms row's,
+    and the contact point too when contact_cm is set, which a calm sea allows."""
+    pids = role_pids(ctx)
+    p1, p2 = pids.get("p1", -1), pids.get("p2", -1)
+    lines = hits(ctx, p1, p2)
+    count(r, "p1 hits p2 on S", len(lines), 1)
+    press = ctx.first("INPUT", "C1", "action=attack_overhead edge=pressed")
+    if lines and press:
+        hit = lines[0]
+        band(r, "contact within the body's radius of the rewound centre (cm)",
+             [((hit.fields["x"] - hit.fields["tx"]) ** 2 + (hit.fields["y"] - hit.fields["ty"]) ** 2) ** 0.5], 0.0, 35.0, "cm")
+        r.add(True, "hit frame after the press, rewind depth, body moved since, part",
+              "%d f, %d f, %.1f cm, %s" % (hit.frame - press.frame, hit.frame - int(hit.fields["rf"]), hit.fields.get("moved", -1.0), hit.fields.get("part")))
+        ref = reference_hit(ctx, s)
+        if ref:
+            ref_hit, ref_press = ref
+            band(r, "rewound body's ship-space point against the 0 ms row (cm)",
+                 [sum((hit.fields[k] - ref_hit.fields[k]) ** 2 for k in ("tx", "ty", "tz")) ** 0.5], 0.0, 10.0, "cm")
+            contact = sum((hit.fields[k] - ref_hit.fields[k]) ** 2 for k in ("x", "y", "z")) ** 0.5
+            if contact_cm is None:
+                r.add(True, "contact point against the 0 ms row (cm)", "%.1f cm, the deck's roll moves it" % contact)
+            else:
+                band(r, "contact point against the 0 ms row (cm)", [contact], 0.0, contact_cm, "cm")
+                equal(r, "hit frame after the press, as at 0 ms", [hit.frame - press.frame], ref_hit.frame - ref_press.frame)
+        else:
+            r.add(True, "rewound body's ship-space point against the 0 ms row (cm)",
+                  "this is the 0 ms row" if ctx.latency == 0 else "no 0 ms row in this run")
+    scores_agree(ctx, r, s)
+    cost_sane(ctx, r)
+
+
+@row("melee.hit")
+def melee_hit(ctx, r, s):
+    still_target(ctx, r, s, contact_cm=None)
+
+
+@row("melee.hit-calm")
+def melee_hit_calm(ctx, r, s):
+    still_target(ctx, r, s, contact_cm=10.0)
+
+
+def rendered_at(ctx, world, pid, frame):
+    """A pawn's rendered ship-space position in one world at the frame its POSE line labels, or a
+    straight line between the two labels around it."""
+    seen = poses(ctx, world, pid)
+    if frame in seen:
+        ln = seen[frame]
+        return [ln.fields[k] for k in ("rx", "ry", "rz")]
+    before = [f for f in seen if f < frame]
+    after = [f for f in seen if f > frame]
+    if not before or not after:
+        return None
+    fa, fb = max(before), min(after)
+    a, b = seen[fa], seen[fb]
+    t = (frame - fa) / float(fb - fa)
+    return [a.fields[k] + (b.fields[k] - a.fields[k]) * t for k in ("rx", "ry", "rz")]
+
+
+@row("melee.hit-walk")
+def melee_hit_walk(ctx, r, s):
+    pids = role_pids(ctx)
+    p1, p2 = pids.get("p1", -1), pids.get("p2", -1)
+    lines = hits(ctx, p1, p2)
+    count(r, "p1 hits the walking p2 on S", len(lines), 1)
+    press = ctx.first("INPUT", "C1", "action=attack_thrust edge=pressed")
+    if lines and press:
+        hit = lines[0]
+        rf = int(hit.fields["rf"])
+        seen = rendered_at(ctx, "C1", p2, rf)
+        err = [sum((hit.fields[k] - seen[i]) ** 2 for i, k in enumerate(("tx", "ty", "tz"))) ** 0.5] if seen else []
+        band(r, "rewound body against what C1 rendered at that frame (cm)", err, 0.0, 10.0, "cm")
+        r.add(True, "hit frame after the press, rewind depth, body moved since",
+              "%d f, %d f, %.1f cm" % (hit.frame - press.frame, hit.frame - rf, hit.fields.get("moved", -1.0)))
+    scores_agree(ctx, r, s)
+    cost_sane(ctx, r)
+
+
+def parries(ctx, attacker, target):
+    return [ln for ln in ctx.lines("PARRY", "S")
+            if int(ln.fields.get("pid", -1)) == attacker and int(ln.fields.get("target", -1)) == target]
+
+
+@row("melee.parry")
+def melee_parry(ctx, r, s):
+    pids = role_pids(ctx)
+    p1, p2 = pids.get("p1", -1), pids.get("p2", -1)
+    lines = parries(ctx, p1, p2)
+    count(r, "p1 parried by p2 on S", len(lines), 1)
+    r.add(not hits(ctx, p1, p2), "no hit on S", "%d HIT" % len(hits(ctx, p1, p2)))
+    press = ctx.first("INPUT", "C2", "action=parry edge=pressed")
+    if lines and press:
+        r.add(True, "contact after the parry press, rewind depth, frames left in the window at the rewound frame",
+              "%d f, %d f, %d f" % (lines[0].frame - press.frame, lines[0].frame - int(lines[0].fields["rf"]), int(lines[0].fields.get("margin", -1))))
+    scores_agree(ctx, r, s)
+    cost_sane(ctx, r)
+
+
+@row("melee.parry-late")
+def melee_parry_late(ctx, r, s):
+    pids = role_pids(ctx)
+    p1, p2 = pids.get("p1", -1), pids.get("p2", -1)
+    lines = hits(ctx, p1, p2)
+    count(r, "p1 hits p2 on S through a late parry", len(lines), 1)
+    r.add(not parries(ctx, p1, p2), "no parry on S", "%d PARRY" % len(parries(ctx, p1, p2)))
+    press = ctx.first("INPUT", "C2", "action=parry edge=pressed")
+    if lines and press:
+        r.add(True, "contact against the parry press, window open at the rewound frame",
+              "%d f, %d" % (lines[0].frame - press.frame, int(lines[0].fields.get("window", -1))))
+    scores_agree(ctx, r, s)
+    cost_sane(ctx, r)
+
+
+def advance_report(ctx, r, s):
+    """What one advance setting did: the attack's start against the press, the effective windup,
+    the resolution's frame, the rewound body against the current one, the parry margin."""
+    pids = role_pids(ctx)
+    p1, p2 = pids.get("p1", -1), pids.get("p2", -1)
+    press = ctx.first("INPUT", "C1", "edge=pressed")
+    server = combat(ctx, "S", p1)
+    starts = [int(ln.fields.get("start", -1)) for ln in server if ln.fields.get("phase") == "windup"]
+    release = [ln for ln in server if ln.fields.get("phase") == "release"]
+    resolved = hits(ctx, p1, p2) + parries(ctx, p1, p2)
+    count(r, "the swing resolved on S, hit or parry", len(resolved), 1)
+    if press and starts:
+        r.add(True, "attack start ahead of the press's command frame on S (frames)", "%d" % (command_frame(press) - starts[0]))
+    if press and release:
+        r.add(True, "effective windup on S (frames after the press)", "%d" % (release[0].frame - press.frame))
+    if press and resolved:
+        ln = resolved[0]
+        r.add(True, "%s on S: frames after the press, rewind depth, body moved since, margin" % ln.tag,
+              "%d f, %d f, %s cm, %s f" % (ln.frame - press.frame, ln.frame - int(ln.fields["rf"]),
+                                           ln.fields.get("moved", "-"), ln.fields.get("margin", "-")))
+    client = combat(ctx, "C1", p1)
+    client_starts = [int(ln.fields.get("start", -1)) for ln in client if ln.fields.get("phase") == "windup"]
+    r.add(bool(starts) and client_starts[:1] == starts[:1], "C1 predicted the same start as S", "S %s, C1 %s" % (starts[:1], client_starts[:1]))
+    rollbacks_reported(ctx, r, "C1", p1, "p1")
+    scores_agree(ctx, r, s)
+    cost_sane(ctx, r)
+
+
+@row("melee.advance-half")
+def melee_advance_half(ctx, r, s):
+    advance_report(ctx, r, s)
+
+
+@row("melee.advance-whole")
+def melee_advance_whole(ctx, r, s):
+    advance_report(ctx, r, s)
 
 
 # --- self-test --------------------------------------------------------------------

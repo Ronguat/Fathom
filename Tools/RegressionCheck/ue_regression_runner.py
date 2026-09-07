@@ -76,6 +76,10 @@ def key(name):
     return k
 
 
+# Keys the engine never reads as down, the mouse wheel: pressed and released in one event, one INJECT.
+MOMENTARY_KEYS = ("MouseScrollUp", "MouseScrollDown")
+
+
 # --- key resolution -------------------------------------------------------------
 # Actions are named in plans; the keys come from the controller's key table, read off its class
 # default object, so a rebind moves the fixture with the game.
@@ -271,6 +275,8 @@ class Run(object):
 
     def phase_apply(self):
         s = SC.SCENARIOS[self.sid]
+        for name, value in SC.CVAR_DEFAULTS.items():
+            unreal.SystemLibrary.execute_console_command(None, "%s %s" % (name, value))
         for name, value in s.get("cvars", {}).items():
             unreal.SystemLibrary.execute_console_command(None, "%s %s" % (name, value))
         if self.fixed:
@@ -343,6 +349,14 @@ class Run(object):
             self.pawns[(role, "S")].harness_teleport(unreal.Vector(*loc), yaw)
             self.pawns[(role, wtag)].set_harness_role(role)
             self.pcs[role].set_control_rotation(unreal.Rotator(0.0, 0.0, yaw))
+        every = int(s.get("pose_every", 0))
+        if every > 0:
+            for wtag, world in self.worlds.items():
+                if wtag == "S":
+                    continue
+                for pawn in unreal.GameplayStatics.get_all_actors_of_class(world, unreal.FMPlayerPawn):
+                    if pawn.get_local_role() == unreal.NetRole.ROLE_SIMULATED_PROXY:
+                        pawn.set_editor_property("pose_every_frames", every)
         server = self.worlds["S"]
         self.begin_game_time = unreal.GameplayStatics.get_time_seconds(server)
         self.begin_frame = self.sim_frame()
@@ -440,6 +454,11 @@ class Run(object):
         if op in ("tap", "press", "release", "hold"):
             action = stepv[3]
             kname = key_for(action)
+            if kname in MOMENTARY_KEYS:
+                unreal.FMInputTools.input_key(pc, key(kname), True)
+                unreal.FMInputTools.input_key(pc, key(kname), False)
+                self.mark("INJECT %s frame=%d %s %s press" % (self.rid, self.frame, role, action))
+                return
             if op == "release":
                 self.up(wtag, kname, role, action)
                 return

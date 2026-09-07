@@ -12,6 +12,23 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-07 | The intake bar's forward-hemisphere letter read as the tip's forward reach over 110 cm, three arcs beginning release beside the shoulder | Melee entry, Decisions | |
+| 2026-09-07 | Windup ends where AutoAlignment reaches 1; a thrust's release runs to the plateau's end, a plateau of no length extended to the fall's; a swing's 30 frames is the designer's word | Melee entry, Decisions | |
+| 2026-09-07 | The blade a 120 cm segment along the weapon bone's -Y, the length a knob in `Tools/Editor/bake-attacks.py` | Melee entry, Decisions | |
+| 2026-09-07 | Combat state a persistent sync-state block written in the mover component's in-simulation hooks, reconciling on the attack, its start and the parry's start only | Melee entry, Decisions | |
+| 2026-09-07 | The rendered frame and the advance in every input command, the advance clamped by the server to its own | Melee entry, Decisions | |
+| 2026-09-07 | The rewind in the ship's space from the server's per-frame body history, no ship reconstructed; a defender off the ship met in world space, unmeasured | Melee entry, Decisions | |
+| 2026-09-07 | The parry judged at the rendered frame: a 30-frame window on press, a 120 degree cone | `Config/DefaultGame.ini`, Melee entry | |
+| 2026-09-07 | Feint on Q; the swing turns with yaw only; the head a 15 cm sphere 80 cm above the capsule's centre; the eye at the head socket | `Config/DefaultGame.ini`, `AFMPlayerController` | |
+| 2026-09-07 | Keys event-timed: presses latched at the key event, the down state the events' gated by the poll, the mouse wheel momentary | Melee entry, Decisions | |
+| 2026-09-07 | Presentation by explicit time on single-node animation in the engine's default material; idle the first frame of overhead left, parry the first frame of the reference's parry pose | Melee entry, Decisions | |
+| 2026-09-07 | The still-target bar split: the rolling row asserts the rewound body's point, a calm-sea row the contact point, the deck's roll having moved the contact 27 cm between rows | Melee entry, Decisions | |
+| 2026-09-07 | The walking target crosses a thrust's line along the ship's length, 110 cm out; the parry press twelve frames after the attack's; every attack row turns one degree before its press to pin the side; the universal injection spread judged per client | `Tools/RegressionCheck/scenarios.py`, `Tools/RegressionCheck/regression_eval.py` | |
+| 2026-09-07 | The melee rows: the feint row's injection tolerance 2, `pose_every` one on the walking-target row's proxies, the COMBAT, HIT, PARRY, SWING and SCORE vocabulary with `rf` and `rp` | `Tools/RegressionCheck/scenarios.py`, `Docs/Debug-Instruments.md` | |
+| 2026-09-07 | `/Game/Fathom/Combat` and `/Game/Fathom/Melee` cooked always, beyond the plan | `Config/DefaultGame.ini` | |
+| 2026-09-07 | The universal set fails a slice on an INPUT no INJECT accounts for, the 2026-09-06 trap's discharge | `Tools/RegressionCheck/regression_eval.py` | |
+| 2026-09-07 | The runner restores every project console variable to its settings-reading value before each row, after the advance leaked from its rows into the swing row | `Tools/RegressionCheck/scenarios.py`, `CVAR_DEFAULTS` | |
+| 2026-09-07 | A client relays its trace every tenth of a second in chunks of sixteen lines rather than once a second in chunks of 64, which cut the view lag by 8 to 11 frames | `UFMTraceSubsystem`, `Docs/Debug-Instruments.md` | |
 | 2026-09-06 | Unplanned input filed as a trap and a rule rather than a universal assertion built | Demonstration entry, Decisions | |
 | 2026-09-05 | All eight attack types imported though the brief takes up to four; the intake chooses | Delivery entry, Decisions | |
 | 2026-09-05 | The mannequin meshes imported with materials, physics asset, post-process and animating rigs stripped | Delivery entry, Decisions | |
@@ -64,6 +81,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 |---|---|---|
 | 2026-09-04 — Fathom is bootstrapped: the spine, the regime and the inheritance | 2026-09-04 — The repository stands alone, and forgets its parent | The reference model's ownership: the file is dissolved into its homes and the ownership check removed; the Harness brief builds on the loop skeleton here rather than a reference elsewhere |
 | 2026-09-05 — Ship: a body every world integrates from the same state, its Stretch deferral of smoothed presentation | 2026-09-05 — Presentation between frames | The deferral, built on the designer's ruling that presentation never relies on a render cap |
+| 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | Eight release curves counted; seven exist, none for underhand left, and the intake leaves the underhand pair unused |
 
 ## Known traps, indexed by what sets them off
 
@@ -135,22 +153,57 @@ delivery, halt and demand it. Bites at Melee. Discharged 2026-09-05 by the impor
 that date: the delivery is in the project.
 
 **Whenever a delivered clip is played — *none has driven a frame here.*** Imported, loaded and
-resaved headless *(2026-09-05)*; nothing has played one on a pawn. Bites at Melee.
+resaved headless *(2026-09-05)*; nothing has played one on a pawn. Bites at Melee. Discharged
+2026-09-07 by the intake's capture, the Melee entry: the first-person overhead played on a pawn
+and the body's pose on the other, looked at.
 
 **Whenever the attacker's view delay is needed — *it is authored, never estimated.*** The rendered
-frame rides in the input command. Bites at Melee.
+frame rides in the input command. Bites at Melee. Discharged 2026-09-07: every command carries
+the frame the client's simulated proxies are drawn at, the Melee entry.
 
 **Whenever a sim proxy's deck position is read — *it is interpolated presentation.*** A
 client's view of the other pawn in ship space is asserted at 50 cm *(2026-09-05)* and no
 tighter until Melee's rewind reads the sync state instead; its rendering is placed from ship
 space and asserted at 10 cm standing *(2026-09-05)*, and the staleness stays. Bites at Melee.
+Discharged 2026-09-07: the rewind reads the server's own per-frame history and never a
+client's proxy, the Melee entry; the 50 cm assertion stays on the rendering, which is what it
+measures.
+
+**Whenever a defender is off the ship — *the sweep meets it in world space through the ship's
+current transform, unmeasured.*** The rewind rows stand both pawns on the deck *(2026-09-07)*.
+Bites at Ship to Ship, where boarding crosses frames. Discharged by a row with a swimmer struck
+from the deck.
+
+**Whenever a press rides one command — *a command the server ticks past loses its edge.*** The
+attack, parry and feint presses are edges in the command of one frame; when that command reaches
+the server after the frame was ticked, the prediction framework runs the frame on the last
+command it had and the edge is gone, or re-bases the client's frames and the attack starts two
+frames later than predicted. Seen on three of eight rows in one sitting and none of twenty in
+others, with the once-a-second relay chunks in the client's packets *(2026-09-07)*; the client
+rolls back to the server's view either way. Bites at every rung with presses. Discharged by an
+edge that survives a missed frame, a queue the server drains, or by a matrix that never shows it
+again.
+
+**Whenever the view lag moves — *the walking target's crossing moves with it.*** The
+`melee.hit-walk` row places its walker so the rewound body crosses the thrust's line during its
+32-frame release for view lags of 11 to 26 frames, with some frames either side *(2026-09-07)*;
+a horizontal, whose forward reach lasts 13 frames, missed at one latency each time the relay's
+chunking moved the lag by eight frames. A larger change to the trace, the relay or the
+interpolation buffer moves the crossing out of the release and the row reads a miss. Bites at
+any such change. Discharged by a walker whose crossing does not depend on the lag.
+
+**Whenever a human's held key loses the window — *the controller's event-down set clears only
+through its own InputKey.*** The engine's flush on focus loss is unmeasured against it
+*(2026-09-07)*; a scripted release always arrives. Bites when a human plays. Discharged by a
+hands-on tape across a focus change.
 
 **Whenever a run's play window has focus — *a hand on the keyboard is input the loop cannot
 see.*** The mechanism and the rule are in `Docs/Debug-Instruments.md`, the shape of a run. Seven
 consecutive rows of the 2026-09-06 demonstration run carried key edges no plan injected, the
 designer's, and its one red, `ship.stop@150`, was a jump at the anchor frame lifting the caller
 out of the station's radius; rerun three times untouched, green *(2026-09-06)*. Bites at every
-run. Discharged by a universal assertion failing a slice on an `INPUT` no `INJECT` accounts for.
+run. Discharged 2026-09-07 by that assertion, `every INPUT injected` in the universal set, with
+its self-test and a `dup INPUT` mutation on the swing and feint rows.
 
 ## Tuning map — a verdict comes back, which knob moves
 
@@ -160,8 +213,10 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | Question | Move this | **Not** this |
 |---|---|---|
 | The simulation rate | `FixedTickFrameRate` in `Config/DefaultNetworkPrediction.ini`, 60 | The engine's own fixed frame rate, which overrides it when enabled |
-| Hit timing under latency | The advance fraction and its cap, per attack, once Melee builds them | The windup |
-| Parry fairness | The parry rule, measured together with the advance | The window length |
+| Hit timing under latency | `AdvanceFraction` and `AdvanceCapMs` in the combat settings, `fm.MeleeAdvanceFraction` and `fm.MeleeAdvanceCapMs` for a row; the advance rows report each setting *(2026-09-07)* | The windup |
+| Parry fairness | `ParryFrames` and `ParryConeDegrees` in the combat settings, the parry judged at the rendered frame, measured beside the advance | The window alone |
+| Where a swing reaches | `BLADE_LENGTH` in `Tools/Editor/bake-attacks.py` and the attack assets it writes; `HeadHeight` and `HeadRadius` in the combat settings | The clips |
+| The eye and the meshes | `EyeOffset`, `MeshOffset` and `MeshYaw` in the combat settings, the eye the head socket of the reference pose | The capsule |
 | The net update rate | `NetServerMaxTickRate`, at the engine default | The simulation rate |
 | Inbound bytes per player | The client's frame rate, `t.MaxFPS`; a packaged client ran uncapped at 30 000 B/s against 10 000 capped at 60 *(2026-09-05)* | The simulation rate |
 | The injection pairing's spread | The render load: the loop runs at half resolution, and the demo's full-resolution walk row read a lead of 13 then 15 frames, spread 2 against the tolerance of 1, where the same row at half resolution reads within 1 *(2026-09-05)*; the walk row's tolerance is 2 after three spreads of 2 in a day with the play windows enlarged *(2026-09-05)* | The tolerance |
@@ -179,30 +234,16 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 its fallback, its coverage and its inheritance; the plan entry written before execution turns
 the bar into numbers.
 
-- **Melee** — **Opens with the intake sub-slice's second half**, against a contract the delivery
-  answers in part: clip list and directions, where windup ends and release begins, the blade
-  socket, root motion or not, first and third person pairs; then blade curves baked per attack. Attack, parry and feint presses ride in the input command with the rendered frame;
-  attack state sits in the sync state; the server sweeps the blade against rewound bodies and the
-  reconstructed ship. The advance knob and the parry rule are measured at 0, 50, 100 and 150 ms
-  across the three known settings, and the verdict goes to the review queue. First person is the
-  aim frame; third person is the pre-registered fallback, a swap rather than a rebuild. **Bar**:
-  per `Docs/Spec.md`. **Stripped**: chambers, glancing, ripostes, stamina. **What the known settings
-  cost, in the designer's account**: an advance of the whole round trip capped at 80 ms gave instant
-  hits up to that ping, windups effectively faster by the ping up to the cap, hits landing early by
-  half the ping, and false positives at high latency; an advance of half the round trip capped at
-  50 ms gave some hit delay at higher ping and no competitive advantage at any ping. The measurement
-  reports each of those. **The clips and their skeleton are in the project** under `/Game/Fathom/Melee/`, listed in
-  `Docs/Melee-Delivery.tsv`, delivered 2026-09-05 from the designer's Mordhau-shaped project, the
-  same project whose half measure is the second setting above; its code and write-ups are
-  available on request, as is an answer to any animation-contract question the clips leave open. **Inherits**: `AFMPlayerPawn` on Mover with
-  its key table read as the input command is authored, the place for presses and the rendered
-  frame; `POSE` with the pawn's ship-space position, the frame the sync state carries, and
-  `ROLLBACK`; `AFMShip` reconstructible at any frame from its snapshot and history, the rewound
-  ship; the deck rows' settle windows and transients as the baseline; the sim-proxy trap above;
-  the loop with its thirteen scenarios, the trace, the field session script, and every earlier
-  entry's measurements.
 - **Ship Combat** — Cannon stations, holes, water, repair, bailing, sinking, respawn. **Bar**: per
-  `Docs/Spec.md`.
+  `Docs/Spec.md`. **Inherits**: the stations and their radii; `UFMCombatComponent` with the server's per-frame body
+  history, the frame and fraction an attacker's proxies were drawn at in every command, the sweep
+  in ship space, replicated tallies and the `SCORE` line, which a cannon's shot and a hole can
+  reuse; `FFMCombatInputs` and `FFMCombatState` as the pattern for a press in the command and state
+  in the sync state; the `melee.*` rows, `pose_every`, the per-row console-variable reset and
+  `Tools/RegressionCheck/melee_report.py` as the pattern for a row that reads a server verdict; the
+  advance and parry knobs in the combat settings with their measurement in the Melee entry; the
+  traps above on a press riding one command and on a defender off the ship; the minimum answer,
+  rung four, met.
 - **Ship to Ship** — Contact response between two kinematic ships, and boarding across ships as a
   base change. **Bar**: per `Docs/Spec.md`.
 - **Stretch** — Receives every deferral, one dated line each. Deferred 2026-09-04, from the basic
@@ -215,18 +256,31 @@ the bar into numbers.
   capsule placeholder from Geometry Script, the engine's cylinder standing in. Deferred
   2026-09-05, from Ship: a predicted station input for the local player; ~~a smoothed presentation
   of the reconstructed ship~~, built 2026-09-05 on the designer's ruling, the Presentation entry.
+  Deferred 2026-09-07, from Melee: pitch in the swing, the blade turning with yaw only; the
+  underhand attacks and the exhausted, riposte and deflect clips; a defender in the water; the
+  head sphere following the clip rather than riding the capsule; a parry held rather than a
+  window; an animation graph in place of explicit time; a material of the project's own on the
+  delivered meshes.
 
 ## Symbol index — which entries discuss this thing
 
-Current through **2026-09-06**. Regenerated, byte-sorted, one row per symbol.
+Current through **2026-09-07**. Regenerated, byte-sorted, one row per symbol.
 
 | Symbol | Entries |
 |---|---|
 | `AFMGameState` | 09-05 |
 | `AFMOceanActor` | 09-05 |
-| `AFMPlayerController` | 09-05 |
-| `AFMPlayerPawn` | 09-05 |
+| `AFMPlayerController` | 09-05, 09-07 |
+| `AFMPlayerPawn` | 09-05, 09-07 |
+| `AFMPlayerState` | 09-07 |
 | `AFMShip` | 09-05 |
+| `EFMAttackSide` | 09-07 |
+| `EFMAttackType` | 09-07 |
+| `EFMCombatPhase` | 09-07 |
+| `FFMBodySample` | 09-07 |
+| `FFMCombatInputs` | 09-07 |
+| `FFMCombatRules` | 09-07 |
+| `FFMCombatState` | 09-07 |
 | `FFMShipInputs` | 09-05 |
 | `FFMShipState` | 09-05 |
 | `FFMStation` | 09-05 |
@@ -234,6 +288,9 @@ Current through **2026-09-06**. Regenerated, byte-sorted, one row per symbol.
 | `FMOcean` | 09-05 |
 | `FM_TRACE` | 09-05 |
 | `LogFMTrace` | 09-04, 09-05 |
+| `UFMAttackData` | 09-07 |
+| `UFMCombatComponent` | 09-07 |
+| `UFMCombatSettings` | 09-07 |
 | `UFMInputTools` | 09-04 |
 | `UFMOceanSettings` | 09-05 |
 | `UFMOceanSubsystem` | 09-05 |
@@ -243,6 +300,230 @@ Current through **2026-09-06**. Regenerated, byte-sorted, one row per symbol.
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05 |
+
+## 2026-09-07 — Melee: the swing, the rewind and the knob, measured
+
+### Next session's brief
+
+**Pick up at Ship Combat**, whose brief is in the rung briefs above. Melee shipped: the whole
+matrix green in three sittings on the same binary, 32, 26 and 28 rows with every mutation
+proven, the bar in `Docs/Spec.md` met, and the advance verdict the designer's, in the review
+queue with the measurement below. **Open**: the review queue's verdicts, forty-odd rows; the
+parry rule's alternatives, measured only as the margin each row reports; the thrusts' release
+from the plateau, the designer's word on stabs being "different" and no number; the traps filed
+today, a press riding one command above all. Budget: none set. The editor is closed, the tree
+clean, every commit on the remote.
+
+### The plan, written before execution
+
+**Scope.** Sub-slices in order, each committed when green. **One, the intake's second half**:
+the contract recorded against the designer's answers below; `UFMMeleeTools` in the editor module
+bakes each attack's blade from its first-person clip into a `UFMAttackData` asset under
+`/Game/Fathom/Combat/`, blade base and tip per frame at 60 Hz in pawn space, with windup,
+release and recovery in frames; the pawn carries the delivered arms and body, each with a
+material, and plays a clip from explicit time; a capture looked at. **Two, combat in the
+simulation**: `FFMCombatInputs` in the input command, the attack type, its side, parry, feint
+and the rendered frame; `FFMCombatState` in the sync state, the attack, its start frame, the
+parry's start and the hits landed; transitions in the mover component's in-simulation hooks; a
+`COMBAT` line per transition on every world. **Three, the rewind and the sweep**: the server
+keeps each pawn's body per frame in ship space, sweeps the attacker's blade during release
+against every other body at the frame the attacker's command says it rendered, and writes `HIT`
+and `SWING`; hits received are a replicated count. **Four, parry**: a window and a facing cone
+in the sync state, resolved at the rendered frame; `PARRY`. **Five, the advance knob**: fraction
+and cap in `UFMCombatSettings` with console variables for rows, the per-connection advance in
+frames replicated on the player state so the client predicts the same start; the three known
+settings measured. **Six, closedown.**
+
+**Bar, pre-registered.** *Intake*: six assets, overhead, horizontal and thrust on each side;
+each tip's path during release spans over 60 cm and lies in the pawn's forward hemisphere; the
+clip visibly mid-swing at its release frame in a PIE capture. *Combat*: the phase transitions
+of a scripted attack at identical frames on the server and the attacker's client at 0, 50, 100
+and 150 ms; a feint in windup leaves no release on any world; the side and type agreed on every
+world. *Rewind*: a still target on the sailing, rolling deck at sea state 1, one `HIT` at each
+latency, its ship-space point within 10 cm of the 0 ms row's point, its frame after the press
+identical across latencies; a walking target, the rewound body within 10 cm of the position the
+attacker's client rendered at that frame. *Parry*: the outcome identical on the server and both
+clients at every latency, a parry inside the window and one after it. *Advance*: each row
+reports the attack's start against the press, the effective windup, the hit frame, the distance
+from the rewound body to the server's current one, and the parry margin; the outcome identical
+on both machines; the verdict is the designer's, in the review queue. Every earlier row stays
+green.
+
+**Fallbacks.** The first-person blade making no sense in pawn space: the third-person clip as
+the aim frame, the brief's fallback. Combat state not reconciling through the sync state: the
+state carried by a movement modifier; failing that, an unpredicted replicated state, recorded
+as a bar miss. A defender in the water: deferred, dated. A rewind error over 10 cm: the number
+re-registered with its cause. A dead end after these winds the session down.
+
+**Coverage.** `melee.swing`, `melee.feint`, `melee.feint-loss`, `melee.direction`, `melee.hit`,
+`melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.advance-half`,
+`melee.advance-whole`; the universal set gains the assertion the 2026-09-06 entry left open, a
+slice failing on an `INPUT` no `INJECT` accounts for. **A trap filed** if sub-slice one ships
+alone: the baked blade has hit nothing.
+
+**The designer's answers, 2026-09-07, which the contract reads from.** The `*_2h_fpp` and
+`*_2h_tpp` family is the refined one, first and third person paired by name. Release is the
+part of the attack that looks as if it would deal damage, for swings around 0.625 s in; windup
+is before it and recovery the remainder; the AutoAlignment plateau read as release is a fair
+reading. The blade's length and axis are determinable from the clips. Overhead binds to scroll
+down, thrust to scroll up, horizontal to the left mouse button, parry to the right; the last
+horizontal mouse motion picks the side. The editor is the session's, closed at the end. Later
+the same day, seeing the bake: release is typically about 500 ms, 30 frames, for swings; a stab
+is different.
+
+### Measured
+
+**The bake**, six attacks from the first-person clips at 60 frames a second, frames of windup,
+release and recovery after the designer's 30-frame swing release, the first bake's plateau
+having given overhead R ten, and the tip's forward reach and path length during release:
+
+| Attack | Windup | Release | Recovery | Reach (cm) | Path (cm) |
+|---|---|---|---|---|---|
+| overhead L | 33 | 30 | 44 | 164 | 320 |
+| overhead R | 47 | 30 | 30 | 155 | 215 |
+| horizontal L | 31 | 30 | 65 | 145 | 277 |
+| horizontal R | 35 | 30 | 61 | 147 | 299 |
+| thrust L | 34 | 32 | 44 | 159 | 63 |
+| thrust R | 32 | 27 | 51 | 164 | 88 |
+
+The blade's axis is the weapon bone's -Y, forward at the thrust's release by 0.971 against 0.228
+for +Z. The eye, the head socket of the reference pose, sits at (-4.1, 0, 84.8) in pawn space and
+the head bone at 77.5.
+
+**Combat in the simulation.** The swing: overhead R pressed at INPUT frame P starts at P+1 on
+every world, windup 47, release 10, idle at P+108; the server's and the attacker's transitions
+identical frame for frame at 0, 50, 100 and 150 ms; the other client sees each phase 9 to 10
+frames after the server at 0 ms and 24 to 26 at 150, with the same start; rollbacks on the
+attacker's client 1 at 0 ms, 3 at 150. The feint ten frames into windup: idle one frame after the
+feint's command frame on the server and the attacker's client at every latency, the other client
+26 frames later at 150, no swing, no hit; under 5 percent loss at 0 and 100 ms the feint took
+and the attacker's client held every state the server did. The side: a turn left then right
+before two horizontals gave horizontal L then R on every world. Injection pairing 5 frames at
+0 ms, 6 on the deck, 15 at 150, spread within 1 with event-timed keys, where the latched press
+alone had run a frame ahead of the polled release.
+
+**The rewind.** A still target 150 cm ahead, struck by overhead R: on the calm sea one hit at
+each latency, 48 frames after the press, the body rewound 11, 16, 21 and 27 frames at 0, 50, 100
+and 150 ms, the contact point and the rewound centre identical to the 0 ms row within a
+centimetre; on the rolling sea the same frames, the depths 11, 17, 20 and 27, the rewound centre
+within 0.2 cm of the 0 ms row, the contact 0.6 to 1.4 cm off, the body having crept 1.3 to
+3.7 cm since the rendered frame. The rewound centre against the position the attacker's client
+had drawn at that frame: 0.0 to 0.3 cm. A target walking across a thrust's line at 12.8 cm a frame, struck by thrust L: the body
+rewound 11, 17, 21 and 28 frames, having moved 115, 191, 242 and 332 cm since, and the rewound
+centre against the client's rendering 0.0 to 0.2 cm. A horizontal, whose reach lasts thirteen
+frames of its release, missed at one latency each time the view lag moved.
+
+**The parry.** Pressed twelve frames after the attack's press and judged at the rendered frame:
+parried at every latency, the window having 6, 12, 15 and 21 frames left at the rewound frame;
+pressed 52 frames after, a hit at every latency with the window closed. Tallies identical on the
+server and both clients in every row.
+
+**The advance**, the three known settings on the parry fixture, an overhead R against a parry
+pressed twelve frames after it, the attacker's client predicting the same start as the server in
+every row:
+
+| Setting | Advance (frames) | Effective windup (frames after the press) | Contact | Parry margin (frames) |
+|---|---|---|---|---|
+| none | 0, 0, 0, 0 | 48, 48, 48, 48 | parried | 6, 12, 15, 21 |
+| half the round trip, 50 ms cap | 0, 2, 3, 3 | 48, 46, 45, 45 | parried | 6, 14, 20, 24 |
+| the whole round trip, 80 ms cap | 1, 4, 5, 5 | 47, 44, 43, 43 | parried | 7, 16, 20, 27 |
+
+Four columns are 0, 50, 100 and 150 ms. The advance a row set leaked into the rows after it
+until the runner restored every project variable before each row, seen as a five-frame advance
+on a swing row. The designer's account of the settings, carried from the brief: the whole round
+trip capped at 80 ms gave instant hits up to that ping, windups effectively faster by the ping
+up to the cap, hits landing early by half the ping, and false positives at high latency; half
+the round trip capped at 50 ms gave some hit delay at higher ping and no competitive advantage
+at any ping. Here the windup shortened by the advance, five frames at most, and contact came
+earlier by the same; a still body moved 1 to 4 cm between the rendered frame and the server's,
+a walking one 115 to 332 cm, which is the distance a false positive can reach; the verdict is
+the designer's.
+
+### Decisions
+
+**The attack table is the designer's ruling**: three types on three keys, overhead on scroll
+down, thrust on scroll up, horizontal on the left mouse button, the side from the view's last
+horizontal turn before the press; six clips of the refined `*_2h_fpp`/`*_2h_tpp` family, the
+underhand pair unused, its left release curve absent. The brief's "up to four" is superseded by
+it. **Reopens** never.
+
+**Windup ends where AutoAlignment reaches 1**, which lands 0.52 to 0.78 s in, the designer's
+"around 0.625 s". **A swing's release is 30 frames from there, the designer's word** on seeing
+the first bake, whose plateau had given overhead R ten frames; **a thrust's runs to the plateau's
+end**, a stab being different by the same word and no number given, a plateau of no length
+extended to the fall's end. Recovery is the remainder. **Alternative.** The plateau for all six.
+**Reopens** on the designer's numbers for the thrusts.
+
+**The blade is a 120 cm segment from the weapon socket along the weapon bone's -Y**, the axis
+the thrust points furthest forward at its release, the length a knob in `bake-attacks.py`.
+**Alternative.** The weapon mesh. **Reopens** when the mesh or the number arrives.
+
+**Combat state is a persistent block of the sync state, written in the mover component's
+in-simulation hooks**: the input command's block is read at `OnPreSimulationTick`, the state
+block written at `OnPostMovement`, both inside `SimulationTick`, so a resimulation reruns them;
+the block reconciles on the attack, its start and the parry's start, and the server's tallies
+ride along unreconciled. **Alternative.** A movement modifier carrying the state; an unpredicted
+replicated state. **Reopens** if rollbacks climb with combat; the rows report them.
+
+**Every input command carries the rendered frame and the advance**: the frame this client's
+simulated proxies are drawn at, from the fixed tick state's interpolation, and the advance in
+frames from the player state, which the server clamps to its own. **Alternative.** A stamp at
+the press only. **Reopens** never.
+
+**The rewind reads the server's own body history in the ship's space.** Every frame the server
+keeps each pawn's base-space position, yaw and parry; the sweep at frame N puts the attacker's
+blade and the defender's body at the rendered frame in the same space, the ship's when both
+stand on it, since a client draws a based proxy on the ship as it presents it. No ship is
+reconstructed at the rendered frame; the entry's plan said one would be. A defender off the
+ship is met in world space through the ship's current transform, unmeasured, a trap.
+**Alternative.** Reconstructing the ship at the rendered frame. **Reopens** at Ship to Ship,
+where two ships' frames meet.
+
+**The parry is judged at the rendered frame**, the frame the body is rewound to: a fixed
+30-frame window opened by its press, a 120 degree cone, both knobs. **Alternative.** The
+server's current frame, or either. **Reopens** on the designer's verdict from the advance
+measurement below.
+
+**Keys are event-timed.** A press is latched at the key event until the pawn takes it, which is
+how the mouse wheel's one-event keys reach a command; the down state is the events' gated by the
+polled state, so a release is seen a frame before the poll shows it and a lost release cannot
+stick. Measured: the latched press ran one frame ahead of the polled release and spread the
+injection pairing to 2; event-timing both edges brought it back. **Reopens** never.
+
+**The swing turns with yaw only**; pitch in the aim frame is deferred, dated in Stretch.
+
+**Presentation is explicit time on a single-node animation**: each mesh set to the attack's
+clip and positioned from the state at the presented frame, the arms for the owner and the body
+for everyone else, both in the engine's default material since the placeholder material lacks
+the skeletal usage; idle is the first frame of overhead left, parry the first frame of the
+reference's parry pose clip. **Reopens** when a Stretch item wants an animation graph.
+
+**The intake bar's letter failed and its intent held.** Three arcs begin release beside the
+shoulder, the tip behind the pawn, so "lies in the forward hemisphere" was the wrong letter;
+every tip reaches over 145 cm forward during release. Re-registered as the tip's maximum forward
+reach over 110 cm, the still target's surface. Taken alone, in the review queue.
+
+**The universal set fails a slice on an INPUT no INJECT accounts for**, the 2026-09-06 trap's
+discharge, with its self-test and a `dup INPUT` mutation on the swing and feint rows.
+
+### Verified against written
+
+**Verified.** The whole matrix on the final binary in three sittings, runs 0907-020237, 0907-020609
+and 0907-021008 with the walker's four rows in 0907-021617 after its last change: 32, 26 and 28 rows green with every mutation proven, the melee family twice over
+across the day's runs. The bake's six assets and their numbers; the first-person overhead played
+on a pawn and the body's pose on the other, in captures looked at; every measurement above read
+off the rows' slices by `melee_report.py`; `docs-check` and `comment-check` pass.
+
+**Written, not verified.** The packaged client, not repackaged since Harness, and the cook
+directories added for the combat and melee content; a defender off the ship; the event-down set
+under a focus loss; the presentation on the other client beyond one capture; the thrusts'
+release window; the field session with combat in it.
+
+**Beyond the plan.** The cook directories; the relay every tenth of a second in chunks of
+sixteen; the runner restoring every project console variable before each row; the universal
+injection spread judged per client; the calm-sea row beside the rolling one; `melee_report.py`;
+the swing rows asserting the press's command frame rather than the press's; the walking target
+crossing the arc rather than a walker in front; the fraction beside the rendered frame.
 
 ## 2026-09-06 — The loop demonstrated: 45 of 46 green, and a hand on the keyboard is invisible to it
 

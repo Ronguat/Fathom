@@ -1,18 +1,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Combat/FMAttackData.h"
 #include "DefaultMovementSet/InstantMovementEffects/BasicInstantMovementEffects.h"
 #include "GameFramework/Pawn.h"
 #include "MoverSimulationTypes.h"
 #include "FMPlayerPawn.generated.h"
 
 struct FMoverDefaultSyncState;
+class UAnimSequence;
 class UPrimitiveComponent;
 
 class UCameraComponent;
 class UCapsuleComponent;
 class UCharacterMoverComponent;
-class UStaticMeshComponent;
+class UFMCombatComponent;
+class USkeletalMeshComponent;
 
 /** A teleport that lands in Falling, so a pawn dropped over a deck or a floor settles onto it. */
 USTRUCT()
@@ -27,8 +30,11 @@ struct FFMTeleportEffect : public FTeleportEffect
 
 /**
  * The player's pawn: a capsule driven by a Character Mover component on the Network Prediction
- * backend, first-person camera. Input is the controller's key table, read when the input
- * command is authored. Writes INPUT on every key edge and POSE every PoseEveryFrames frames.
+ * backend, first-person camera at the eye, the delivered arms drawn for the owner and the body
+ * for everyone else in the engine's default material, each posed from the combat state at the
+ * presented frame. Input is the
+ * controller's key table, read when the input command is authored; the attack's side is the last
+ * turn of the control yaw. Writes INPUT on every key edge and POSE every PoseEveryFrames frames.
  */
 UCLASS()
 class FATHOM_API AFMPlayerPawn : public APawn, public IMoverInputProducerInterface
@@ -82,7 +88,10 @@ protected:
 	/** The base's transform as drawn this frame: a ship's mesh between its last two frames, any other base as it is. */
 	static FTransform PresentedBase(const UPrimitiveComponent& Base);
 
-	/** The smoothed root Mover offsets between frames; the mesh and the camera ride it. */
+	/** Poses one mesh from the combat state at the presented frame, the first attack's first frame when idle. */
+	void Pose(USkeletalMeshComponent* Target, bool bFirstPerson);
+
+	/** The smoothed root Mover offsets between frames; the meshes and the camera ride it. */
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<USceneComponent> Visual;
 
@@ -90,13 +99,19 @@ protected:
 	TObjectPtr<UCapsuleComponent> Capsule;
 
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
-	TObjectPtr<UStaticMeshComponent> Mesh;
+	TObjectPtr<USkeletalMeshComponent> ArmsMesh;
+
+	UPROPERTY(VisibleAnywhere, Category="Fathom")
+	TObjectPtr<USkeletalMeshComponent> BodyMesh;
 
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<UCameraComponent> Camera;
 
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<UCharacterMoverComponent> Mover;
+
+	UPROPERTY(VisibleAnywhere, Category="Fathom")
+	TObjectPtr<UFMCombatComponent> Combat;
 
 private:
 	FString RoleName() const;
@@ -107,4 +122,8 @@ private:
 	int32 PendingRollbackTo = -1;
 	int32 PendingRollbackFrom = -1;
 	TMap<FName, bool> KeyWasDown;
+	EFMAttackSide Side = EFMAttackSide::Right;
+	float LastControlYaw = 0.0f;
+	bool bHasLastControlYaw = false;
+	TMap<USkeletalMeshComponent*, const UAnimSequence*> Posed;
 };

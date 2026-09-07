@@ -128,14 +128,22 @@ def universal(trace, markers, raw, bad, r, allow=(), injection_tolerance=INJECTI
     r.add(not uncosted, "cost printed per connection",
           "no COST line for %s" % ", ".join(uncosted) if uncosted else "%d connection(s)" % len(clients))
 
-    deltas = injection_deltas(trace, markers)
-    if deltas:
-        span = max(deltas) - min(deltas)
-        r.add(span <= injection_tolerance, "injection latency constant",
-              "%d injection(s), %d frame(s)%s" % (len(deltas), deltas[0],
-                                                  "" if span == 0 else ", spread %d" % span))
+    injected, consumed = injections(trace, markers)
+    by_role = injection_deltas(trace, markers)
+    if by_role:
+        spans = dict((role, max(d) - min(d)) for role, d in sorted(by_role.items()))
+        worst = max(spans.values())
+        r.add(worst <= injection_tolerance, "injection latency constant",
+              "%d injection(s), %s" % (sum(len(d) for d in by_role.values()),
+                                       "; ".join("%s %d frame(s)%s" % (role, d[0], "" if spans[role] == 0 else ", spread %d" % spans[role])
+                                                 for role, d in sorted(by_role.items()))))
     else:
         r.add(True, "injection latency constant", "no injections")
+
+    extra = ["%s %s %s" % k for k in sorted(consumed) if len(consumed[k]) > len(injected.get(k, []))]
+    r.add(not extra, "every INPUT injected",
+          "%d unaccounted for: %s" % (len(extra), "; ".join(extra[:3])) if extra
+          else "%d INPUT line(s)" % sum(len(v) for v in consumed.values()))
 
     allow = list(allow) + allowlist()
     warns = [l for l in raw
@@ -151,9 +159,9 @@ def allowlist():
     return [l.split("#")[0].strip() for l in open(ALLOWLIST) if l.split("#")[0].strip()]
 
 
-def injection_deltas(trace, markers):
-    """Frames from each INJECT marker to the INPUT line that carries it, paired in order per
-    (role, action, edge): `INJECT <id> frame=<f> <role> <action> <press|release>` against
+def injections(trace, markers):
+    """Per (role, action, edge), the frames of every INJECT marker and of every INPUT line:
+    `INJECT <id> frame=<f> <role> <action> <press|release>` against
     `INPUT role=<r> action=<a> edge=<pressed|released>`."""
     edges = {"press": "pressed", "release": "released"}
     injected = {}
@@ -170,11 +178,18 @@ def injection_deltas(trace, markers):
         if ln.tag == "INPUT":
             key = (str(ln.fields.get("role")), str(ln.fields.get("action")), str(ln.fields.get("edge")))
             consumed.setdefault(key, []).append(ln.frame)
-    out = []
+    return injected, consumed
+
+
+def injection_deltas(trace, markers):
+    """Frames from each INJECT marker to the INPUT line that carries it, paired in order, per
+    role: each client leads the server by its own margin."""
+    injected, consumed = injections(trace, markers)
+    out = {}
     for key, sent in injected.items():
         got = consumed.get(key, [])
-        out.extend(g - s for s, g in zip(sent, got))
-    return out
+        out.setdefault(key[0], []).extend(g - s for s, g in zip(sent, got))
+    return dict((role, d) for role, d in out.items() if d)
 
 
 # --- cost -----------------------------------------------------------------------
@@ -355,6 +370,7 @@ GOOD_SLICE = """\
 BAD_LINE = "[2026.01.01-00.00.00:000][  0]LogFMTrace: MOVE without a frame\n"
 BAD_ORDER = "[2026.01.01-00.00.00:000][  0]LogFMTrace: [90] [S] MOVE role=p2 x=0.0 y=0.0\n"
 BAD_WARN = "[2026.01.01-00.00.00:000][  0]LogNet: Warning: something the row did not ask for\n"
+BAD_INPUT = "[2026.01.01-00.00.00:000][  0]LogFMTrace: [170] [C1] INPUT role=p1 action=jump edge=released\n"
 
 
 def _universal_on(text, allow=()):
@@ -398,6 +414,8 @@ def self_test():
            _universal_on(jitter)["injection latency constant"] == "FAIL")
     expect("warnings fail on an unallowed engine warning",
            _universal_on(GOOD_SLICE + BAD_WARN)["no unallowed engine warnings"] == "FAIL")
+    expect("every INPUT injected fails on an INPUT no INJECT accounts for",
+           _universal_on(GOOD_SLICE + BAD_INPUT)["every INPUT injected"] == "FAIL")
     expect("warnings pass when the line is allowed",
            _universal_on(GOOD_SLICE + BAD_WARN, ["did not ask"])["no unallowed engine warnings"] == "PASS")
 
@@ -415,7 +433,7 @@ def self_test():
     expect("cost averages per connection", abs(c["C1"]["out_bps"] - 8000.0) < 1e-6 and c["C2"]["samples"] == 1)
     if bad:
         return 1
-    print("SELF-TEST PASSED (16 assertions)")
+    print("SELF-TEST PASSED (17 assertions)")
     return 0
 
 

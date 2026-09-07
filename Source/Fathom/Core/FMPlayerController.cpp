@@ -2,6 +2,7 @@
 
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
+#include "InputKeyEventArgs.h"
 #include "InputMappingContext.h"
 #include "Net/FMTrace.h"
 #include "Ship/FMShip.h"
@@ -14,6 +15,11 @@ AFMPlayerController::AFMPlayerController()
 	ActionKeys.Add(TEXT("move_right"), EKeys::D);
 	ActionKeys.Add(TEXT("jump"), EKeys::SpaceBar);
 	ActionKeys.Add(TEXT("mark"), EKeys::M);
+	ActionKeys.Add(TEXT("attack_horizontal"), EKeys::LeftMouseButton);
+	ActionKeys.Add(TEXT("attack_overhead"), EKeys::MouseScrollDown);
+	ActionKeys.Add(TEXT("attack_thrust"), EKeys::MouseScrollUp);
+	ActionKeys.Add(TEXT("parry"), EKeys::RightMouseButton);
+	ActionKeys.Add(TEXT("feint"), EKeys::Q);
 }
 
 void AFMPlayerController::BeginPlay()
@@ -43,6 +49,51 @@ void AFMPlayerController::BeginPlay()
 			Subsystem->AddMappingContext(Context, Priority++);
 		}
 	}
+}
+
+bool AFMPlayerController::IsMomentary(const FKey& Key)
+{
+	return Key == EKeys::MouseScrollUp || Key == EKeys::MouseScrollDown;
+}
+
+bool AFMPlayerController::InputKey(const FInputKeyEventArgs& Params)
+{
+	if (Params.Event == IE_Pressed || Params.Event == IE_Released)
+	{
+		for (const TPair<FName, FKey>& Binding : ActionKeys)
+		{
+			if (Binding.Value != Params.Key)
+			{
+				continue;
+			}
+			if (Params.Event == IE_Pressed)
+			{
+				Latched.Add(Binding.Key);
+				EventDown.Add(Binding.Key);
+			}
+			else
+			{
+				EventDown.Remove(Binding.Key);
+			}
+		}
+	}
+	return Super::InputKey(Params);
+}
+
+void AFMPlayerController::TakeLatched(TSet<FName>& OutPressed)
+{
+	OutPressed = MoveTemp(Latched);
+	Latched.Reset();
+}
+
+bool AFMPlayerController::IsActionDown(FName Action) const
+{
+	if (Latched.Contains(Action))
+	{
+		return true;
+	}
+	const FKey* Key = ActionKeys.Find(Action);
+	return Key && EventDown.Contains(Action) && IsInputKeyDown(*Key);
 }
 
 void AFMPlayerController::PlayerTick(float DeltaTime)

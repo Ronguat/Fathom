@@ -22,8 +22,9 @@ question, never a fix. Every value here is a knob unless the tuning map says oth
 - **A player on a ship simulates in ship space.** Standing on a deck is based movement on the
   ship; leaving the deck and climbing back are movement-base changes, never teleports.
 - **A hit resolves on the server** by sweeping the attacker's blade against defenders rewound to
-  the frame the attacker was rendering, with the ship reconstructed at that frame. The rendered
-  frame number is authored into the attacker's input command, never estimated from ping.
+  the frame the attacker was rendering, in the ship's space when both stand on it, which is
+  where the attacker's client drew the defender. The rendered frame number is authored into
+  every input command, never estimated from ping.
 - **Hit timing is a knob**: the server may start an attack early by a fraction of the round trip,
   capped. Known settings are none, half with a 50 ms cap, and whole with an 80 ms cap; the Melee
   rung measures them under emulated latency, and the parry's rule is the same decision's other
@@ -71,13 +72,22 @@ in time; weapon-sweep hits resolved on the server against rewound bodies and a r
 ship space; a parry window that resolves the same way on both machines under latency; a feint,
 which is combat state rolling back; and attack direction from mouse motion, replicated as intent.
 
-First person is the aim frame, with third person as the pre-registered fallback. Each attack's
-blade path is baked from its clip as a curve of blade transforms over attack time, in the aim
-frame, so the server sweeps from state alone and never from a skeletal pose. Hit volumes are a
-capsule and a head sphere. A parry is a timed window with a facing cone; a feint is a cancel
-during windup; attack directions are whatever the delivered clips offer, up to four, with one
-weapon. Deliberately absent: chambers, glancing blows, ripostes, stamina, and anything that is
-feel rather than proof.
+Three attack types, overhead, horizontal and thrust, each on either side: the type is the key
+pressed, the side is the direction of the view's last horizontal turn before the press. First
+person is the aim frame, with third person as the pre-registered fallback: the blade is a
+segment from the weapon socket along the blade's axis, baked from the first-person clip at every
+frame in pawn space, so the server sweeps from state alone and never from a skeletal pose; the
+swing turns with the pawn's yaw and not with its pitch. An attack is windup, release and recovery
+in frames from its data asset: windup ends where the clip's AutoAlignment curve reaches 1, a
+swing's release runs 30 frames from there and a thrust's to the plateau's end. Hit volumes are a
+capsule and a head sphere, the head tested first, and a body is met at most once per swing. The
+server sweeps during release against every other body as it stood at the frame the attacker's
+command says it rendered, in the attacker's ship space when it stands on the ship. A parry is a
+fixed window opened by its press, with a facing cone, judged at that same rendered frame; a
+feint is a cancel during windup. The advance starts an attack early by a fraction of the round
+trip, capped, the client predicting the same start from the advance its player state carries.
+Deliberately absent: chambers, glancing blows, ripostes, stamina, pitch in the swing, and
+anything that is feel rather than proof.
 
 ## Ship combat
 

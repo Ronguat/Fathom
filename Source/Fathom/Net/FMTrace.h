@@ -14,7 +14,7 @@ class FArchive;
 /**
  * One trace per game world. Every line carries the shared simulation frame and the world tag,
  * `S` or `C<n>`. The server prints COST per connection once a second; a client relays its lines
- * to the server once a second. Each world keeps its own session bundle under
+ * to the server every tenth of a second in chunks of sixteen. Each world keeps its own session bundle under
  * Saved/Fathom/Sessions/<stamp>-<tag>/: trace.log, and meta.json rewritten every ten seconds.
  */
 UCLASS()
@@ -67,6 +67,7 @@ private:
 	int32 TicksAccumulated = 0;
 	double LastCostSeconds = 0.0;
 	double LastMetaSeconds = 0.0;
+	double LastRelaySeconds = 0.0;
 	int32 FirstFrame = -1;
 	int32 LastFrame = -1;
 	int64 LinesWritten = 0;

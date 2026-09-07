@@ -39,12 +39,26 @@ and `gpu=none`; `inv=<cm>` on the same line is the height inversion's residual a
 written every sixth frame by every world, the server's the truth and a client's its
 reconstruction; `SHIPIN id=<n> sf=<frame> input=<station> value=<v>` by the server at the frame
 a station input took effect, and `SHIPNO id= sf= input= dist=` when the caller stood farther
-from the station than its radius. `MARK category=<c>` is the marker hotkey, `M`, and the console
-command `FM.Mark <category>`. Everything else is a rung's own vocabulary.
+from the station than its radius. `COMBAT pid= sf= phase=<idle|windup|release|recovery|parry>
+attack=<name|-> start=<frame> parry=<frame>` is written by every world for every pawn at a phase
+change, `start` the frame the attack began in the sync state, `parry` the parry's; the melee rows
+compare `start` and the phase order across worlds. `HIT pid=<attacker> sf= target= rf= rp= k=
+part=<head|body> x= y= z= tx= ty= tz= moved= window= facing=` is written by the server at the
+frame a blade met a body: `rf` the frame the attacker's command said its proxies were drawn from
+and `rp` the fraction toward the next, between which the body is rewound; `k` the attack frame;
+`x..z` the contact and `tx..tz` the rewound body's centre, both in the attacker's frame, ship
+space when it stands on the ship; `moved` how far that body moved since; `window` and `facing`
+whether it was parrying and facing. A proxy's own `POSE` labels `sf` with that same `rf`, so
+the row reads the rendered position off the label. `PARRY pid= sf= target= rf= rp= k= margin=
+x= y= z=` is the same for a blade a parry met, `margin` the frames the window had left at `rf`. `SWING pid= sf= attack= start= hits= parried=` is written by the server
+as release ends. `SCORE pid= taken= dealt= parries=` is written by the server when a tally changes
+and by a client when the replicated tallies arrive. `MARK category=<c>` is the marker hotkey,
+`M`, and the console command `FM.Mark <category>`. Everything else is a rung's own vocabulary.
 
-**Clients relay their trace to the server** once a second over a reliable call, into the
-server's session file, and into its log only outside PIE, where the process log already carries
-every world once. **A marker hotkey** drops a `MARK` line at the frame the player pressed it, which
+**Clients relay their trace to the server** every tenth of a second over a reliable call in
+chunks of sixteen lines, into the server's session file, and into its log only outside PIE,
+where the process log already carries every world once; once a second in chunks of 64 it crowded
+a client's packets under per-frame poses and cost the server input commands *(2026-09-07)*. **A marker hotkey** drops a `MARK` line at the frame the player pressed it, which
 is the only thing a remote human is asked to do. **Every world keeps a session bundle** under
 `Saved/Fathom/Sessions/<PIE|Field>/<stamp>-<tag>/`: `trace.log`, and `meta.json` with the commit, the map, the
 fixed rate, the frame range and per-connection averages, rewritten every ten seconds, at the end
@@ -110,17 +124,28 @@ a placement each, a plan in frames, a stop condition, the mechanics it covers an
 mutation the validator will not let you omit. It runs once per round trip, as `<id>@<ms>`.
 Assertions are keyed by scenario id in `regression_rows.py`, and a **universal set** in
 `regression_eval.py` runs on every slice: trace lines well-formed, frames monotonic per world,
-every world reporting, cost printed per connection, injection latency constant, no unallowed
-engine warning. **Every assertion has failed once on purpose**: the self-tests corrupt a good slice
+every world reporting, cost printed per connection, injection latency constant per client, every
+`INPUT` accounted for by an `INJECT`, no unallowed engine warning. **Every assertion has failed once on purpose**: the self-tests corrupt a good slice
 one way per row, and a run proves each scenario's mutations turn it red. Rows run on the fixed
 clock through `UFMTimeTools`, and every run prints bandwidth per connection and server tick time
 per player.
 
-**A plan's ops** are `tap`, `press`, `release` and `hold` on an action, `move` and `stop_move`,
+**A row's console variables** are set from its `cvars` after every name in `CVAR_DEFAULTS` is
+restored to the value that reads the settings, so nothing a row sets reaches the next; a name
+without a default fails validation. **A plan's ops** are `tap`, `press`, `release` and `hold` on an action, `move` and `stop_move`,
 `face`, `teleport`, `mark`, and `ship <station> <value>`, which drives one of the ship's stations
 from the role's own client through its controller; the runner writes a `SHIPOP` marker for it.
 The stations are `wheel`, `sail_length`, `sail_angle`, `anchor` and `ladder`, each with a place
-on the ship and a radius in the ship settings. A row's steady state is asserted outside a settle
+on the ship and a radius in the ship settings. The combat actions are `attack_overhead`,
+`attack_horizontal`, `attack_thrust`, `parry` and `feint`; the mouse wheel's two keys are
+momentary, one event and one `INJECT` press with no release, and a `face` before a press picks
+the side. `pose_every` on a scenario sets every simulated proxy's `POSE` cadence for the row,
+one for the row that reads a rendered position at the rewound frame; every pawn at every frame
+lifted a client's lead from 6 frames to 17 *(2026-09-07)*, so the cadence stays on the proxies
+alone. **The relay sets the view lag**: the frames between an attacker's own frame and the one
+its proxies are drawn from read 19, 24, 31 and 37 at 0, 50, 100 and 150 ms with the relay in
+once-a-second chunks of 64 lines, and 11, 17, 22 and 26 in tenth-second chunks of sixteen
+*(2026-09-07)*. A row's steady state is asserted outside a settle
 window: thirty frames after the last applied ship input, `settle_frames` on a scenario to widen
 it, and eighteen frames after a pawn's own input edge; the transients inside are reported.
 
@@ -159,6 +184,17 @@ what is now untested. A loop that lags the surface still prints green.
 | `deck.station` | S C1 C2 | 0, 100 | f120 p2 ship wheel 1.0; f180 p1 ship wheel 1.0; f240 p1 ship wheel 0.0 | 6 s | two worlds, cost |
 | `deck.swim` | S C1 C2 | 0, 50, 100, 150 | f360 p1 ship ladder 1.0 | 10 s | determinism, cost |
 | `deck.walk` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f420 p1 move 0.0 1.0 90 | 14 s | determinism, cost, injection latency |
+| `melee.advance-half` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f372 p2 tap parry | 10 s | advance, combat, cost |
+| `melee.advance-whole` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f372 p2 tap parry | 10 s | advance, combat, cost |
+| `melee.direction` | S C1 C2 | 0, 100 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f400 p1 face -20.0; f420 p1 tap attack_horizontal; +2 more | 14 s | combat, cost |
+| `melee.feint` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f400 p1 face 1.0; f420 p1 tap attack_horizontal; +1 more | 12 s | combat, cost |
+| `melee.feint-loss` | S C1 C2 | 0, 100 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f400 p1 face 1.0; f420 p1 tap attack_horizontal; +1 more | 12 s | combat, cost |
+| `melee.hit` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead | 10 s | rewind, combat, cost |
+| `melee.hit-calm` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead | 10 s | rewind, combat, cost |
+| `melee.hit-walk` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 89.0; f355 p2 move -1.0 0.0 100; f360 p1 tap attack_thrust | 10 s | rewind, combat, cost |
+| `melee.parry` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f372 p2 tap parry | 10 s | parry, combat, cost |
+| `melee.parry-late` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f412 p2 tap parry | 10 s | parry, combat, cost |
+| `melee.swing` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f400 p1 face 1.0; f420 p1 tap attack_overhead | 12 s | combat, cost |
 
 *Generated from `Tools/RegressionCheck/scenarios.py` by `Tools/RegressionCheck/gen-matrix.py`. Edit the fixtures there, never this table.*
 <!-- matrix:end -->
@@ -170,9 +206,13 @@ what is now untested. A loop that lags the surface still prints green.
 | Mechanic | Rows asserting it |
 |---|---|
 | two worlds | `deck.station`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
-| cost | `deck.stand`, `deck.station`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
+| cost | `deck.stand`, `deck.station`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
 | injection latency | `deck.walk`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
 | determinism | `deck.stand`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
+| combat | `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing` |
+| rewind | `melee.hit`, `melee.hit-calm`, `melee.hit-walk` |
+| parry | `melee.parry`, `melee.parry-late` |
+| advance | `melee.advance-half`, `melee.advance-whole` |
 
 *Generated from each row's `covers` in `Tools/RegressionCheck/scenarios.py` by `Tools/RegressionCheck/gen-matrix.py`.*
 <!-- coverage:end -->

@@ -22,7 +22,8 @@ namespace
 {
 	constexpr double CostPeriodSeconds = 1.0;
 	constexpr double MetaPeriodSeconds = 10.0;
-	constexpr int32 RelayBatchSize = 64;
+	constexpr double RelayPeriodSeconds = 0.1;
+	constexpr int32 RelayBatchSize = 16;
 
 	FString ComputeWorldTag(const UWorld* World)
 	{
@@ -196,14 +197,15 @@ void UFMTraceSubsystem::OnTickEnd(UWorld* World, ELevelTick TickType, float Delt
 	const double Now = FPlatformTime::Seconds();
 	TickAccumulatedMs += (Now - TickStartSeconds) * 1000.0;
 	++TicksAccumulated;
+	if (World->GetNetMode() == NM_Client && Now - LastRelaySeconds >= RelayPeriodSeconds)
+	{
+		LastRelaySeconds = Now;
+		FlushRelay();
+	}
 	if (Now - LastCostSeconds >= CostPeriodSeconds)
 	{
 		LastCostSeconds = Now;
-		if (World->GetNetMode() == NM_Client)
-		{
-			FlushRelay();
-		}
-		else
+		if (World->GetNetMode() != NM_Client)
 		{
 			PrintCost();
 		}

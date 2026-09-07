@@ -1,19 +1,21 @@
 #include "Deck/FMPlayerPawn.h"
 
+#include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Combat/FMCombatComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Core/FMPlayerController.h"
+#include "Core/FMPlayerState.h"
 #include "Deck/FMSwimMode.h"
 #include "DefaultMovementSet/CharacterMoverComponent.h"
-#include "Engine/StaticMesh.h"
+#include "Engine/SkeletalMesh.h"
 #include "GameFramework/PlayerState.h"
 #include "MoverDataModelTypes.h"
 #include "Net/FMTrace.h"
 #include "Ocean/FMOceanSubsystem.h"
 #include "Ship/FMShip.h"
-#include "UObject/ConstructorHelpers.h"
 
 bool FFMTeleportEffect::ApplyMovementEffect(FApplyMovementEffectParams& ApplyEffectParams, FMoverSyncState& OutputState)
 {
@@ -52,16 +54,19 @@ AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
 	Visual = CreateDefaultSubobject<USceneComponent>(TEXT("Visual"));
 	Visual->SetupAttachment(Capsule);
 
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	Mesh->SetupAttachment(Visual);
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
-	if (CylinderMesh.Succeeded())
+	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsMesh"));
+	ArmsMesh->SetupAttachment(Visual);
+	ArmsMesh->SetOnlyOwnerSee(true);
+	BodyMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BodyMesh"));
+	BodyMesh->SetupAttachment(Visual);
+	BodyMesh->SetOwnerNoSee(true);
+	for (USkeletalMeshComponent* Mesh : { ArmsMesh.Get(), BodyMesh.Get() })
 	{
-		Mesh->SetStaticMesh(CylinderMesh.Object);
+		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Mesh->SetCanEverAffectNavigation(false);
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		Mesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 	}
-	Mesh->SetRelativeScale3D(FVector(0.68f, 0.68f, 1.76f));
-	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Mesh->SetCanEverAffectNavigation(false);
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(Visual);
@@ -71,6 +76,9 @@ AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
 	Mover = CreateDefaultSubobject<UCharacterMoverComponent>(TEXT("Mover"));
 	Mover->MovementModes.Add(DefaultModeNames::Swimming, CreateDefaultSubobject<UFMSwimMode>(TEXT("SwimMode")));
 	Mover->Transitions.Add(CreateDefaultSubobject<UFMSwimTransition>(TEXT("SwimTransition")));
+	Mover->PersistentSyncStateDataTypes.Add(FMoverDataPersistence(FFMCombatState::StaticStruct(), true));
+
+	Combat = CreateDefaultSubobject<UFMCombatComponent>(TEXT("Combat"));
 }
 
 void AFMPlayerPawn::PostInitializeComponents()
@@ -92,6 +100,19 @@ void AFMPlayerPawn::BeginPlay()
 			PC->PlayerCameraManager->ViewPitchMin = -89.0f;
 		}
 	}
+	const UFMCombatSettings* K = GetDefault<UFMCombatSettings>();
+	Camera->SetRelativeLocation(K->EyeOffset);
+	const TPair<USkeletalMeshComponent*, USkeletalMesh*> Rigs[] = {
+		{ ArmsMesh.Get(), K->FirstPersonMesh.LoadSynchronous() },
+		{ BodyMesh.Get(), K->ThirdPersonMesh.LoadSynchronous() } };
+	for (const TPair<USkeletalMeshComponent*, USkeletalMesh*>& Rig : Rigs)
+	{
+		Rig.Key->SetRelativeLocationAndRotation(K->MeshOffset, FRotator(0.0f, K->MeshYaw, 0.0f));
+		if (Rig.Value)
+		{
+			Rig.Key->SetSkeletalMeshAsset(Rig.Value);
+		}
+	}
 }
 
 void AFMPlayerPawn::Tick(float DeltaSeconds)
@@ -105,6 +126,34 @@ void AFMPlayerPawn::Tick(float DeltaSeconds)
 		PC->AddYawInput(DeltaX * LookScale);
 		PC->AddPitchInput(-DeltaY * LookScale);
 	}
+	if (!IsNetMode(NM_DedicatedServer))
+	{
+		Pose(ArmsMesh, true);
+		Pose(BodyMesh, false);
+	}
+}
+
+void AFMPlayerPawn::Pose(USkeletalMeshComponent* Target, bool bFirstPerson)
+{
+	const UAnimSequence* Clip = nullptr;
+	float Time = 0.0f;
+	if (!Combat->Presented(bFirstPerson, Clip, Time))
+	{
+		const UFMAttackData* Idle = Combat->AttackData(1);
+		Clip = Idle ? (bFirstPerson ? Idle->FirstPerson.Get() : Idle->ThirdPerson.Get()) : nullptr;
+		Time = 0.0f;
+	}
+	if (!Clip)
+	{
+		return;
+	}
+	const UAnimSequence*& Current = Posed.FindOrAdd(Target);
+	if (Current != Clip)
+	{
+		Current = Clip;
+		Target->SetAnimation(const_cast<UAnimSequence*>(Clip));
+	}
+	Target->SetPosition(Time, false);
 }
 
 void AFMPlayerPawn::SetHarnessRole(FName InRole)
@@ -153,20 +202,39 @@ int32 AFMPlayerPawn::GetSimFrame() const
 void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdContext& InputCmdResult)
 {
 	FCharacterDefaultInputs& Inputs = InputCmdResult.InputCollection.FindOrAddMutableDataByType<FCharacterDefaultInputs>();
-	const AFMPlayerController* PC = Cast<AFMPlayerController>(GetController());
+	FFMCombatInputs& CombatInputs = InputCmdResult.InputCollection.FindOrAddMutableDataByType<FFMCombatInputs>();
+	AFMPlayerController* PC = Cast<AFMPlayerController>(GetController());
 	if (!PC || !PC->IsLocalController())
 	{
 		Inputs = FCharacterDefaultInputs();
+		CombatInputs = FFMCombatInputs();
 		return;
 	}
 
+	TSet<FName> Latched;
+	PC->TakeLatched(Latched);
+	TSet<FName> Pressed;
 	for (const TPair<FName, FKey>& Binding : PC->ActionKeys)
 	{
-		const bool bDown = PC->IsInputKeyDown(Binding.Value);
+		const bool bLatched = Latched.Contains(Binding.Key);
+		if (AFMPlayerController::IsMomentary(Binding.Value))
+		{
+			if (bLatched)
+			{
+				Pressed.Add(Binding.Key);
+				FM_TRACE(this, TEXT("INPUT role=%s action=%s edge=pressed"), *RoleName(), *Binding.Key.ToString());
+			}
+			continue;
+		}
+		const bool bDown = bLatched || PC->IsActionDown(Binding.Key);
 		bool& bWasDown = KeyWasDown.FindOrAdd(Binding.Key);
 		if (bDown != bWasDown)
 		{
 			bWasDown = bDown;
+			if (bDown)
+			{
+				Pressed.Add(Binding.Key);
+			}
 			FM_TRACE(this, TEXT("INPUT role=%s action=%s edge=%s"),
 				*RoleName(), *Binding.Key.ToString(), bDown ? TEXT("pressed") : TEXT("released"));
 		}
@@ -174,8 +242,8 @@ void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdC
 
 	const auto Down = [&](const TCHAR* Action)
 	{
-		const FKey* Key = PC->ActionKeys.Find(FName(Action));
-		return Key && PC->IsInputKeyDown(*Key);
+		const FName Name(Action);
+		return Latched.Contains(Name) || PC->IsActionDown(Name);
 	};
 	FVector Intent = FVector::ZeroVector;
 	Intent.X += Down(TEXT("move_forward")) ? 1.0f : 0.0f;
@@ -195,6 +263,39 @@ void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdC
 	Inputs.bIsJumpJustPressed = bJump && !bJumpWasDown;
 	Inputs.bIsJumpPressed = bJump;
 	bJumpWasDown = bJump;
+
+	if (bHasLastControlYaw)
+	{
+		const float DeltaYaw = FMath::FindDeltaAngleDegrees(LastControlYaw, Control.Yaw);
+		if (FMath::Abs(DeltaYaw) > 0.05f)
+		{
+			Side = DeltaYaw > 0.0f ? EFMAttackSide::Right : EFMAttackSide::Left;
+		}
+	}
+	LastControlYaw = Control.Yaw;
+	bHasLastControlYaw = true;
+
+	CombatInputs = FFMCombatInputs();
+	if (Pressed.Contains(TEXT("attack_thrust")))
+	{
+		CombatInputs.Attack = EFMAttackType::Thrust;
+	}
+	else if (Pressed.Contains(TEXT("attack_overhead")))
+	{
+		CombatInputs.Attack = EFMAttackType::Overhead;
+	}
+	else if (Pressed.Contains(TEXT("attack_horizontal")))
+	{
+		CombatInputs.Attack = EFMAttackType::Horizontal;
+	}
+	CombatInputs.Side = Side;
+	CombatInputs.bParry = Pressed.Contains(TEXT("parry"));
+	CombatInputs.bFeint = Pressed.Contains(TEXT("feint"));
+	float RenderedFraction = 0.0f;
+	CombatInputs.RenderedFrame = UFMCombatComponent::RenderedFrame(GetWorld(), RenderedFraction);
+	CombatInputs.RenderedFraction = static_cast<uint8>(FMath::RoundToInt(RenderedFraction * 255.0f));
+	const AFMPlayerState* Player = GetPlayerState<AFMPlayerState>();
+	CombatInputs.AdvanceFrames = static_cast<uint8>(FMath::Clamp(Player ? Player->AdvanceFrames : 0, 0, 255));
 }
 
 void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const FMoverAuxStateContext& AuxState)

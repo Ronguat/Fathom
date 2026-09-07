@@ -181,11 +181,10 @@ plan time; a loop that lags the surface still prints green.
 
 ## Current Focus
 
-> **~~Bootstrap~~ → ~~Harness~~ → ~~Ocean~~ → ~~Ship~~ → ~~Deck~~ → Melee → Ship Combat → Ship to Ship → Stretch**
+> **~~Bootstrap~~ → ~~Harness~~ → ~~Ocean~~ → ~~Ship~~ → ~~Deck~~ → ~~Melee~~ → Ship Combat → Ship to Ship → Stretch**
 
-**Pick up at Melee.** Its brief is in `Docs/Decisions.md`, and the handoff at the top of the
-newest dated entry there is the session brief. The clips and their skeleton are in the project
-under `/Game/Fathom/Melee/`; the intake's contract check is the rung's first sub-slice.
+**Pick up at Ship Combat.** Its brief is in `Docs/Decisions.md`, and the handoff at the top of the
+newest dated entry there is the session brief.
 
 ### When a rung ships
 

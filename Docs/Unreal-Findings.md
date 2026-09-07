@@ -47,6 +47,15 @@ category `LogPython`.
 — its sandbox refuses `import unreal` and allows exactly `{math, datetime, re, time, json, copy}`. A
 sandbox policy, not an API limit.
 
+**Python wraps a class, struct or enum only if it is script-exposed** *(Python and the plugin
+source, 2026-09-07)*: `PyGenUtil.cpp`'s `ShouldExportClass` wants `BlueprintType` on the class or
+an ancestor, or a Blueprint-exposed field, and `ShouldExportEnum` the same on the enum. A plain
+`UDataAsset` or `UDeveloperSettings` subclass and a plain `UENUM` get no wrapper: `dir(unreal)`
+omits them, `get_type_from_class` answers the nearest wrapped ancestor, and `set_editor_property`
+on their objects fails with *Failed to find property*. `UFMAttackData`, `UFMCombatSettings` and the
+combat enums carry `BlueprintType` for this; `UFMShipSettings` and `UFMOceanSettings` do not and
+are unreachable from Python.
+
 **There is no IK Rig or IK Retargeter toolset** *(2026-08-21, read off a full `list_toolsets`
 response — `ControlRigTools` is Control Rig, a different system, and `SkeletalMeshTools` is mesh,
 bones and sockets)*. **Python carries the system in full** *(confirmed 2026-08-27)*: 129
@@ -82,6 +91,12 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
   the track and `0 ≤ start ≤ play length`, outers the notify to the montage, and **does not dirty the
   package** — `modify()` dirties it, `EditorLoadingAndSavingUtils.save_packages` saves it, `git status`
   confirms it.
+- **A clip's pose evaluates from Python at any time** *(Python, 2026-09-07)*:
+  `AnimPoseExtensions.get_anim_pose_at_time(sequence, seconds, options)` with
+  `AnimPoseEvaluationOptions.optional_skeletal_mesh` set returns a pose whose `get_bone_pose`,
+  `get_socket_pose` and `get_ref_bone_pose` answer in `AnimPoseSpaces.WORLD`, which is component
+  space; `MathLibrary.compose_transforms` then carries it into pawn space. The deprecated
+  `AnimationLibrary.get_bone_pose_for_time` is not needed.
 - **Bone poses come off the AnimSequence, never the montage** *(Python, 2026-09-01)*: a montage has
   no bone tracks, and sampling one returns zero motion at every frame, which reads as a clip that
   does not move. Melee's blade curves are baked from the sequences.
@@ -109,8 +124,12 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
 - **`UCurveFloat` and `UCurveVector` keys need C++** *(Python re-confirmed shut 2026-08-28; C++ built
   the same day)*. `FloatCurve` answers *"is protected and cannot be read"*, there is no `AddKey`
   UFUNCTION and no curve-editing library; the member is a public `FRichCurve`, so an editor-module
-  function library authors keys directly. Creation stays with `AssetTools`. Melee's blade curves,
-  transforms over attack time, take this route.
+  function library authors keys directly. Creation stays with `AssetTools`.
+- **A curve's shape reads from Python** *(Python, 2026-09-07)*: `CurveFloat.get_float_value`,
+  `get_time_range` and `get_value_range` sample a `UCurveFloat`, and
+  `AnimationLibrary.get_float_keys(sequence, name)` returns an animation curve's key times and
+  values. Only the writes need C++. Melee's blade is not a curve asset: `Tools/Editor/bake-attacks.py`
+  writes positions per frame into a `UFMAttackData` asset from Python.
 - **A BlendSpace's sample count is never changed by reflection write** *(confirmed 2026-08-15)*:
   moving a sample keeps the array length and the cached triangulation valid, and opening the asset
   finishes the rebuild; removing one leaves the triangulation indexing the old length, and the engine
@@ -131,6 +150,11 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
   loaded, `modify()`d and saved. There is no `FixupReferencers` on `AssetTools` or `EditorAssetLibrary`
   *(Python, 2026-08-24)*; load-and-re-save is the fixup. Referencer counts stay stale until
   `scan_paths_synchronous(force_rescan=True)`; `git status` is the check, not the registry.
+- **Sockets and bones read from Python through the mesh, no editor needed** *(Python, 2026-09-07)*:
+  `SkeletalMesh.num_sockets` and `get_socket_by_index` list the mesh's and the skeleton's sockets
+  with `socket_name`, `bone_name` and the relative transform, where `Skeleton.Sockets` is refused
+  to reflection; a `SkeletalMeshComponent()` built in Python with `set_skeletal_mesh_asset` answers
+  `get_num_bones`, `get_bone_name` and `get_bone_index` outside any world.
 - **Bone positions in world space are readable live in PIE from Python** *(2026-08-28)*:
   `SkeletalMeshComponent.get_socket_location` resolves bone names, not only sockets, during a play
   session. With `GameplayStatics.set_global_time_dilation` it charts any bone through any event.
@@ -215,6 +239,22 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
 ## Dated findings — newest first
 
 An archive reached by search. Each entry keeps its date and the surface it measured on.
+
+## 2026-09-07 — The melee intake reads the delivery and bakes the blade from Python
+
+**The delivery answered its own contract from Python** *(Python, 2026-09-07)*: the skeleton's
+sockets through the mesh, `weapon_rSocket` on `weapon_r` at zero offset and `headSocket` on `head`
+among eight; the seventy bone names through a component built in Python; every release curve's
+shape through `CurveFloat.get_float_value`, a 0 to 1 ramp over one second; the `AutoAlignment`
+keys through `AnimationLibrary.get_float_keys`. **The blade bakes from Python**: `AnimPoseExtensions`
+evaluates each clip at every frame and `bake-attacks.py` writes the socket's position and the
+blade's tip into a `UFMAttackData` asset created through `AssetTools.create_asset` with
+`DataAssetFactory`. **The wrappers had to be asked for**: the class and its enums were invisible
+to Python until marked `BlueprintType`, the register's rule above. **`Shot` from a play world's
+console took the editor viewport six times in six** *(PIE, 2026-09-07)*, its camera far off the
+map looking at sky, where `AutomationLibrary.take_high_res_screenshot` took the first client's
+game viewport every time; `Tools/Editor/melee_capture.py` uses the latter. Both stall the tick,
+so the frames a capture is asked for arrive late and bunched.
 
 ## 2026-09-05 — A delivery moves between projects by a rename in the source editor
 
