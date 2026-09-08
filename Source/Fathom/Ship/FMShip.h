@@ -39,8 +39,15 @@ public:
 
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float MaxSpeed = 1000.0f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float Drag = 0.3f;
-	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorDrag = 20.0f;
+	/** The fraction of full drive a sail makes head to wind, so a ship under sail can always turn. */
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float HeadwindSpeed = 0.2f;
+	/** Drag added while the anchor is down, slack line or taut. */
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorDrag = 1.0f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorRaiseSeconds = 8.0f;
+	/** The anchor line: the ship runs this far from the drop point before the line catches, then a spring of this stiffness and damping, per second squared and per second, holds it there. */
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineLength = 500.0f;
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineStiffness = 100.0f;
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineDamping = 12.0f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float SailRate = 0.5f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float SailAngleRate = 30.0f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float RudderRate = 1.0f;
@@ -88,6 +95,10 @@ struct FFMShipState
 	UPROPERTY() float SailAngle = 0.0f;
 	UPROPERTY() float Rudder = 0.0f;
 	UPROPERTY() float AnchorRaise = 1.0f;
+	/** Where the anchor lies while it is set: the ship's position at the drop. */
+	UPROPERTY() float AnchorX = 0.0f;
+	UPROPERTY() float AnchorY = 0.0f;
+	UPROPERTY() bool bAnchorSet = false;
 	UPROPERTY() float Heave = 0.0f;
 	UPROPERTY() float HeaveVel = 0.0f;
 	UPROPERTY() float Roll = 0.0f;
@@ -99,7 +110,9 @@ struct FFMShipState
 /**
  * A deterministic kinematic ship. Every world steps the same integrator one frame at a time from
  * a replicated snapshot through the replicated input history to its own frame; the server's
- * state is the truth, a client re-integrates when a snapshot or an input arrives late. The hull
+ * state is the truth, a client re-integrates when a snapshot or an input arrives late. Surge
+ * comes from the sail against the wind with a floor head to wind; a dropped anchor lies where
+ * the ship was, and the ship runs to the end of its line, catches, and is held there. The hull
  * box is moved by transform and publishes its velocity. Stations are the named inputs wheel,
  * sail_length, sail_angle and anchor, each with a placeholder on the deck. Writes SHIP every
  * TraceEveryFrames, and SHIPIN, SHIPNO and BOARD on the server.

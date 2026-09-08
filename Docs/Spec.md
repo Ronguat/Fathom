@@ -53,8 +53,10 @@ where it is drawn.
 
 Sample points on the hull read the ocean; a spring-damper on heave, roll and pitch fits the hull
 to the surface. Surge comes from sail length and the sail's angle against the wind through one
-speed curve; yaw from a rudder driven at a rate and scaled by speed; the anchor is a strong drag
-that stops the ship, raised over a fixed time. A **station** is a place one player occupies to
+speed curve with a floor head to wind, so a ship under sail can always turn; yaw from a rudder
+driven at a rate and scaled by speed, holding where it is left; the anchor lies where the ship
+was when it dropped, and the ship runs to the end of its line, catches, and is held there by a
+spring until the anchor is raised over a fixed time. A **station** is a place one player occupies to
 drive one ship input: wheel, sail length, sail angle, anchor, ladder, and later cannon.
 
 ## The deck
@@ -116,7 +118,7 @@ first by the designer and held open in the review queue for row-by-row correctio
 | Sail length | One continuous value driven at a fixed rate from one station | Rope pairs, per-mast sails |
 | Sail angle | Continuous, rate-limited; one speed curve of angle against wind | Class quirks |
 | Wheel | Rudder driven at a rate; turn rate scales with speed; no heel | Heel, wheel travel |
-| Anchor | Drop stops the ship; raise takes a fixed time at the capstan | Anchor turn, crew scaling |
+| Anchor | Drop lets the ship run to the end of its line and catch; raise takes a fixed time at the capstan | Anchor turn, crew scaling |
 | Cannons | One ammunition, fixed cone, fixed reload, arc inheriting ship velocity | Special shot |
 | Damage | Holes below the waterline, one size; water rises; repair by holding; bail by bucket | Above-waterline holes, mast and wheel damage |
 | Sinking | Threshold, then respawn at a spawn point with the crew | Sink motion |

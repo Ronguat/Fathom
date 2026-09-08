@@ -290,7 +290,13 @@ def ship_stop(ctx, r, s):
     ship_reconstruction(ctx, r, s, settle_after=360 + 30)
     moving, stopped = server_at(ctx, 350), server_at(ctx, 480)
     band(r, "speed before the anchor (cm/s)", [moving.fields["speed"]] if moving else [], 300.0, 1100.0, "cm/s")
-    band(r, "speed two seconds after the anchor (cm/s)", [stopped.fields["speed"]] if stopped else [], 0.0, 20.0, "cm/s")
+    band(r, "speed two seconds after the anchor (cm/s)", [abs(stopped.fields["speed"])] if stopped else [], 0.0, 20.0, "cm/s")
+    dropped = server_at(ctx, 360)
+    if dropped and stopped:
+        run = ((stopped.fields["x"] - dropped.fields["x"]) ** 2 + (stopped.fields["y"] - dropped.fields["y"]) ** 2) ** 0.5
+        band(r, "the ship ran to the line's end and caught (cm past the drop)", [run], 300.0, 1200.0, "cm")
+    else:
+        r.add(False, "the ship ran to the line's end and caught (cm past the drop)", "no SHIP line at the drop or after")
     cost_sane(ctx, r)
 
 
@@ -402,7 +408,7 @@ def deck_station_key(ctx, r, s):
     applied = ctx.lines("SHIPIN", "S", "input=wheel")
     count(r, "wheel calls applied by key from the wheel", len(applied), 2)
     values = [ln.fields.get("value") for ln in applied]
-    r.add(values == [1.0, 0.0], "wheel value on press, then centre on release", "%s" % (values,))
+    r.add(len(values) == 2 and values[0] == 1.0 and values[1] >= 0.9, "wheel value on press, then where it stood on release", "%s" % (values,))
     before, after = server_at(ctx, 300), server_at(ctx, 540)
     band(r, "heading change under the held key (deg)",
          [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 15.0, 180.0, "deg")

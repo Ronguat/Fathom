@@ -287,14 +287,38 @@ void AFMShip::Step(FFMShipState& S, const FFMShipInputs& In, const UFMShipSettin
 	const FVector2f Wind = Ocean ? Ocean->GetWind() : FVector2f(1.0f, 0.0f);
 	const float SailNormalDegrees = (S.Heading + S.SailAngle) * (FMOcean::Pi / 180.0f);
 	const FVector2f SailNormal(FMath::Cos(SailNormalDegrees), FMath::Sin(SailNormalDegrees));
-	const float Drive = S.SailLength * FMath::Max(0.0f, Wind.X * SailNormal.X + Wind.Y * SailNormal.Y);
-	const float DragNow = K.Drag + (1.0f - S.AnchorRaise) * K.AnchorDrag;
-	S.Speed += (K.MaxSpeed * K.Drag * Drive - DragNow * S.Speed) * Dt;
-
-	S.Heading = WrapDegrees(S.Heading + S.Rudder * K.TurnRate * (S.Speed / FMath::Max(K.MaxSpeed, 1.0f)) * Dt);
+	const float Drive = S.SailLength * FMath::Max(K.HeadwindSpeed, Wind.X * SailNormal.X + Wind.Y * SailNormal.Y);
+	const float Hold = 1.0f - S.AnchorRaise;
+	if (In.bAnchorDown && !S.bAnchorSet)
+	{
+		S.AnchorX = S.X;
+		S.AnchorY = S.Y;
+		S.bAnchorSet = true;
+	}
+	else if (!In.bAnchorDown && Hold <= 0.0f)
+	{
+		S.bAnchorSet = false;
+	}
 	const float HeadingRadians = S.Heading * (FMOcean::Pi / 180.0f);
 	const float CosH = FMath::Cos(HeadingRadians);
 	const float SinH = FMath::Sin(HeadingRadians);
+	float DragNow = K.Drag + Hold * K.AnchorDrag;
+	float LinePull = 0.0f;
+	if (S.bAnchorSet && Hold > 0.0f)
+	{
+		const float Dx = S.X - S.AnchorX;
+		const float Dy = S.Y - S.AnchorY;
+		const float Distance = FMath::Sqrt(Dx * Dx + Dy * Dy);
+		if (Distance > K.AnchorLineLength)
+		{
+			const float Along = (Dx * CosH + Dy * SinH) / Distance;
+			LinePull = -K.AnchorLineStiffness * (Distance - K.AnchorLineLength) * Along * Hold;
+			DragNow += K.AnchorLineDamping * Hold;
+		}
+	}
+	S.Speed += (K.MaxSpeed * K.Drag * Drive - DragNow * S.Speed + LinePull) * Dt;
+
+	S.Heading = WrapDegrees(S.Heading + S.Rudder * K.TurnRate * (S.Speed / FMath::Max(K.MaxSpeed, 1.0f)) * Dt);
 	S.X += S.Speed * CosH * Dt;
 	S.Y += S.Speed * SinH * Dt;
 

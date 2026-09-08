@@ -120,69 +120,69 @@ Judged: 2026-09-08, session 1, RED: an edge to the sea, stopping before the hori
 
 ## S — the ship
 
-**S1 The ship sits on the water** · RED
+**S1 The ship sits on the water** · GREEN
 Claim: `Docs/Spec.md`, The ship; the hull fit.
 Needs: O1, O2. Setup: sea 0 then sea 1, anchored, L0.
 Do: from the rail, look down at the waterline on both sides; then from the bow and the stern.
 Pass only if: at calm the water meets the hull's sides at one height; at 1 the hull rises and falls with each passing wave, never floating above nor sunk below.
 Judged: 2026-09-08, session 1, GREEN, driven by the waves. NOTE: the hull looks shallow, a bit lifted; `HullCenterAboveWater` in the ship settings, 100 cm, for the designer's verdict.
 
-**S2 The ship moves like a ship on water** · RED
+**S2 The ship moves like a ship on water** · GREEN
 Needs: S1. Setup: sea 1, anchored, L0; columns on the floor as a still reference.
 Do: stand amidships and watch the horizon and the columns thirty seconds, anchored, then under sail.
 Pass only if: roll and pitch are continuous and unhurried; no jitter, no snap, no rigid stillness.
 If red: the fit's stiffness and damping, knobs in the tuning map; a render rate under the simulation's, the two-fixed-ticks trap.
-Judged: 2026-09-08, session 1, RED: very jittery under way, milder but present at anchor. The session's defect; measured before it was touched: steady frames, the ship mesh's step swinging 44 to 2 246 cm/s, a one-frame sawtooth from the ship stepping per world tick rather than per simulation step, and the pawn moving only on frames that ran a step. Both fixed the same session, every line of the tape within a quarter of its median after; to be judged again.
+Judged: 2026-09-08, session 1, RED: very jittery under way, milder but present at anchor. The session's defect; measured before it was touched: steady frames, the ship mesh's step swinging 44 to 2 246 cm/s, a one-frame sawtooth from the ship stepping per world tick rather than per simulation step, and the pawn moving only on frames that ran a step. Both fixed the same session, every line of the tape within a quarter of its median after. Then GREEN against the columns.
 
-**S3 The stations can be found unaided** · RED
+**S3 The stations can be found unaided** · GREEN
 Claim: the basic set, the station rows.
 Needs: Z. Setup: standard, L0, the HUD's station line covered or ignored.
 Do: without me, find and name the wheel, the sail length, the sail angle, the anchor and the ladder from their placeholders.
 Pass only if: you name all five from what you see.
-Judged: —
+Judged: 2026-09-08, session 1, the designer.
 
-**S4 Sail** · RED
+**S4 Sail** · GREEN
 Needs: S3. Setup: sea 1, anchor raised, L0; you at the mast.
 Do: hold Down; watch the sail unfurl, the HUD's speed and the water past the hull.
 Pass only if: the ship visibly moves, the water moves past, and the speed reaches its top within about ten seconds.
-Judged: —
+Judged: 2026-09-08, session 1, "I think passes"; furling the sail glides the ship to a stop.
 
-**S5 Sail angle** · RED
+**S5 Sail angle** · GREEN
 Needs: S4. Setup: under sail, L0.
 Do: read the wind off the pennant; hold `[`, then `]`; watch the sail turn and the speed.
 Pass only if: the speed changes in the direction you predicted from the wind.
-Judged: —
+Judged: 2026-09-08, session 1, GREEN. NOTE: facing directly into the wind softlocks the ship at no speed; a floor on the speed scaling with how far the sail is unfurled, as the reference game does, followed the same session, `HeadwindSpeed` in the ship settings.
 
 **S6 Wheel** · RED
 Needs: S4. Setup: under sail, L0; you at the stern.
 Do: hold Right five seconds; release; hold Left. Then the same at rest.
-Pass only if: the ship turns the way you pressed, visibly faster under sail than at rest, and the rudder centres when you let go.
-Judged: —
+Pass only if: the ship turns the way you pressed, visibly faster under sail than at rest, and the rudder holds where you let go.
+Judged: 2026-09-08, session 1, RED: the wheel recentred on release and should hold its position, the designer's words; changed the same session, to be judged again.
 
-**S7 Anchor** · RED
+**S7 Anchor** · GREEN
 Needs: S4. Setup: under sail, L0; you at the bow.
 Do: press X and count; press X again and count until the ship moves.
 Pass only if: the ship stops within a few seconds, and the raise takes about eight seconds before it moves.
-Judged: —
+Judged: 2026-09-08, session 1, GREEN. NOTE: the stop was instant, the speed set to zero; the designer asked for a lurch, the ship catching against a taut anchor line and pulled back to it, which followed the same session; to be looked at again.
 
-**S8 Out of radius** · RED
+**S8 Out of radius** · GREEN
 Needs: S3. Setup: standard, L0; you amidships.
 Do: press Right; the wheel is at the stern.
 Pass only if: the ship ignores it and the HUD tells you why.
-Judged: —
+Judged: 2026-09-08, session 1, the designer.
 
-**S9 The other window's ship is your ship** · RED
+**S9 The other window's ship is your ship** · GREEN
 Needs: S6. Setup: sea 1, L150, side by side.
 Do: sail and turn; watch both.
 Pass only if: heading, speed and roll match moment to moment, as far as your eye can tell.
-Judged: —
+Judged: 2026-09-08, session 1, "very impressed".
 
-**S10 The anchor drop, seen from the other window** · RED
+**S10 The anchor drop, seen from the other window** · GREEN
 Needs: S7. Setup: under sail, L150.
 Do: drop the anchor; watch the other window's ship.
 Pass only if: it stops without a visible jump.
 If red: the loop's stop row measured a transient of 186 cm at 150 ms; whether it shows is this item.
-Judged: —
+Judged: 2026-09-08, session 1, the designer, before the anchor line; the line's catch is to be looked at here too.
 
 ## D — the deck
 

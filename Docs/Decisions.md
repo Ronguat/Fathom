@@ -22,6 +22,9 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
 | 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
+| 2026-09-08 | The anchor line: 5 m of run from the drop point, then a spring of 100 per second squared with damping 12 per second, the anchor's own drag 1 per second while down; the settle under two seconds from 10 m/s by the stop row's band | `UFMShipSettings`, `Config/DefaultGame.ini` | |
+| 2026-09-08 | The headwind floor a fifth of full drive, `HeadwindSpeed`, scaled by the sail as everything else is | `UFMShipSettings` | |
+| 2026-09-08 | The wheel holding where it is left on release, the designer's verdict at S6 | `AFMPlayerController` | |
 | 2026-09-08 | A pennant at the masthead, a slab 3 m long streaming the way the wind blows, from the same replicated wind the waves take | `AFMShip` | |
 | 2026-09-08 | The station keys: Left/Right the wheel, Up/Down the sail length, `[` `]` the sail angle, X the anchor, E the ladder, B board; the wheel back to centre on release, a sail key sending where the sail stands on release, the anchor a toggle | `AFMPlayerController` | 2026-09-08: the sail keys read upside-down once the sail hung from the yard; Down unfurls, Up furls |
 | 2026-09-08 | The board key as a review affordance rather than a spawn on the deck, every row's placement untouched | Human review entry, Decisions | |
@@ -105,6 +108,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-05 — Ship: a body every world integrates from the same state, its Stretch deferral of smoothed presentation | 2026-09-05 — Presentation between frames | The deferral, built on the designer's ruling that presentation never relies on a render cap |
 | 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | Eight release curves counted; seven exist, none for underhand left, and the intake leaves the underhand pair unused |
 | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | 2026-09-08 — The human review: a human reaches what the loop reaches | The blade baked from the clip as a segment in pawn space, no weapon on the pawn: the designer rules it does not accomplish what the project set out to do, the point being to test tracers on a ship drawn from a weapon; flagged as needing work, the trap of that date, and not debugged |
+| 2026-09-05 — Ship: a body every world integrates from the same state, its anchor as a strong drag | 2026-09-08 — The human review: a human reaches what the loop reaches | The anchor a point dropped where the ship was, the ship running to the end of its line and caught by a spring, on the designer's ask for a lurch; the stop row keeps its two-second band and gains the run past the drop |
 
 ## Known traps, indexed by what sets them off
 
@@ -205,7 +209,10 @@ the server after the frame was ticked, the prediction framework runs the frame o
 command it had and the edge is gone, or re-bases the client's frames and the attack starts two
 frames later than predicted. Seen on three of eight rows in one sitting and none of twenty in
 others, with the once-a-second relay chunks in the client's packets *(2026-09-07)*; the client
-rolls back to the server's view either way. Bites at every rung with presses. Discharged by an
+rolls back to the server's view either way. Seen once more *(2026-09-08)*: an injected wheel tap
+at 100 ms read on the client as pressed, released, pressed, released over four frames, the
+universal set catching the spread, clean on the rerun and in every other run of the row that day.
+Bites at every rung with presses. Discharged by an
 edge that survives a missed frame, a queue the server drains, or by a matrix that never shows it
 again.
 
@@ -264,7 +271,7 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | The sea's horizon | `PlaneSize` and `PlaneSteps` in the ocean settings, a 1 km plane at 2.5 m steps that follows the local pawn, over `HorizonSize`'s flat plane dropped under the deepest trough *(2026-09-08)* | The wave function, which is the same everywhere |
 | A component's shape | Its row in `Config/DefaultGame.ini` under the ocean settings | The formulation, which two evaluators share |
 | The probe's cost | `ProbeEveryFrames` and `ProbeCells` in the ocean settings; the readback is synchronous | The trace cadence |
-| Ship handling | The speed curve, the rudder rate, the anchor drag | The hull sample points, which shape the fit rather than the handling |
+| Ship handling | The speed curve and `HeadwindSpeed`, its floor; the rudder rate; `AnchorDrag` with the anchor down, and the line's `AnchorLineLength`, `AnchorLineStiffness` and `AnchorLineDamping`, the catch's run, its firmness and how many swings it settles in *(2026-09-08)* | The hull sample points, which shape the fit rather than the handling |
 | The ship's reconstruction | `SnapshotEveryFrames` in the ship settings, 12; every input carries its frame | The integrator, which every world runs alike |
 
 ## Rung briefs — read the one you are picking up
@@ -491,6 +498,22 @@ replicated wind the waves take. `deck.station-key` sets the sail by key from the
 rather than by script, and asserts the release leaves it where it stood, over 0.9 after a
 150-frame hold. The designer's rule for the rest of the review: after a change, the rows it
 reaches and nothing more; the whole matrix once the checklist is green.
+
+**The ship group judged: S1 to S10 green but S6.** *S5's note*, a ship head to wind stalls with
+no way to turn, since the turn scales with speed: a floor on the drive, a fifth of full at any
+sail, scaled by the sail; the reference game's answer, the designer's suggestion. *S6 red*: the
+wheel recentred on release and must hold where it is left, as the sails already did; the
+station-key row's release value is now where the rudder stood. *S7's note*, the designer's ask
+and the effort they chose: the anchor stopped the ship dead through a drag of 20 per second. Now
+the anchor is a point in the state, dropped where the ship was; with the line slack the ship
+runs on under a light drag; past the line's length a spring along the heading pulls it back with
+its own damping, the catch and the lurch; the pull fades as the anchor is raised and the point
+clears once it is up. Chosen so the settle from full speed stays inside the stop row's two
+seconds: stiffness 100 gives a natural rate of 10 per second, damping 12 sits under critical so
+the ship swings back once, and 5 m of run makes the coast half a second. Under full sail at
+anchor the line stretches about 3 m and holds. *Alternatives.* A lateral velocity in the ship's
+state, so an anchor abeam could swing the bow; deferred with the anchor turn. *Reopens* on the
+designer's eye at S7 and S10, or on the stop row.
 
 ### Verified against written
 

@@ -176,7 +176,7 @@ void AFMPlayerController::DriveFromKeys()
 	}
 	if ((Released(TEXT("wheel_right")) || Released(TEXT("wheel_left"))) && !Down(TEXT("wheel_right")) && !Down(TEXT("wheel_left")))
 	{
-		DriveByKey(TEXT("wheel"), 0.0f);
+		DriveByKey(TEXT("wheel"), S.Rudder);
 	}
 	if (Pressed(TEXT("sail_down")))
 	{
