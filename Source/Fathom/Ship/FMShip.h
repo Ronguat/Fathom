@@ -166,6 +166,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<UStaticMeshComponent> Sail;
 
+	/** A pennant at the masthead streaming the way the wind blows. */
+	UPROPERTY(VisibleAnywhere, Category="Fathom")
+	TObjectPtr<UStaticMeshComponent> Pennant;
+
 private:
 	void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaSeconds);
 	void Land(AFMPlayerPawn& Pawn);

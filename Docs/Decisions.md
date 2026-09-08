@@ -22,7 +22,8 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
 | 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
-| 2026-09-08 | The station keys: Left/Right the wheel, Up/Down the sail length, `[` `]` the sail angle, X the anchor, E the ladder, B board; the wheel back to centre on release, a sail key sending where the sail stands on release, the anchor a toggle | `AFMPlayerController` | |
+| 2026-09-08 | A pennant at the masthead, a slab 3 m long streaming the way the wind blows, from the same replicated wind the waves take | `AFMShip` | |
+| 2026-09-08 | The station keys: Left/Right the wheel, Up/Down the sail length, `[` `]` the sail angle, X the anchor, E the ladder, B board; the wheel back to centre on release, a sail key sending where the sail stands on release, the anchor a toggle | `AFMPlayerController` | 2026-09-08: the sail keys read upside-down once the sail hung from the yard; Down unfurls, Up furls |
 | 2026-09-08 | The board key as a review affordance rather than a spawn on the deck, every row's placement untouched | Human review entry, Decisions | |
 | 2026-09-08 | A refusal predicted on the client from the same station table and shown two seconds, the call sent regardless | `AFMPlayerController` | |
 | 2026-09-08 | The station placeholders: a post and disc at the wheel, a cube at the anchor, a plinth at the mast for both sail stations, a plank at the rail for the ladder, in the hull's material | `AFMShip` | |
@@ -482,6 +483,14 @@ that order; the capture passed a pitch first and set an 18° roll on the control
 nothing clears, and the hands-on `aim` had done the same with its pitch since 2026-09-05, the demo
 the designer watched. *Decision.* The scripts corrected and the note in the driver's docstring;
 the camera manager's roll limits set to zero, so no source can leave the view rolled.
+
+**S2 green, and two asks.** All of the second pass worked to the designer's eye. The sail keys
+read upside-down with the cloth hanging from the yard: Down unfurls and Up furls now, the queue
+row's verdict. Wind was imperceptible: a pennant at the masthead streams downwind, the same
+replicated wind the waves take. `deck.station-key` sets the sail by key from the ladder point
+rather than by script, and asserts the release leaves it where it stood, over 0.9 after a
+150-frame hold. The designer's rule for the rest of the review: after a change, the rows it
+reaches and nothing more; the whole matrix once the checklist is green.
 
 ### Verified against written
 

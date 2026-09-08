@@ -178,11 +178,11 @@ void AFMPlayerController::DriveFromKeys()
 	{
 		DriveByKey(TEXT("wheel"), 0.0f);
 	}
-	if (Pressed(TEXT("sail_up")))
+	if (Pressed(TEXT("sail_down")))
 	{
 		DriveByKey(TEXT("sail_length"), 1.0f);
 	}
-	if (Pressed(TEXT("sail_down")))
+	if (Pressed(TEXT("sail_up")))
 	{
 		DriveByKey(TEXT("sail_length"), 0.0f);
 	}

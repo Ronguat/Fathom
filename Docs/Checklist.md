@@ -31,10 +31,11 @@ the wheel is at the stern, the anchor at the bow, both sail stations at the mast
 starboard rail, each with a placeholder on the deck.
 
 **Keys.** WASD move, Space jump, left button horizontal, scroll down overhead, scroll up thrust,
-right button parry, Q feint; Left/Right the wheel, Up/Down the sail length, `[` `]` the sail angle,
-X the anchor, E the ladder, B board, F fly where you look and F again to drop, M mark. The HUD's
-last two lines repeat this. The sail is the slab on the mast, as tall as it is set and turned to
-its angle; the five columns on the floor's edge are still, for the ship to be seen moving against.
+right button parry, Q feint; Left/Right the wheel, Down unfurls the sail and Up furls it, `[` `]`
+the sail angle, X the anchor, E the ladder, B board, F fly where you look and F again to drop, M
+mark. The HUD's last two lines repeat this. The sail is the slab hanging from the yard, unfurled
+as far as it is set and turned to its angle; the pennant at the masthead streams the way the wind
+blows; the five columns on the floor's edge are still, for the ship to be seen moving against.
 
 ## Before Z1 could run — the prep, built 2026-09-08
 
@@ -142,13 +143,13 @@ Judged: —
 
 **S4 Sail** · RED
 Needs: S3. Setup: sea 1, anchor raised, L0; you at the mast.
-Do: hold Up; watch the HUD's speed and the water past the hull.
+Do: hold Down; watch the sail unfurl, the HUD's speed and the water past the hull.
 Pass only if: the ship visibly moves, the water moves past, and the speed reaches its top within about ten seconds.
 Judged: —
 
 **S5 Sail angle** · RED
 Needs: S4. Setup: under sail, L0.
-Do: hold `[`, then `]`; watch the speed against the HUD's wind.
+Do: read the wind off the pennant; hold `[`, then `]`; watch the sail turn and the speed.
 Pass only if: the speed changes in the direction you predicted from the wind.
 Judged: —
 

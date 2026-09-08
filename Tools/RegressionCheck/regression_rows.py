@@ -395,6 +395,9 @@ def deck_station_key(ctx, r, s):
     count(r, "p1 BOARD on the server", len(ctx.lines("BOARD", "S")), 1)
     based = [sf for sf in based_poses(ctx, "S", pids.get("p1", -1)) if sf >= start + 200]
     band(r, "p1 based POSE lines on S after boarding", [len(based)], 10, 10 ** 6, "")
+    sail = ctx.lines("SHIPIN", "S", "input=sail_length")
+    count(r, "sail calls applied by key at the mast, the hold's press and release", len(sail), 2)
+    band(r, "sail set by the release, where it stood (fraction)", [sail[-1].fields.get("value", 0.0)] if sail else [], 0.9, 1.0, "")
     count(r, "wheel calls refused by distance, the tap's press and release", len(ctx.lines("SHIPNO", "S", "input=wheel")), 2)
     applied = ctx.lines("SHIPIN", "S", "input=wheel")
     count(r, "wheel calls applied by key from the wheel", len(applied), 2)

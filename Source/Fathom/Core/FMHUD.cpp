@@ -93,6 +93,6 @@ TArray<TPair<FString, FLinearColor>> AFMHUD::Lines() const
 		Out.Emplace(Notice, Yellow);
 	}
 	Out.Emplace(TEXT("WASD move  Space jump  LMB horizontal  scroll down overhead  scroll up thrust  RMB parry  Q feint"), Grey);
-	Out.Emplace(TEXT("Left/Right wheel  Up/Down sail  [ ] sail angle  X anchor  E ladder  B board  M mark  console: FM.Latency <ms>"), Grey);
+	Out.Emplace(TEXT("Left/Right wheel  Down unfurls sail, Up furls  [ ] sail angle  X anchor  E ladder  B board  F fly  M mark  console: FM.Latency <ms>"), Grey);
 	return Out;
 }

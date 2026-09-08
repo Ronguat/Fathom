@@ -72,6 +72,20 @@ AFMShip::AFMShip()
 	{
 		Sail->SetMaterial(0, HullMaterial.Object);
 	}
+
+	Pennant = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pennant"));
+	Pennant->SetupAttachment(Mesh);
+	Pennant->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Pennant->SetCanEverAffectNavigation(false);
+	if (Cube.Succeeded())
+	{
+		Pennant->SetStaticMesh(Cube.Object);
+	}
+	if (HullMaterial.Succeeded())
+	{
+		Pennant->SetMaterial(0, HullMaterial.Object);
+	}
+	Pennant->SetRelativeScale3D(FVector(3.0, 0.15, 0.4));
 }
 
 AFMShip* AFMShip::Find(const UWorld* World)
@@ -407,6 +421,13 @@ void AFMShip::Tick(float DeltaSeconds)
 		Sail->SetRelativeLocationAndRotation(FVector(0.0, 0.0, Yard - Height * 0.5), FRotator(0.0f, State.SailAngle, 0.0f));
 		Sail->SetRelativeScale3D(FVector(0.2, 6.0, Height / 100.0));
 		Mesh->SetWorldTransform(PresentedTransform());
+		if (const UFMOceanSubsystem* Ocean = GetWorld()->GetSubsystem<UFMOceanSubsystem>())
+		{
+			const FVector2f Wind = Ocean->GetWind();
+			const float Downwind = FMath::RadiansToDegrees(FMath::Atan2(Wind.Y, Wind.X)) - Mesh->GetComponentRotation().Yaw;
+			const FVector Along = FRotator(0.0f, Downwind, 0.0f).Vector() * 150.0;
+			Pennant->SetRelativeLocationAndRotation(FVector(Along.X, Along.Y, K->HullHeight * 0.5 + 1220.0), FRotator(0.0f, Downwind, 0.0f));
+		}
 	}
 }
 

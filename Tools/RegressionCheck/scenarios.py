@@ -188,7 +188,7 @@ SCENARIOS = {
         roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
                    p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
         cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
-        plan=[(120, "p1", "tap", "board"), (200, "p1", "ship", "sail_length", 1.0), (240, "p1", "tap", "wheel_right"),
+        plan=[(120, "p1", "tap", "board"), (180, "p1", "hold", "sail_down", 150), (240, "p1", "tap", "wheel_right"),
               (300, "p2", "hold", "wheel_right", 240)],
         stop=dict(duration=12.0),
         mutations=[("drop", "SHIPIN", 1), ("regex", r"SHIPNO", r"SHIPNIL"), ("drop", "BOARD", 1), ("set", "POSE", "base", "0")],
