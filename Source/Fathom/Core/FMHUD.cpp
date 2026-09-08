@@ -67,8 +67,9 @@ TArray<TPair<FString, FLinearColor>> AFMHUD::Lines() const
 				NearestDistance <= Nearest->Radius ? TEXT("in radius") : TEXT("out of radius")), White);
 		}
 		const FFMShipState& S = Ship->GetState();
-		const FString Anchor = Ship->GetInputs().bAnchorDown ? TEXT("down")
-			: S.AnchorRaise < 1.0f ? FString::Printf(TEXT("raising %.0f%%"), S.AnchorRaise * 100.0f) : TEXT("raised");
+		const FString Anchor = Ship->GetInputs().bAnchorDown
+			? (S.bAnchorSet ? FString(TEXT("down")) : FString::Printf(TEXT("dropping %.0f%%"), (1.0f - S.AnchorRaise) * 100.0f))
+			: (S.AnchorRaise < 1.0f ? FString::Printf(TEXT("raising %.0f%%"), S.AnchorRaise * 100.0f) : FString(TEXT("raised")));
 		Out.Emplace(FString::Printf(TEXT("ship speed %.0f cm/s  sail %.2f  angle %.0f  rudder %.2f  anchor %s"),
 			S.Speed, S.SailLength, S.SailAngle, S.Rudder, *Anchor), White);
 	}

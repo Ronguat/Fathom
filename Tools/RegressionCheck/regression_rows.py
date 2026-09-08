@@ -288,15 +288,20 @@ ROWS["ship.turn-loss"] = ship_turn
 @row("ship.stop")
 def ship_stop(ctx, r, s):
     ship_reconstruction(ctx, r, s, settle_after=360 + 30)
-    moving, stopped = server_at(ctx, 350), server_at(ctx, 480)
+    moving = server_at(ctx, 350)
     band(r, "speed before the anchor (cm/s)", [moving.fields["speed"]] if moving else [], 300.0, 1100.0, "cm/s")
-    band(r, "speed two seconds after the anchor (cm/s)", [abs(stopped.fields["speed"])] if stopped else [], 0.0, 20.0, "cm/s")
-    dropped = server_at(ctx, 360)
-    if dropped and stopped:
-        run = ((stopped.fields["x"] - dropped.fields["x"]) ** 2 + (stopped.fields["y"] - dropped.fields["y"]) ** 2) ** 0.5
-        band(r, "the ship ran to the line's end and caught (cm past the drop)", [run], 300.0, 1200.0, "cm")
+    server = ship_lines(ctx, "S")
+    start = begin_frame(ctx)
+    bites = [f for f in sorted(server) if f >= start + 360 and server[f].fields.get("anchor") == 0.0]
+    bite = bites[0] if bites else None
+    band(r, "the anchor bites after its fall (frames after the press)", [bite - (start + 360)] if bite else [], 90, 180, "f")
+    settled = server_at(ctx, (bite - start) + 240) if bite else None
+    band(r, "speed four seconds after the bite (cm/s)", [abs(settled.fields["speed"])] if settled else [], 0.0, 20.0, "cm/s")
+    if bite and settled:
+        run = ((settled.fields["x"] - server[bite].fields["x"]) ** 2 + (settled.fields["y"] - server[bite].fields["y"]) ** 2) ** 0.5
+        band(r, "the ship ran to the line's end and caught (cm past the bite)", [run], 300.0, 1500.0, "cm")
     else:
-        r.add(False, "the ship ran to the line's end and caught (cm past the drop)", "no SHIP line at the drop or after")
+        r.add(False, "the ship ran to the line's end and caught (cm past the bite)", "no SHIP line at the bite or after")
     cost_sane(ctx, r)
 
 

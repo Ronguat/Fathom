@@ -54,9 +54,10 @@ where it is drawn.
 Sample points on the hull read the ocean; a spring-damper on heave, roll and pitch fits the hull
 to the surface. Surge comes from sail length and the sail's angle against the wind through one
 speed curve with a floor head to wind, so a ship under sail can always turn; yaw from a rudder
-driven at a rate and scaled by speed, holding where it is left; the anchor lies where the ship
-was when it dropped, and the ship runs to the end of its line, catches, and is held there by a
-spring until the anchor is raised over a fixed time. A **station** is a place one player occupies to
+driven at a rate and scaled by speed, holding where it is left; a dropped anchor falls for a
+fixed time with the ship sailing on, then lies where the ship was, and the ship runs to the end
+of its line, catches, and is held there by a spring until the anchor is raised over a fixed
+time. A **station** is a place one player occupies to
 drive one ship input: wheel, sail length, sail angle, anchor, ladder, and later cannon.
 
 ## The deck

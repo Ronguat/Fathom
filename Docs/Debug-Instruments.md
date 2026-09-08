@@ -192,12 +192,12 @@ what is now untested. A loop that lags the surface still prints green.
 | `harness.walk-loss` | S C1 C2 | 0, 100 | f60 p1 move 0.0 1.0 120 | 6 s | two worlds, cost, injection latency, determinism |
 | `ocean.agree` | S C1 C2 | 0, 50, 100, 150 | - | 8 s | determinism, cost |
 | `ship.sail` | S C1 C2 | 0, 50, 100, 150 | f60 p1 ship sail_length 1.0 | 12 s | determinism, cost |
-| `ship.stop` | S C1 C2 | 0, 50, 100, 150 | f60 p1 ship sail_length 1.0; f360 p2 ship anchor 1.0 | 10 s | determinism, cost |
+| `ship.stop` | S C1 C2 | 0, 50, 100, 150 | f60 p1 ship sail_length 1.0; f360 p2 ship anchor 1.0 | 14 s | determinism, cost |
 | `ship.turn` | S C1 C2 | 0, 50, 100, 150 | f60 p1 ship sail_length 1.0; f240 p2 ship wheel 1.0; f480 p2 ship wheel 0.0 | 12 s | determinism, cost |
 | `ship.turn-loss` | S C1 C2 | 0, 100 | f60 p1 ship sail_length 1.0; f240 p2 ship wheel 1.0; f480 p2 ship wheel 0.0 | 12 s | determinism, cost |
 | `deck.stand` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5 | 14 s | determinism, cost |
 | `deck.station` | S C1 C2 | 0, 100 | f120 p2 ship wheel 1.0; f180 p1 ship wheel 1.0; f240 p1 ship wheel 0.0 | 6 s | two worlds, cost |
-| `deck.station-key` | S C1 C2 | 0, 100 | f120 p1 tap board; f200 p1 ship sail_length 1.0; f240 p1 tap wheel_right; f300 p2 hold wheel_right 240 | 12 s | two worlds, cost, injection latency |
+| `deck.station-key` | S C1 C2 | 0, 100 | f120 p1 tap board; f180 p1 hold sail_down 150; f240 p1 tap wheel_right; f300 p2 hold wheel_right 240 | 12 s | two worlds, cost, injection latency |
 | `deck.swim` | S C1 C2 | 0, 50, 100, 150 | f360 p1 ship ladder 1.0 | 10 s | determinism, cost |
 | `deck.walk` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f420 p1 move 0.0 1.0 90 | 14 s | determinism, cost, injection latency |
 | `melee.advance-half` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f372 p2 tap parry | 10 s | advance, combat, cost |

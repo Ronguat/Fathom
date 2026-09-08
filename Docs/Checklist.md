@@ -151,19 +151,19 @@ Judged: 2026-09-08, session 1, "I think passes"; furling the sail glides the shi
 Needs: S4. Setup: under sail, L0.
 Do: read the wind off the pennant; hold `[`, then `]`; watch the sail turn and the speed.
 Pass only if: the speed changes in the direction you predicted from the wind.
-Judged: 2026-09-08, session 1, GREEN. NOTE: facing directly into the wind softlocks the ship at no speed; a floor on the speed scaling with how far the sail is unfurled, as the reference game does, followed the same session, `HeadwindSpeed` in the ship settings.
+Judged: 2026-09-08, session 1, GREEN. NOTE: facing directly into the wind softlocks the ship at no speed; a floor on the speed scaling with how far the sail is unfurled, as the reference game does, followed the same session, `HeadwindSpeed` in the ship settings; GREEN again with the floor.
 
-**S6 Wheel** · RED
+**S6 Wheel** · GREEN
 Needs: S4. Setup: under sail, L0; you at the stern.
 Do: hold Right five seconds; release; hold Left. Then the same at rest.
 Pass only if: the ship turns the way you pressed, visibly faster under sail than at rest, and the rudder holds where you let go.
-Judged: 2026-09-08, session 1, RED: the wheel recentred on release and should hold its position, the designer's words; changed the same session, to be judged again.
+Judged: 2026-09-08, session 1, RED: the wheel recentred on release and should hold its position, the designer's words; changed the same session, then GREEN.
 
 **S7 Anchor** · GREEN
 Needs: S4. Setup: under sail, L0; you at the bow.
 Do: press X and count; press X again and count until the ship moves.
-Pass only if: the ship stops within a few seconds, and the raise takes about eight seconds before it moves.
-Judged: 2026-09-08, session 1, GREEN. NOTE: the stop was instant, the speed set to zero; the designer asked for a lurch, the ship catching against a taut anchor line and pulled back to it, which followed the same session; to be looked at again.
+Pass only if: the anchor falls for a moment with the ship sailing on, then the ship runs to the line's end, catches, swings back and settles; the raise takes about eight seconds before it moves.
+Judged: 2026-09-08, session 1, GREEN. NOTE: the stop was instant, the speed set to zero; the designer asked for a lurch, the ship catching against a taut anchor line and pulled back to it, which followed the same session. Then, on the designer's eye: too abrupt, and the speed changed before the anchor reached bottom; a drop time and a softer line followed; to be looked at again.
 
 **S8 Out of radius** · GREEN
 Needs: S3. Setup: standard, L0; you amidships.

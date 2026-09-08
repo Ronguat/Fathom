@@ -144,7 +144,7 @@ SCENARIOS = {
                    p2=("C2", (1000.0, 15000.0, 320.0), 180.0)),
         cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
         plan=[(60, "p1", "ship", "sail_length", 1.0), (360, "p2", "ship", "anchor", 1.0)],
-        stop=dict(duration=10.0),
+        stop=dict(duration=14.0),
         mutations=[SHIP_SERVER_ZERO, ("set", "SHIP", "speed", "999.00")],
         allow=[],
     ),

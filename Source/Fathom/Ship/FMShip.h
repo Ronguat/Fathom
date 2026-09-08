@@ -41,13 +41,15 @@ public:
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float Drag = 0.3f;
 	/** The fraction of full drive a sail makes head to wind, so a ship under sail can always turn. */
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float HeadwindSpeed = 0.2f;
-	/** Drag added while the anchor is down, slack line or taut. */
-	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorDrag = 1.0f;
+	/** Drag added once the anchor lies on the bottom, slack line or taut. */
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorDrag = 0.3f;
+	/** The anchor's fall to the bottom after the drop, during which nothing acts on the ship. */
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorDropSeconds = 2.0f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorRaiseSeconds = 8.0f;
-	/** The anchor line: the ship runs this far from the drop point before the line catches, then a spring of this stiffness and damping, per second squared and per second, holds it there. */
-	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineLength = 500.0f;
-	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineStiffness = 100.0f;
-	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineDamping = 12.0f;
+	/** The anchor line: the ship runs this far from where the anchor bit before the line catches, then a spring of this stiffness and damping, per second squared and per second, holds it there. */
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineLength = 800.0f;
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineStiffness = 9.0f;
+	UPROPERTY(config, EditAnywhere, Category="Sailing") float AnchorLineDamping = 2.4f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float SailRate = 0.5f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float SailAngleRate = 30.0f;
 	UPROPERTY(config, EditAnywhere, Category="Sailing") float RudderRate = 1.0f;
@@ -95,7 +97,7 @@ struct FFMShipState
 	UPROPERTY() float SailAngle = 0.0f;
 	UPROPERTY() float Rudder = 0.0f;
 	UPROPERTY() float AnchorRaise = 1.0f;
-	/** Where the anchor lies while it is set: the ship's position at the drop. */
+	/** Where the anchor lies once it has reached the bottom: the ship's position at that frame. */
 	UPROPERTY() float AnchorX = 0.0f;
 	UPROPERTY() float AnchorY = 0.0f;
 	UPROPERTY() bool bAnchorSet = false;

@@ -282,23 +282,25 @@ void AFMShip::Step(FFMShipState& S, const FFMShipInputs& In, const UFMShipSettin
 	S.SailLength = MoveToward(S.SailLength, In.SailLength, K.SailRate * Dt);
 	S.SailAngle = MoveToward(S.SailAngle, In.SailAngle, K.SailAngleRate * Dt);
 	S.Rudder = MoveToward(S.Rudder, In.Wheel, K.RudderRate * Dt);
-	S.AnchorRaise = In.bAnchorDown ? 0.0f : MoveToward(S.AnchorRaise, 1.0f, Dt / FMath::Max(K.AnchorRaiseSeconds, 0.01f));
+	S.AnchorRaise = In.bAnchorDown
+		? MoveToward(S.AnchorRaise, 0.0f, Dt / FMath::Max(K.AnchorDropSeconds, 0.01f))
+		: MoveToward(S.AnchorRaise, 1.0f, Dt / FMath::Max(K.AnchorRaiseSeconds, 0.01f));
 
 	const FVector2f Wind = Ocean ? Ocean->GetWind() : FVector2f(1.0f, 0.0f);
 	const float SailNormalDegrees = (S.Heading + S.SailAngle) * (FMOcean::Pi / 180.0f);
 	const FVector2f SailNormal(FMath::Cos(SailNormalDegrees), FMath::Sin(SailNormalDegrees));
 	const float Drive = S.SailLength * FMath::Max(K.HeadwindSpeed, Wind.X * SailNormal.X + Wind.Y * SailNormal.Y);
-	const float Hold = 1.0f - S.AnchorRaise;
-	if (In.bAnchorDown && !S.bAnchorSet)
+	if (In.bAnchorDown && !S.bAnchorSet && S.AnchorRaise <= 0.0f)
 	{
 		S.AnchorX = S.X;
 		S.AnchorY = S.Y;
 		S.bAnchorSet = true;
 	}
-	else if (!In.bAnchorDown && Hold <= 0.0f)
+	else if (!In.bAnchorDown && S.AnchorRaise >= 1.0f)
 	{
 		S.bAnchorSet = false;
 	}
+	const float Hold = S.bAnchorSet ? 1.0f - S.AnchorRaise : 0.0f;
 	const float HeadingRadians = S.Heading * (FMOcean::Pi / 180.0f);
 	const float CosH = FMath::Cos(HeadingRadians);
 	const float SinH = FMath::Sin(HeadingRadians);
