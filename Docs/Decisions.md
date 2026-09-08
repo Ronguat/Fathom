@@ -333,7 +333,15 @@ Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
 
 ### Next session's brief
 
-*Written at closedown.*
+**Pick up at the human review, `Docs/Checklist.md`, item Z1**, the designer at the keyboard and
+the agent driving p2 through the hands-on driver's review behaviours; the ocean, ship and deck
+groups first, the melee group waiting for the rework by the designer's ruling below. The work is
+on `wip/human-review-prep`, main untouched: the harness, ocean, ship and deck families are green
+on this binary and the melee family was not run, by the designer's word, so the gate for main is
+that family green, run when the designer allows. **Open**: the melee family's rows on this
+binary; the draw, unverified and not to be debugged; whether the Melee rung reopens on the ladder,
+a queue row; the packaged client, waiting for the F group; the queue's paper pass, last.
+Budget: none set.
 
 ### The plan, written before execution
 
@@ -396,6 +404,28 @@ row and the trap; the Melee rung's place on the ladder is the designer's to chan
 the items earn them; the paper pass over what remains, last; the basic set table read before the
 ship group. Fail-first: every item red until the designer says its pass line held, and the first
 defect becomes the session, with the mark key pinning its frame and nothing else recorded.
+
+### Verified against written
+
+**Verified.** The build, both binaries newer than every source. The harness family, 14 rows,
+run `0908-120337`; the ocean family, 4 rows, `0908-120455`; the ship family, 14 rows,
+`0908-120526`; the deck family, 16 rows, `0908-120842`, every row green with every mutation
+proven except `deck.station-key`, red on its own expectation of one refusal where a tap's press
+and release make two, green at both latencies with four mutations proven in `0908-121235`:
+`BOARD` on the server four frames after the press, the pawn based on the deck, the wheel refused
+from amidships at 1 029 cm, applied at the stern as 1.00 on press and 0.00 on release, the ship
+turned under the held key. The HUD's lines read in a capture on the deck: world tag, frame, lag,
+advance, mode and ship-space place, the nearest station and its radius, the ship's values, sea
+and wind, the combat phase and tallies, the legend. A hit registered in the capture session, the
+tallies and the `HIT` line agreeing.
+
+**Written, not verified.** The draw, in no capture; the notice and the placeholders' shapes,
+seen by no eye; `FM.Latency` from a console, exercised only through the driver's equivalent; the
+review behaviours beyond `stand`, `face` and the swing; the melee family on this binary, not run
+by the designer's word; the packaged client, waiting for the F group.
+
+**Beyond the plan.** The ruling and its record: two queue verdicts, a supersession row, a trap,
+the melee group of the checklist marked as waiting. Nothing else.
 ## 2026-09-07 — Melee: the swing, the rewind and the knob, measured
 
 ### Next session's brief
