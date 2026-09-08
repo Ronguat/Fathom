@@ -87,7 +87,7 @@ protected:
 	UFUNCTION()
 	void HandleRollback(const FMoverTimeStep& CurrentTimeStep, const FMoverTimeStep& ExpungedTimeStep);
 
-	/** Places a simulated proxy where its base-space state stands on the base as this world presents it. */
+	/** Places a simulated proxy where its base-space state stands on the base as this world presents it, turned by the base's yaw alone so the body stays upright as the deck rolls. */
 	void PlaceOnBase(const FMoverDefaultSyncState& State, const UPrimitiveComponent& Base);
 
 	/** The base's transform as drawn this frame: a ship's mesh between its last two frames, any other base as it is. */

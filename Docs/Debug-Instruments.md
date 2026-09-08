@@ -81,7 +81,8 @@ view mode or show flag reaches the play viewport only through the controller's c
 the deck with Left/Right, Up/Down, `[` `]`, X and E, reads `AFMHUD`, the world tag, frame,
 measured lag, advance, mode, ship-space place, nearest station and its radius, the ship's speed
 and station values, sea state, wind, combat phase, tallies and the controller's notice, and
-sets a round trip on every world in the process with `FM.Latency <ms>`. Every hit and parry the
+sets a round trip on every world in the process with `FM.Latency <ms>`, or one per client with
+`FM.Latency <ms1> <ms2>`, the server carrying the smallest half. Every hit and parry the
 server resolves is drawn on both clients for half a second, the blade with the rewound capsule
 and head, red for a hit and blue for a parry, on the ship as that world presents it;
 `fm.MeleeDraw 1` draws the local blade green on every release frame. The loop

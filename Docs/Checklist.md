@@ -57,62 +57,63 @@ Item shape: **id title** · verdict / Claim / Needs, Setup / Do / Pass only if /
 
 ## Z — every session starts here
 
-**Z1 Both windows are in the game** · RED
+**Z1 Both windows are in the game** · GREEN
 Setup: standard, L0.
 Do: look at both windows before touching anything; press B in each.
 Pass only if: each shows the ship on the sea with a pawn on its deck, and the HUD reads C1 in yours and C2 in the other.
-Judged: —
+Judged: 2026-09-08, session 1, the designer.
 
-**Z2 The latency is what the item asks** · RED
+**Z2 The latency is what the item asks** · GREEN
 Setup: L150.
 Do: wait five seconds; read the HUD's measured lag in both windows.
 Pass only if: both read within 10 ms of the round trip set.
-Judged: —
+Judged: 2026-09-08, session 1, the designer.
 
-**Z3 The mark pins a frame** · RED
+**Z3 The mark pins a frame** · GREEN
 Do: press M.
 Pass only if: within ten seconds I quote a `MARK` line with its frame.
-Judged: —
+Judged: 2026-09-08, session 1; marks C1 260 and C1 1564, quoted from the trace.
 
-**Z4 You are in control** · RED
+**Z4 You are in control** · GREEN
 Do: turn the view with the mouse; walk forward with W.
 Pass only if: the view turns and you walk along the deck, without a hitch in the first steps.
-Judged: —
+Judged: 2026-09-08, session 1, the designer.
 
 ## O — the ocean
 
-**O1 The calm sea shows no edge** · RED
+**O1 The calm sea shows no edge** · GREEN
 Claim: `Docs/Spec.md`, The ocean; the plane follows the pawn.
 Needs: Z. Setup: sea 0, anchored, L0.
 Do: a full turn amidships; then the bow and the stern, looking down over the rail and out.
 Pass only if: no edge, seam, gap or pop anywhere.
 If red: the plane's extent or its follow snap; shots at the mark.
-Judged: —
+Judged: 2026-09-08, session 1, GREEN, after the horizon plane and the 1 km near plane of that date.
 
-**O2 Waves travel one way, whole** · RED
+**O2 Waves travel one way, whole** · GREEN
 Needs: O1. Setup: sea 1, anchored, L0.
 Do: from the bow, watch twenty seconds; point at the direction the crests travel.
 Pass only if: crests are continuous, travel in one direction, never tear or pop.
-Judged: —
+Judged: 2026-09-08, session 1, the designer.
 
-**O3 A storm reads as a storm** · RED
+**O3 A storm reads as a storm** · GREEN
 Needs: O2. Setup: sea 2, twice the loop's, anchored, L0.
 Do: the same watch.
 Pass only if: the waves are visibly larger and the surface has no loops or spikes.
-If red: amplitude and steepness scale with the sea state and nothing clamps them; nobody has looked above 1.
-Judged: —
+If red: amplitude and steepness scale with the sea state; the ceiling is `SeaStateMax`, 2.4 with these components.
+Judged: 2026-09-08, session 1, GREEN at sea 2, after the ceiling was raised from 1 that day; before it the designer could raise nothing past a gentle sea.
 
-**O4 Both windows show the same sea** · RED
-Needs: O2. Setup: sea 1, L150, windows side by side.
+**O4 Both windows show the same sea** · GREEN
+Needs: O2. Setup: sea 1, C1 at L150 and C2 at L50 through the driver's `latencies`, windows side by side.
 Do: pick one crest as it reaches the bow in your window; find it in the other.
 Pass only if: the same crest passes the same point at the same moment, as far as your eye can tell.
-Judged: —
+Judged: 2026-09-08, session 1, GREEN, "pretty cohesive". NOTE: the higher-latency window draws the ship and the sea a little ahead; each client leads the server by its own lead, 6 frames plus its round trip, so the windows differ by the difference of their leads, about a tenth of a second here. Expected; the Ship entry of 2026-09-05 and the Spec's authority section.
 
 **O5 The sea follows you** · RED
 Needs: O2. Setup: sea 1, L0.
 Do: walk bow to stern and back twice, watching the water beside the hull.
-Pass only if: the plane never shows an edge and never pops under the hull.
-Judged: —
+Pass only if: no edge appears as you move, and the water never visibly jumps when the plane re-snaps under you; a wave passing through the hull's sides is not this item.
+NOTE 2026-09-08: waves pierce the hull, the designer's words; the placeholder hull clips nothing, a facelift item beside the shader.
+Judged: 2026-09-08, session 1, RED: an edge to the sea, stopping before the horizon, seen from the deck at sea 1; the horizon plane and the 1 km near plane followed the same session. Then RED again, the designer's words: needs a better shader for the ocean, hard to see depth currently. Routed as the next presentation fix, the ocean material; the S items do not depend on it.
 
 ## S — the ship
 
@@ -214,7 +215,8 @@ Judged: —
 **D6 The other player walks the deck** · RED
 Needs: D3. Setup: sea 1, L150; p2 walking a loop amidships.
 Do: watch p2 thirty seconds.
-Pass only if: on the deck, feet planted, continuous; no slide, no teleport, no pop.
+Pass only if: on the deck, feet planted, continuous; no slide, no teleport, no pop, no wobble.
+If red: seen ahead of its turn on 2026-09-08, the other player wobbling with the deck's roll while your own body stays upright; the proxy was placed with the base's full turn, pitch and roll included, and now takes its yaw alone.
 Judged: —
 
 **D7 You, as they see you** · RED

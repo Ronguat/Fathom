@@ -51,6 +51,8 @@ private:
 	void Probe(int32 Frame);
 	/** Keeps the surface under the local pawn, snapped to the plane's grid step. */
 	void Follow();
+	/** Drops the horizon plane under the sea state's deepest trough by the settings' margin. */
+	void PlaceHorizon();
 	bool Renders() const;
 
 	UPROPERTY()
@@ -64,6 +66,10 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<AFMOceanActor> Surface;
+
+	/** The flat plane to the horizon, under the deepest trough the session's sea state can make. */
+	UPROPERTY()
+	TObjectPtr<AFMOceanActor> Horizon;
 
 	TArray<FFMWaveComponent> Waves;
 	FVector2f Wind = FVector2f(1.0f, 0.0f);

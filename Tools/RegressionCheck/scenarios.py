@@ -54,7 +54,7 @@ MECHANICS = ("two worlds", "cost", "injection latency", "determinism", "combat",
 # Rung order, which is the order the matrix lists families in.
 FAMILIES = ("harness", "ocean", "ship", "deck", "melee", "ship-combat", "ship-to-ship")
 
-# The ocean plane's half-extent; a placement beyond it fails before PIE.
+# The placement bound, inside the ocean plane; a placement beyond it fails before PIE.
 FLOOR_LIMIT = 20000.0
 
 # Every project console variable a row may set, with the value that reads the settings; the

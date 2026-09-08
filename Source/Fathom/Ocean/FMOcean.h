@@ -36,8 +36,12 @@ public:
 	UPROPERTY(config, EditAnywhere, Category="Waves")
 	TArray<FFMWaveComponent> Components;
 
-	UPROPERTY(config, EditAnywhere, Category="Session", meta=(ClampMin="0", ClampMax="1"))
+	UPROPERTY(config, EditAnywhere, Category="Session", meta=(ClampMin="0"))
 	float SeaState = 0.5f;
+
+	/** The largest sea state a session takes: amplitude and steepness both scale with it, so the summed steepness loops the surface past the square root of one over the components' summed steepness times amplitude times wavenumber. */
+	UPROPERTY(config, EditAnywhere, Category="Session", meta=(ClampMin="0"))
+	float SeaStateMax = 2.4f;
 
 	UPROPERTY(config, EditAnywhere, Category="Session")
 	float WindAngleDegrees = 0.0f;
@@ -68,6 +72,14 @@ public:
 
 	UPROPERTY(config, EditAnywhere, Category="Plane")
 	float PlaneZ = -200.0f;
+
+	/** A flat plane this wide under the displaced one, reaching the horizon. */
+	UPROPERTY(config, EditAnywhere, Category="Plane")
+	float HorizonSize = 4000000.0f;
+
+	/** How far the horizon plane sits under the deepest trough the session's sea state can make. */
+	UPROPERTY(config, EditAnywhere, Category="Plane")
+	float HorizonMargin = 20.0f;
 };
 
 /** The wave function in single floats, the same formulation as Shaders/FMOcean.ush. */

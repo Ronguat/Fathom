@@ -12,6 +12,11 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-08 | The ocean's look: the Gerstner normal from the shader function at the undisplaced point, deep water lerped to a sky tint by a fresnel of exponent 4, specular 1, roughness 0.12 | `Tools/Editor/make-ocean-assets.py`, `Shaders/FMOcean.ush` | |
+| 2026-09-08 | A simulated proxy placed with the base's yaw alone, upright as the deck rolls, the position still on the full transform | `AFMPlayerPawn` | |
+| 2026-09-08 | `FM.Latency` with one round trip per client: the server's delay the smallest half, each client the rest of its own | `UFMTraceSubsystem`, `Docs/Debug-Instruments.md` | |
+| 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
+| 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
 | 2026-09-08 | The station keys: Left/Right the wheel, Up/Down the sail length, `[` `]` the sail angle, X the anchor, E the ladder, B board; the wheel back to centre on release, a sail key sending where the sail stands on release, the anchor a toggle | `AFMPlayerController` | |
 | 2026-09-08 | The board key as a review affordance rather than a spawn on the deck, every row's placement untouched | Human review entry, Decisions | |
@@ -248,7 +253,8 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | The injection pairing's spread | The render load: the loop runs at half resolution, and the demo's full-resolution walk row read a lead of 13 then 15 frames, spread 2 against the tolerance of 1, where the same row at half resolution reads within 1 *(2026-09-05)*; the walk row's tolerance is 2 after three spreads of 2 in a day with the play windows enlarged *(2026-09-05)* | The tolerance |
 | Judder on movement when rendering outruns 60 | The presentation, drawn one step behind at the framework's fraction; `t.MaxFPS` hides it and the designer ruled it out *(2026-09-05)* | The simulation rate |
 | The sea | The sea-state scalar | Any single wave component |
-| The sea's horizon | `PlaneSize` and `PlaneSteps` in the ocean settings, a 400 m plane at two-metre steps that follows the local pawn | The wave function, which is the same everywhere |
+| A storm | `SeaStateMax` in the ocean settings, 2.4 with these components, the loop bound in its header comment; then the components' amplitudes *(2026-09-08)* | The steepness alone |
+| The sea's horizon | `PlaneSize` and `PlaneSteps` in the ocean settings, a 1 km plane at 2.5 m steps that follows the local pawn, over `HorizonSize`'s flat plane dropped under the deepest trough *(2026-09-08)* | The wave function, which is the same everywhere |
 | A component's shape | Its row in `Config/DefaultGame.ini` under the ocean settings | The formulation, which two evaluators share |
 | The probe's cost | `ProbeEveryFrames` and `ProbeCells` in the ocean settings; the readback is synchronous | The trace cadence |
 | Ship handling | The speed curve, the rudder rate, the anchor drag | The hull sample points, which shape the fit rather than the handling |
@@ -286,7 +292,8 @@ the bar into numbers.
   underhand attacks and the exhausted, riposte and deflect clips; a defender in the water; the
   head sphere following the clip rather than riding the capsule; a parry held rather than a
   window; an animation graph in place of explicit time; a material of the project's own on the
-  delivered meshes.
+  delivered meshes. Deferred 2026-09-08, from the human review: water masked inside the hull,
+  the placeholder hull letting waves through its sides.
 
 ## Symbol index — which entries discuss this thing
 
@@ -404,6 +411,32 @@ row and the trap; the Melee rung's place on the ladder is the designer's to chan
 the items earn them; the paper pass over what remains, last; the basic set table read before the
 ship group. Fail-first: every item red until the designer says its pass line held, and the first
 defect becomes the session, with the mark key pinning its frame and nothing else recorded.
+
+**Session 1's defect: the sea's edge, and the storm that was not one.** Z green; at sea 1 the
+designer saw the sea stop before the horizon, O5 red, and could raise nothing past a gentle sea:
+two `fm.SeaState 2` commands logged and the server running sea 1.00, the game state clamping at
+1. *Decision.* The near plane 1 km at 2.5 m steps, a flat 40 km plane in the same material under
+it, dropped below the deepest trough the session's sea state can make plus a margin, placed when
+the sea state arrives; the ceiling a settings knob, `SeaStateMax`, 2.4, from the bound at which
+both scalings loop the surface: the square root of one over the components' summed steepness
+times amplitude times wavenumber, 0.161 here. *Alternatives.* A near plane to the horizon, a
+million quads and more; fog, which the harness map lacks; the horizon plane at mean level, which
+fills every trough. *Reopens* on the designer's eye at the seam, a faint step at 500 m, or on a
+component change that moves the bound.
+
+**Session 1's second pass, the designer away from the keyboard.** O1 to O4 green after the fix,
+O4 with the lead as its note. O5 red again on the designer's words, a better shader wanted, depth
+hard to see; and a wave piercing the hull, which the item never asked about, its pass line
+rewritten to say so. Ahead of the deck group, the other player wobbling with the deck's roll while
+the designer's own body stayed upright. *Decision.* The shader: a normal from the Gerstner closed
+form at the undisplaced point, in `Shaders/FMOcean.ush` beside the displacement, a fresnel between
+deep water and a sky tint, specular and a low roughness, built by the same script as before. The
+wobble: the proxy was turned by the base's whole rotation since capture, pitch and roll included;
+it takes the yaw alone now, the position still on the full transform, so the feet follow the deck
+and the body stays upright as the owner's does. The console command takes one round trip per
+client. *Alternatives.* A water-clipping mask inside the hull, deferred with the Stretch line for
+it; the proxy tilting with the deck as the owner does not, which is what was seen. *Reopens* on
+the designer's eye at D6 and O5.
 
 ### Verified against written
 

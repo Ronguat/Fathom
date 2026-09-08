@@ -73,18 +73,39 @@ namespace
 		}));
 
 	FAutoConsoleCommand GFMLatency(
-		TEXT("FM.Latency"), TEXT("Emulates a round trip on every game world in this process, split evenly: FM.Latency <ms>; 0 turns the emulation off"),
+		TEXT("FM.Latency"), TEXT("Emulates round trips on the game worlds of this process: FM.Latency <ms> gives every client the same, split evenly; FM.Latency <ms1> <ms2> ... gives each client its own, the server carrying the smallest half; 0 turns the emulation off"),
 		FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
 		{
-			const int32 Ms = Args.Num() ? FCString::Atoi(*Args[0]) : 0;
-			const FString Command = Ms > 0 ? FString::Printf(TEXT("NetEmulation.PktLag %d"), Ms / 2) : FString(TEXT("NetEmulation.Off"));
+			TArray<int32> Trips;
+			for (const FString& Arg : Args)
+			{
+				Trips.Add(FMath::Max(0, FCString::Atoi(*Arg)));
+			}
+			if (Trips.Num() == 0)
+			{
+				Trips.Add(0);
+			}
+			int32 Shared = Trips[0];
+			for (const int32 Trip : Trips)
+			{
+				Shared = FMath::Min(Shared, Trip);
+			}
+			Shared /= 2;
+			int32 Client = 0;
 			for (const FWorldContext& Context : GEngine->GetWorldContexts())
 			{
 				UWorld* World = Context.World();
-				if (World && (Context.WorldType == EWorldType::PIE || Context.WorldType == EWorldType::Game))
+				if (!World || (Context.WorldType != EWorldType::PIE && Context.WorldType != EWorldType::Game))
 				{
-					GEngine->Exec(World, *Command);
+					continue;
 				}
+				int32 Delay = Shared;
+				if (World->GetNetMode() == NM_Client)
+				{
+					Delay = Trips[FMath::Min(Client, Trips.Num() - 1)] - Shared;
+					++Client;
+				}
+				GEngine->Exec(World, Delay > 0 ? *FString::Printf(TEXT("NetEmulation.PktLag %d"), Delay) : TEXT("NetEmulation.Off"));
 			}
 		}));
 }

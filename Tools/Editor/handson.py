@@ -467,3 +467,14 @@ def face(role, other="p1"):
 def stop_review():
     _review_stop()
     return "review behaviours stopped, keys released"
+
+
+def latencies(c1_ms, c2_ms):
+    """A different round trip per client: the server's delay is the smaller half, shared by both
+    connections, and each client carries the rest of its own."""
+    ms = dict(C1=int(c1_ms), C2=int(c2_ms))
+    shared = min(ms.values()) // 2
+    lags = dict(S=shared, C1=ms["C1"] - shared, C2=ms["C2"] - shared)
+    for tag, w in STATE["worlds"].items():
+        unreal.SystemLibrary.execute_console_command(w, "NetEmulation.PktLag %d" % lags[tag] if lags[tag] > 0 else "NetEmulation.Off")
+    return "round trips C1 %d ms, C2 %d ms; delays %s" % (ms["C1"], ms["C2"], lags)

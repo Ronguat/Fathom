@@ -89,6 +89,26 @@ void UFMOceanSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 	{
 		Surface->Build(Settings->PlaneSize, FMath::Max(1, Settings->PlaneSteps), Material);
 	}
+	Horizon = InWorld.SpawnActor<AFMOceanActor>(FVector(0.0, 0.0, Settings->PlaneZ - Settings->HorizonMargin), FRotator::ZeroRotator);
+	if (Horizon && Material)
+	{
+		Horizon->Build(Settings->HorizonSize, 1, Material);
+	}
+}
+
+void UFMOceanSubsystem::PlaceHorizon()
+{
+	if (!Horizon)
+	{
+		return;
+	}
+	const UFMOceanSettings* Settings = GetDefault<UFMOceanSettings>();
+	float Amplitude = 0.0f;
+	for (const FFMWaveComponent& W : Waves)
+	{
+		Amplitude += W.Amplitude;
+	}
+	Horizon->SetActorLocation(FVector(0.0, 0.0, Settings->PlaneZ - Amplitude * FMath::Max(SeaState, 0.0f) - Settings->HorizonMargin));
 }
 
 bool UFMOceanSubsystem::Renders() const
@@ -131,6 +151,7 @@ void UFMOceanSubsystem::SyncFromGameState()
 		SeaState = State->SeaState;
 		Wind = NewWind;
 		bParamsPushed = false;
+		PlaceHorizon();
 	}
 }
 

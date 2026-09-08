@@ -35,6 +35,35 @@ float3 FMOceanDisplace(float2 P, float4 G, float4 W0, float4 W1, float4 W2, floa
 	return Out;
 }
 
+// The terms one wave adds to the surface normal at P: the slope in x and y, and the steepness term the up component loses.
+float3 FMOceanWaveSlope(float2 P, float Time, float SeaState, float2 Wind, float4 W)
+{
+	float Amplitude = W.y * SeaState;
+	float Steepness = W.z * SeaState;
+	float Angle = W.w * (FM_PI / 180.0f);
+	float SinA = sin(Angle);
+	float CosA = cos(Angle);
+	float2 D = float2(Wind.x * CosA - Wind.y * SinA, Wind.x * SinA + Wind.y * CosA);
+	float K = 2.0f * FM_PI / W.x;
+	float Omega = sqrt(FM_GRAVITY * K);
+	float Phase = (P.x * D.x + P.y * D.y) * K - Omega * Time;
+	float Turns = Phase / (2.0f * FM_PI);
+	Phase = (Turns - floor(Turns)) * (2.0f * FM_PI);
+	float S = sin(Phase);
+	float C = cos(Phase);
+	return float3(Amplitude * K * D.x * S, Amplitude * K * D.y * S, Steepness * Amplitude * K * C);
+}
+
+// The world-space normal of the sum at the undisplaced point P, for shading.
+float3 FMOceanNormal(float2 P, float4 G, float4 W0, float4 W1, float4 W2, float4 W3)
+{
+	float3 T = FMOceanWaveSlope(P, G.w, G.x, G.yz, W0);
+	T += FMOceanWaveSlope(P, G.w, G.x, G.yz, W1);
+	T += FMOceanWaveSlope(P, G.w, G.x, G.yz, W2);
+	T += FMOceanWaveSlope(P, G.w, G.x, G.yz, W3);
+	return normalize(float3(T.x, T.y, 1.0f - T.z));
+}
+
 // Probe: origin x, origin y, extent, unused. A pixel's UV names its sample point; the offset keeps every channel positive.
 float3 FMOceanProbe(float2 UV, float4 G, float4 W0, float4 W1, float4 W2, float4 W3, float4 Probe)
 {

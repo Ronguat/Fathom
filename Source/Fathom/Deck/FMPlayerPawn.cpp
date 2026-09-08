@@ -359,7 +359,8 @@ void AFMPlayerPawn::PlaceOnBase(const FMoverDefaultSyncState& State, const UPrim
 {
 	const FTransform BaseNow = PresentedBase(Base);
 	const FVector Location = BaseNow.TransformPositionNoScale(State.GetLocation_BaseSpace());
-	const FQuat Orientation = BaseNow.GetRotation() * State.GetCapturedMovementBaseQuat().Inverse() * State.GetOrientation_WorldSpace().Quaternion();
+	const float YawTurned = BaseNow.Rotator().Yaw - State.GetCapturedMovementBaseQuat().Rotator().Yaw;
+	const FQuat Orientation = FRotator(0.0f, YawTurned, 0.0f).Quaternion() * State.GetOrientation_WorldSpace().Quaternion();
 	SetActorLocationAndRotation(Location, Orientation, false, nullptr, ETeleportType::TeleportPhysics);
 }
 
