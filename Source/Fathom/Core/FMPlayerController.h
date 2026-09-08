@@ -11,7 +11,11 @@ struct FInputKeyEventArgs;
 /**
  * Owns the key table the pawn reads and the marker hotkey; tells the server its world tag on
  * BeginPlay and carries the client's trace relay. Latches every action key's press until the
- * pawn takes it, which is how the mouse wheel's one-event keys reach a command. Adds
+ * pawn takes it, which is how the mouse wheel's one-event keys reach a command. The station keys
+ * drive the ship from the controller's tick, a value on press and one on release: the wheel to
+ * its side and back to centre, a sail to its end and back to where it stands, the anchor a
+ * toggle, the ladder and the board key a call. A call from outside a station's radius is sent
+ * regardless and the refusal the server will make is shown for a moment. Adds
  * DefaultMappingContexts to the local player's Enhanced Input subsystem at BeginPlay, in array order.
  */
 UCLASS()
@@ -22,7 +26,7 @@ class FATHOM_API AFMPlayerController : public APlayerController
 public:
 	AFMPlayerController();
 
-	/** Action name to key: move_forward, move_back, move_left, move_right, jump, mark, attack_overhead, attack_horizontal, attack_thrust, parry, feint. */
+	/** Action name to key: move_forward, move_back, move_left, move_right, jump, mark, attack_overhead, attack_horizontal, attack_thrust, parry, feint, wheel_left, wheel_right, sail_up, sail_down, angle_left, angle_right, anchor, ladder, board. */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TMap<FName, FKey> ActionKeys;
 
@@ -33,12 +37,19 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerRelayTrace(const TArray<FString>& Lines);
 
-	/** Drives one of the ship's stations: wheel, sail_length, sail_angle, anchor. Sent to the server from the next tick. */
+	/** Drives one of the ship's stations: wheel, sail_length, sail_angle, anchor, ladder. Sent to the server from the next tick. */
 	UFUNCTION(BlueprintCallable, Category="Fathom|Ship")
 	void DriveShip(FName Input, float Value);
 
 	UFUNCTION(Server, Reliable)
 	void ServerDriveShip(FName Input, float Value);
+
+	/** Lands the pawn on the deck at the ladder point, from anywhere. */
+	UFUNCTION(Server, Reliable)
+	void ServerBoard();
+
+	/** The refusal or notice the HUD shows; empty once its moment has passed. */
+	FString Notice() const;
 
 	/** The actions pressed since the last take, then cleared. */
 	void TakeLatched(TSet<FName>& OutPressed);
@@ -63,8 +74,17 @@ protected:
 	virtual void PlayerTick(float DeltaTime) override;
 
 private:
+	/** The station keys' edges this tick, into DriveShip. */
+	void DriveFromKeys();
+	/** A station call from a key: the notice when the pawn stands outside the radius, then the call. */
+	void DriveByKey(FName Station, float Value);
+	bool WithinStation(FName Station, float& OutDistance) const;
+	void Notify(const FString& Text);
+
 	FString ClientWorldTag;
 	TArray<TPair<FName, float>> PendingDrives;
 	TSet<FName> Latched;
 	TSet<FName> EventDown;
+	FString NoticeText;
+	double NoticeUntil = 0.0;
 };

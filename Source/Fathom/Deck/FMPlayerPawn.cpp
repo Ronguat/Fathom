@@ -130,7 +130,24 @@ void AFMPlayerPawn::Tick(float DeltaSeconds)
 	{
 		Pose(ArmsMesh, true);
 		Pose(BodyMesh, false);
+		Combat->DrawPending();
 	}
+}
+
+bool AFMPlayerPawn::ShipSpaceLocation(FVector& Out) const
+{
+	const FMoverDefaultSyncState* State = Mover->GetSyncState().SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
+	if (!State || !State->GetMovementBase())
+	{
+		return false;
+	}
+	Out = State->GetLocation_BaseSpace();
+	return true;
+}
+
+FString AFMPlayerPawn::MovementModeName() const
+{
+	return Mover->GetSyncState().MovementMode.ToString();
 }
 
 void AFMPlayerPawn::Pose(USkeletalMeshComponent* Target, bool bFirstPerson)

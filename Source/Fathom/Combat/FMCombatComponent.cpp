@@ -3,15 +3,25 @@
 #include "Animation/AnimSequence.h"
 #include "Components/PrimitiveComponent.h"
 #include "Core/FMPlayerState.h"
+#include "DrawDebugHelpers.h"
 #include "Engine/NetConnection.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerState.h"
+#include "HAL/IConsoleManager.h"
 #include "MoverComponent.h"
 #include "MoverDataModelTypes.h"
 #include "Net/FMTrace.h"
 #include "Net/UnrealNetwork.h"
 #include "NetworkPredictionWorldManager.h"
+#include "Ship/FMShip.h"
+
+namespace
+{
+	TAutoConsoleVariable<int32> CVarMeleeDraw(TEXT("fm.MeleeDraw"), 0,
+		TEXT("Draws the local pawn's blade on every release frame"));
+	constexpr double DrawSeconds = 0.5;
+}
 
 UFMCombatComponent::UFMCombatComponent()
 {
@@ -194,6 +204,54 @@ void UFMCombatComponent::TraceScore()
 void UFMCombatComponent::OnRep_Score()
 {
 	TraceScore();
+}
+
+void UFMCombatComponent::ClientDraw_Implementation(const FFMHitDraw& Draw)
+{
+	PendingDraws.Emplace(GetWorld()->GetTimeSeconds() + DrawSeconds, Draw);
+}
+
+void UFMCombatComponent::DrawPending()
+{
+	UWorld* World = GetWorld();
+	const double Now = World->GetTimeSeconds();
+	const UFMCombatSettings* K = GetDefault<UFMCombatSettings>();
+	const AFMShip* Ship = AFMShip::Find(World);
+	const FTransform ShipNow = Ship ? Ship->PresentedTransform() : FTransform::Identity;
+	for (int32 Index = PendingDraws.Num() - 1; Index >= 0; --Index)
+	{
+		if (PendingDraws[Index].Key < Now)
+		{
+			PendingDraws.RemoveAtSwap(Index);
+			continue;
+		}
+		const FFMHitDraw& Draw = PendingDraws[Index].Value;
+		const FTransform& Frame = Draw.bShipSpace ? ShipNow : FTransform::Identity;
+		const FColor Colour = Draw.bParried ? FColor::Blue : FColor::Red;
+		const FVector Centre = Frame.TransformPosition(Draw.Centre);
+		const FVector Up = Frame.TransformVectorNoScale(Draw.Up);
+		DrawDebugCapsule(World, Centre, K->BodyHalfHeight, K->BodyRadius, FRotationMatrix::MakeFromZ(Up).ToQuat(), Colour, false, -1.0f, 0, 1.5f);
+		DrawDebugSphere(World, Centre + Up * K->HeadHeight, K->HeadRadius, 12, Colour, false, -1.0f, 0, 1.5f);
+		DrawDebugLine(World, Frame.TransformPosition(Draw.BladeBase), Frame.TransformPosition(Draw.BladeTip), Colour, false, -1.0f, 0, 3.0f);
+	}
+	if (CVarMeleeDraw.GetValueOnGameThread() <= 0)
+	{
+		return;
+	}
+	const FFMCombatState* S = State();
+	const UFMAttackData* Data = S ? AttackData(S->Attack) : nullptr;
+	if (!S || !Data || !S->IsAttacking())
+	{
+		return;
+	}
+	const int32 Kf = FMath::FloorToInt32(PresentedFrame()) - S->AttackStart;
+	FVector Base, Tip;
+	if (Kf >= Data->WindupFrames && Kf < Data->WindupFrames + Data->ReleaseFrames && Data->BladeAt(Kf, Base, Tip))
+	{
+		const AActor* Owner = GetOwner();
+		const FTransform Pawn(FRotator(0.0f, Owner->GetActorRotation().Yaw, 0.0f), Owner->GetActorLocation());
+		DrawDebugLine(World, Pawn.TransformPosition(Base), Pawn.TransformPosition(Tip), FColor::Green, false, -1.0f, 0, 2.0f);
+	}
 }
 
 void UFMCombatComponent::HandlePreSimulationTick(const FMoverTimeStep& TimeStep, const FMoverInputCmdContext& InputCmd)
@@ -386,6 +444,17 @@ void UFMCombatComponent::Sweep(FFMCombatState& S, const FMoverDefaultSyncState& 
 			const FVector Forward = FRotator(0.0f, Their.Yaw, 0.0f).Vector();
 			const FVector ToMe = (MyLocation - Centre).GetSafeNormal2D();
 			const bool bFacing = FVector::DotProduct(Forward, ToMe) >= FMath::Cos(FMath::DegreesToRadians(K->ParryConeDegrees * 0.5f));
+			FFMHitDraw Draw;
+			Draw.BladeBase = A0;
+			Draw.BladeTip = A1;
+			Draw.Centre = Centre;
+			Draw.Up = Up;
+			Draw.Frame = Frame;
+			Draw.RenderedFrame = AtFrame;
+			Draw.bShipSpace = MyBase != nullptr;
+			Draw.bParried = bWindow && bFacing;
+			ClientDraw(Draw);
+			Other->ClientDraw(Draw);
 			if (bWindow && bFacing)
 			{
 				++S.Parried;

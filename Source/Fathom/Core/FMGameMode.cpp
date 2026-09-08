@@ -1,6 +1,7 @@
 #include "Core/FMGameMode.h"
 
 #include "Core/FMGameState.h"
+#include "Core/FMHUD.h"
 #include "Core/FMPlayerController.h"
 #include "Core/FMPlayerState.h"
 #include "Deck/FMPlayerPawn.h"
@@ -12,6 +13,7 @@ AFMGameMode::AFMGameMode()
 	DefaultPawnClass = AFMPlayerPawn::StaticClass();
 	GameStateClass = AFMGameState::StaticClass();
 	PlayerStateClass = AFMPlayerState::StaticClass();
+	HUDClass = AFMHUD::StaticClass();
 }
 
 void AFMGameMode::BeginPlay()

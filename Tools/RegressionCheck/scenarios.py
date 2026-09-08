@@ -32,7 +32,8 @@ it lists, as `<id>@<ms>`; the round trip is split evenly between the two directi
 # Actions a plan may name. The runner resolves each to its key from the controller's key table,
 # KEY_TABLE_CLASS's ActionKeys, at arm time; an action with no key fails validation there.
 ACTIONS = ("move_forward", "move_back", "move_left", "move_right", "jump", "mark",
-           "attack_horizontal", "attack_overhead", "attack_thrust", "parry", "feint")
+           "attack_horizontal", "attack_overhead", "attack_thrust", "parry", "feint",
+           "wheel_left", "wheel_right", "sail_up", "sail_down", "angle_left", "angle_right", "anchor", "ladder", "board")
 KEY_TABLE_CLASS = "FMPlayerController"
 
 # What the move op holds for a direction: X right, Y forward.
@@ -58,7 +59,8 @@ FLOOR_LIMIT = 20000.0
 
 # Every project console variable a row may set, with the value that reads the settings; the
 # runner restores these before each row, so nothing a row sets reaches the next.
-CVAR_DEFAULTS = {"fm.SeaState": "-1", "fm.WindAngle": "-1000", "fm.MeleeAdvanceFraction": "-1", "fm.MeleeAdvanceCapMs": "-1"}
+CVAR_DEFAULTS = {"fm.SeaState": "-1", "fm.WindAngle": "-1000", "fm.MeleeAdvanceFraction": "-1", "fm.MeleeAdvanceCapMs": "-1",
+                 "fm.MeleeDraw": "0"}
 
 # One mutation every harness row carries: the server's POSE positions zeroed, which the
 # determinism assertion must catch.
@@ -178,6 +180,18 @@ SCENARIOS = {
         plan=[(120, "p2", "ship", "wheel", 1.0), (180, "p1", "ship", "wheel", 1.0), (240, "p1", "ship", "wheel", 0.0)],
         stop=dict(duration=6.0),
         mutations=[("drop", "SHIPIN", 1), ("regex", r"SHIPNO", r"SHIPNIL")],
+        allow=[],
+    ),
+    "deck.station-key": dict(
+        family="deck", covers=["two worlds", "cost", "injection latency"],
+        worlds=("S", "C1", "C2"), latencies=(0, 100), loss=0.0,
+        roles=dict(p1=("C1", (0.0, -200.0, 100.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "0.5", "fm.WindAngle": "0"},
+        plan=[(120, "p1", "tap", "board"), (200, "p1", "ship", "sail_length", 1.0), (240, "p1", "tap", "wheel_right"),
+              (300, "p2", "hold", "wheel_right", 240)],
+        stop=dict(duration=12.0),
+        mutations=[("drop", "SHIPIN", 1), ("regex", r"SHIPNO", r"SHIPNIL"), ("drop", "BOARD", 1), ("set", "POSE", "base", "0")],
         allow=[],
     ),
     "deck.swim": dict(

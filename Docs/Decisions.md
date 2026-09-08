@@ -12,9 +12,21 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
+| 2026-09-08 | The station keys: Left/Right the wheel, Up/Down the sail length, `[` `]` the sail angle, X the anchor, E the ladder, B board; the wheel back to centre on release, a sail key sending where the sail stands on release, the anchor a toggle | `AFMPlayerController` | |
+| 2026-09-08 | The board key as a review affordance rather than a spawn on the deck, every row's placement untouched | Human review entry, Decisions | |
+| 2026-09-08 | A refusal predicted on the client from the same station table and shown two seconds, the call sent regardless | `AFMPlayerController` | |
+| 2026-09-08 | The station placeholders: a post and disc at the wheel, a cube at the anchor, a plinth at the mast for both sail stations, a plank at the rail for the ladder, in the hull's material | `AFMShip` | |
+| 2026-09-08 | The HUD's lines and their order, in the engine's medium font | `AFMHUD` | |
+| 2026-09-08 | `FM.Latency` splitting the round trip evenly on every game world of the process | `UFMTraceSubsystem`, `Docs/Debug-Instruments.md` | |
+| 2026-09-08 | The hit draw held half a second, red for a hit and blue for a parry, sent to the attacker and the target; `fm.MeleeDraw` in `CVAR_DEFAULTS`; unverified, the trap | `UFMCombatComponent` | |
+| 2026-09-08 | `deck.station-key` at 0 and 100 ms with four mutations; the station actions and board in `ACTIONS` | `Tools/RegressionCheck/scenarios.py` | |
+| 2026-09-08 | The review behaviours as press-and-release by Slate ticks, a loop as a repeating square | `Tools/Editor/handson.py` | |
+| 2026-09-08 | The checklist a standing file under the docs check; the human review first, verdicts as the items earn them, the paper pass last | `Docs/Checklist.md`, `CLAUDE.md` | |
+| 2026-09-08 | The packaged client deferred to the checklist's F group | Human review entry, The plan | |
 | 2026-09-07 | The intake bar's forward-hemisphere letter read as the tip's forward reach over 110 cm, three arcs beginning release beside the shoulder | Melee entry, Decisions | |
 | 2026-09-07 | Windup ends where AutoAlignment reaches 1; a thrust's release runs to the plateau's end, a plateau of no length extended to the fall's; a swing's 30 frames is the designer's word | Melee entry, Decisions | |
-| 2026-09-07 | The blade a 120 cm segment along the weapon bone's -Y, the length a knob in `Tools/Editor/bake-attacks.py` | Melee entry, Decisions | |
+| 2026-09-07 | The blade a 120 cm segment along the weapon bone's -Y, the length a knob in `Tools/Editor/bake-attacks.py` | Melee entry, Decisions | 2026-09-08: does not accomplish what the project set out to do; the point is to test tracers on a ship, drawn from a weapon. Flagged as needing work, the trap of that date |
 | 2026-09-07 | Combat state a persistent sync-state block written in the mover component's in-simulation hooks, reconciling on the attack, its start and the parry's start only | Melee entry, Decisions | |
 | 2026-09-07 | The rendered frame and the advance in every input command, the advance clamped by the server to its own | Melee entry, Decisions | |
 | 2026-09-07 | The rewind in the ship's space from the server's per-frame body history, no ship reconstructed; a defender off the ship met in world space, unmeasured | Melee entry, Decisions | |
@@ -32,7 +44,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-06 | Unplanned input filed as a trap and a rule rather than a universal assertion built | Demonstration entry, Decisions | |
 | 2026-09-05 | All eight attack types imported though the brief takes up to four; the intake chooses | Delivery entry, Decisions | |
 | 2026-09-05 | The mannequin meshes imported with materials, physics asset, post-process and animating rigs stripped | Delivery entry, Decisions | |
-| 2026-09-05 | The weapon meshes, the retargeter and the IK rig left behind; the blade length and the timings carried as numbers | Delivery entry, Decisions | |
+| 2026-09-05 | The weapon meshes, the retargeter and the IK rig left behind; the blade length and the timings carried as numbers | Delivery entry, Decisions | 2026-09-08: the hit is to be traced from a weapon drawn on the pawn; the meshes come in with the rework, the trap of that date |
 | 2026-09-05 | The four binaries already tracked renormalised into LFS | Delivery entry, Decisions | |
 | 2026-09-05 | Presentation one step behind the simulation, interpolated by the framework's fraction, rather than the ship extrapolated ahead | Presentation entry, Decisions | |
 | 2026-09-05 | The presentation bar judged met with one hitch frame in 219 under its letter, the fix kept | Presentation entry, Decisions | |
@@ -82,6 +94,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-04 — Fathom is bootstrapped: the spine, the regime and the inheritance | 2026-09-04 — The repository stands alone, and forgets its parent | The reference model's ownership: the file is dissolved into its homes and the ownership check removed; the Harness brief builds on the loop skeleton here rather than a reference elsewhere |
 | 2026-09-05 — Ship: a body every world integrates from the same state, its Stretch deferral of smoothed presentation | 2026-09-05 — Presentation between frames | The deferral, built on the designer's ruling that presentation never relies on a render cap |
 | 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | Eight release curves counted; seven exist, none for underhand left, and the intake leaves the underhand pair unused |
+| 2026-09-07 — Melee: the swing, the rewind and the knob, measured | 2026-09-08 — The human review: a human reaches what the loop reaches | The blade baked from the clip as a segment in pawn space, no weapon on the pawn: the designer rules it does not accomplish what the project set out to do, the point being to test tracers on a ship drawn from a weapon; flagged as needing work, the trap of that date, and not debugged |
 
 ## Known traps, indexed by what sets them off
 
@@ -197,6 +210,19 @@ through its own InputKey.*** The engine's flush on focus loss is unmeasured agai
 *(2026-09-07)*; a scripted release always arrives. Bites when a human plays. Discharged by a
 hands-on tape across a focus change.
 
+**Whenever the HUD, the notice or a station placeholder is relied on — *presentation the loop
+never reads.*** `AFMHUD`'s lines were read once in a capture *(2026-09-08)*; the notice and the
+placeholders' shapes were not. Bites when a human judges from them. Discharged by a row that reads
+a capture, or by the Z and S items of `Docs/Checklist.md`.
+
+**Whenever the melee hit is read as done — *the blade is numbers, and nothing on the pawn holds
+a weapon.*** The hit is a segment baked from the clip and swept from state; the delivered weapon
+meshes were left behind at intake. The designer's ruling *(2026-09-08)*: the implementation does
+not accomplish what the project set out to do, the point being to test tracers on a ship, drawn
+from a weapon; flagged as needing work, not debugged. The draw of a hit added the same day never
+showed in a capture and stays unverified. Bites at Ship Combat's inheritance and at the M group of
+`Docs/Checklist.md`. Discharged by a hit traced from a weapon drawn on the pawn.
+
 **Whenever a run's play window has focus — *a hand on the keyboard is input the loop cannot
 see.*** The mechanism and the rule are in `Docs/Debug-Instruments.md`, the shape of a run. Seven
 consecutive rows of the 2026-09-06 demonstration run carried key edges no plan injected, the
@@ -264,16 +290,17 @@ the bar into numbers.
 
 ## Symbol index — which entries discuss this thing
 
-Current through **2026-09-07**. Regenerated, byte-sorted, one row per symbol.
+Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
 
 | Symbol | Entries |
 |---|---|
 | `AFMGameState` | 09-05 |
+| `AFMHUD` | 09-08 |
 | `AFMOceanActor` | 09-05 |
-| `AFMPlayerController` | 09-05, 09-07 |
-| `AFMPlayerPawn` | 09-05, 09-07 |
+| `AFMPlayerController` | 09-05, 09-07, 09-08 |
+| `AFMPlayerPawn` | 09-05, 09-07, 09-08 |
 | `AFMPlayerState` | 09-07 |
-| `AFMShip` | 09-05 |
+| `AFMShip` | 09-05, 09-08 |
 | `EFMAttackSide` | 09-07 |
 | `EFMAttackType` | 09-07 |
 | `EFMCombatPhase` | 09-07 |
@@ -281,26 +308,94 @@ Current through **2026-09-07**. Regenerated, byte-sorted, one row per symbol.
 | `FFMCombatInputs` | 09-07 |
 | `FFMCombatRules` | 09-07 |
 | `FFMCombatState` | 09-07 |
+| `FFMHitDraw` | 09-08 |
 | `FFMShipInputs` | 09-05 |
 | `FFMShipState` | 09-05 |
-| `FFMStation` | 09-05 |
+| `FFMStation` | 09-05, 09-08 |
 | `FFMTeleportEffect` | 09-05 |
 | `FMOcean` | 09-05 |
 | `FM_TRACE` | 09-05 |
 | `LogFMTrace` | 09-04, 09-05 |
 | `UFMAttackData` | 09-07 |
-| `UFMCombatComponent` | 09-07 |
+| `UFMCombatComponent` | 09-07, 09-08 |
 | `UFMCombatSettings` | 09-07 |
 | `UFMInputTools` | 09-04 |
 | `UFMOceanSettings` | 09-05 |
 | `UFMOceanSubsystem` | 09-05 |
-| `UFMShipSettings` | 09-05 |
+| `UFMShipSettings` | 09-05, 09-08 |
 | `UFMSwimMode` | 09-05 |
 | `UFMSwimTransition` | 09-05 |
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
-| `UFMTraceSubsystem` | 09-05 |
+| `UFMTraceSubsystem` | 09-05, 09-08 |
 
+## 2026-09-08 — The human review: a human reaches what the loop reaches
+
+### Next session's brief
+
+*Written at closedown.*
+
+### The plan, written before execution
+
+**Scope.** The prep `Docs/Checklist.md` names before its first item, and nothing else: a board
+key that lands the pawn on the deck from anywhere; station keys, a marker per station on the
+hull, and a refusal shown on the client for a call outside a station's radius; a HUD reading
+what the items ask a human to read; a draw on both clients of the blade and the rewound body at
+every hit and parry, on the ship as each world presents it, and the local blade during release
+on `fm.MeleeDraw`; `FM.Latency <ms>` across every world in the process; review behaviours for
+the other pawn in the hands-on driver; the checklist landed as a standing file. The packaged
+client waits for the checklist's F group. Whatever the review finds is the review's; no fix
+rides along.
+
+**Bar, pre-registered.** The whole matrix green on the binary that ships, the key table being
+shared by every row; the new row `deck.station-key` green at 0 and 100 ms with every mutation
+proven: a pawn boards by key from the floor and stands based, a wheel key from amidships is
+refused by the server, the same key held at the stern applies its value on press and centre on
+release and turns the ship; a capture of the HUD, the markers and a hit's draw looked at once
+before the designer sits down.
+
+**Fallbacks.** A polled key edge the runner's injection misses: the station keys move to the
+event-latched route the combat keys use. The client call for the draw not reaching a component:
+the draw carried on the pawn. The refusal predicted on the client disagreeing with the server's
+`SHIPNO`: the prediction dropped, the HUD's radius line standing alone.
+
+**Coverage.** `deck.station-key`. **Traps filed** for the HUD, the draw and the refusal notice,
+presentation the loop never reads.
+
+### Decisions
+
+**The human layer.** *Decision.* Station keys on `AFMPlayerController`'s polled edges, sent as
+the station calls a script makes: the wheel to its side on press and to centre on release; a sail
+key to its end on press and to where the sail stands on release; the anchor a toggle from the
+ship's last applied inputs; the ladder and B a call, B through `ServerBoard` to `AFMShip::Board`,
+which lands the pawn at the ladder point through its simulation and writes `BOARD`. A refusal is
+predicted on the client from `UFMShipSettings`' station table, each `FFMStation` measured by
+`AFMShip::StationDistance`, and shown two seconds; the call goes regardless and the server's
+`SHIPNO` stays the verdict. A placeholder per station appended to the hull's dynamic mesh.
+`AFMHUD` reads `AFMPlayerPawn`, the ship, the ocean subsystem, the player state and
+`UFMTraceSubsystem`. `FM.Latency` walks the engine's world contexts and sends the emulation
+command to each game world. *Alternatives.* A spawn on the deck, which touches every row's
+placement; the event-latched route the combat keys use, the fallback if the runner's injection
+misses a polled edge; a persistent world-space draw, which drifts with the ship. *Reopens* on
+the designer's verdict on the key mapping, or a red on `deck.station-key`.
+
+**The draw, written and flagged.** *Decision.* `FFMHitDraw` sent by client call from
+`UFMCombatComponent`'s sweep to the attacker's and the target's components, redrawn every tick on
+the presented ship for half a second; `fm.MeleeDraw` for the local blade. *Measured.* A hit
+registered in the capture session, the HUD reading dealt 1 and the server's `HIT` line 48 frames
+after the press; the draw showed in no capture at 52 and 69 frames after the press, while a line
+and a sphere drawn from Python showed in the same viewport. Not debugged, by the ruling below.
+
+**The ruling.** The designer, on hearing that the blade is a baked segment and the pawn holds no
+weapon: the implementation does not accomplish what the project set out to do, because the point
+is to test tracers on a ship that are drawn from a weapon; flag it as needing work and focus on
+getting the other parts testable. Recorded as the verdicts on the two queue rows, the supersession
+row and the trap; the Melee rung's place on the ladder is the designer's to change, a queue row.
+
+**The review's order, the designer's.** The human review first, verdicts recorded on the queue as
+the items earn them; the paper pass over what remains, last; the basic set table read before the
+ship group. Fail-first: every item red until the designer says its pass line held, and the first
+defect becomes the session, with the mark key pinning its frame and nothing else recorded.
 ## 2026-09-07 — Melee: the swing, the rewind and the knob, measured
 
 ### Next session's brief

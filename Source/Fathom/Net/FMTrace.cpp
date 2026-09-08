@@ -71,6 +71,22 @@ namespace
 		{
 			UFMTraceLibrary::WriteBundle(World);
 		}));
+
+	FAutoConsoleCommand GFMLatency(
+		TEXT("FM.Latency"), TEXT("Emulates a round trip on every game world in this process, split evenly: FM.Latency <ms>; 0 turns the emulation off"),
+		FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
+		{
+			const int32 Ms = Args.Num() ? FCString::Atoi(*Args[0]) : 0;
+			const FString Command = Ms > 0 ? FString::Printf(TEXT("NetEmulation.PktLag %d"), Ms / 2) : FString(TEXT("NetEmulation.Off"));
+			for (const FWorldContext& Context : GEngine->GetWorldContexts())
+			{
+				UWorld* World = Context.World();
+				if (World && (Context.WorldType == EWorldType::PIE || Context.WorldType == EWorldType::Game))
+				{
+					GEngine->Exec(World, *Command);
+				}
+			}
+		}));
 }
 
 UFMTraceSubsystem* UFMTraceSubsystem::Get(const UObject* WorldContext)

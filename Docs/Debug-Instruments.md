@@ -52,7 +52,8 @@ whether it was parrying and facing. A proxy's own `POSE` labels `sf` with that s
 the row reads the rendered position off the label. `PARRY pid= sf= target= rf= rp= k= margin=
 x= y= z=` is the same for a blade a parry met, `margin` the frames the window had left at `rf`. `SWING pid= sf= attack= start= hits= parried=` is written by the server
 as release ends. `SCORE pid= taken= dealt= parries=` is written by the server when a tally changes
-and by a client when the replicated tallies arrive. `MARK category=<c>` is the marker hotkey,
+and by a client when the replicated tallies arrive. `BOARD pid= sf=` is written by the server
+when a pawn lands on the deck by the board key. `MARK category=<c>` is the marker hotkey,
 `M`, and the console command `FM.Mark <category>`. Everything else is a rung's own vocabulary.
 
 **Clients relay their trace to the server** every tenth of a second over a reliable call in
@@ -72,8 +73,18 @@ closed: the editor with `-server` on the harness map, the packaged client from
 ship driven on request, per-frame tapes of the rendered ship, pawn and camera transforms on every
 world, consecutive rendered frames through the `Shot` command into `Saved/Screenshots/`, and a
 judder tape that holds a movement key and reads the camera's, the ship mesh's and the other
-pawn's step between rendered frames. A
-view mode or show flag reaches the play viewport only through the controller's console. The loop
+pawn's step between rendered frames; its review behaviours, `board`, `stand`, `walk`, `loop`,
+`swing`, `parry`, `feint`, `face`, `latency`, `advance` and `stop_review`, drive the other pawn
+for the items in `Docs/Checklist.md`. A
+view mode or show flag reaches the play viewport only through the controller's console.
+**A human at the play window** boards with B, drives the stations from their placeholders on
+the deck with Left/Right, Up/Down, `[` `]`, X and E, reads `AFMHUD`, the world tag, frame,
+measured lag, advance, mode, ship-space place, nearest station and its radius, the ship's speed
+and station values, sea state, wind, combat phase, tallies and the controller's notice, and
+sets a round trip on every world in the process with `FM.Latency <ms>`. Every hit and parry the
+server resolves is drawn on both clients for half a second, the blade with the rewound capsule
+and head, red for a hit and blue for a parry, on the ship as that world presents it;
+`fm.MeleeDraw 1` draws the local blade green on every release frame. The loop
 reads none of this; what is rendered is asserted by nothing.
 
 **The engine's replay system is the upgrade to recon**, recording the server for scrubbing in the
@@ -182,6 +193,7 @@ what is now untested. A loop that lags the surface still prints green.
 | `ship.turn-loss` | S C1 C2 | 0, 100 | f60 p1 ship sail_length 1.0; f240 p2 ship wheel 1.0; f480 p2 ship wheel 0.0 | 12 s | determinism, cost |
 | `deck.stand` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5 | 14 s | determinism, cost |
 | `deck.station` | S C1 C2 | 0, 100 | f120 p2 ship wheel 1.0; f180 p1 ship wheel 1.0; f240 p1 ship wheel 0.0 | 6 s | two worlds, cost |
+| `deck.station-key` | S C1 C2 | 0, 100 | f120 p1 tap board; f200 p1 ship sail_length 1.0; f240 p1 tap wheel_right; f300 p2 hold wheel_right 240 | 12 s | two worlds, cost, injection latency |
 | `deck.swim` | S C1 C2 | 0, 50, 100, 150 | f360 p1 ship ladder 1.0 | 10 s | determinism, cost |
 | `deck.walk` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f420 p1 move 0.0 1.0 90 | 14 s | determinism, cost, injection latency |
 | `melee.advance-half` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f372 p2 tap parry | 10 s | advance, combat, cost |
@@ -205,9 +217,9 @@ what is now untested. A loop that lags the surface still prints green.
 
 | Mechanic | Rows asserting it |
 |---|---|
-| two worlds | `deck.station`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
-| cost | `deck.stand`, `deck.station`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
-| injection latency | `deck.walk`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
+| two worlds | `deck.station`, `deck.station-key`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
+| cost | `deck.stand`, `deck.station`, `deck.station-key`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
+| injection latency | `deck.station-key`, `deck.walk`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
 | determinism | `deck.stand`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
 | combat | `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing` |
 | rewind | `melee.hit`, `melee.hit-calm`, `melee.hit-walk` |

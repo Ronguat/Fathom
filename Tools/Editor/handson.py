@@ -332,3 +332,138 @@ def shots(frames=4):
 
 def shots_report():
     return "%d taken, running=%s, err=%s" % (SHOT["taken"], SHOT["handle"] is not None, SHOT["err"])
+
+
+# --- review behaviours: the other pawn does what the checklist's item asks ------------------------
+
+REVIEW = dict(handle=None, steps=[], held=None, left=0, loop=False)
+
+
+def _action_key(action):
+    table = unreal.get_default_object(unreal.FMPlayerController).get_editor_property("action_keys")
+    for name, k in table.items():
+        if str(name) == action:
+            return k
+    raise KeyError(action)
+
+
+def _press(role, action, ticks=2):
+    """A press now and its release after some ticks; the mouse wheel releases at once."""
+    pc = STATE["pcs"][role]
+    k = _action_key(action)
+    unreal.FMInputTools.input_key(pc, k, True)
+    if k.export_text() in ("MouseScrollUp", "MouseScrollDown"):
+        unreal.FMInputTools.input_key(pc, k, False)
+        return
+    _schedule([(ticks, role, k)])
+
+
+def _review_stop():
+    if REVIEW["handle"] is not None:
+        unreal.unregister_slate_post_tick_callback(REVIEW["handle"])
+        REVIEW["handle"] = None
+    if REVIEW["held"] is not None:
+        role, k = REVIEW["held"]
+        unreal.FMInputTools.input_key(STATE["pcs"][role], k, False)
+        REVIEW["held"] = None
+    REVIEW.update(steps=[], left=0, loop=False)
+
+
+def _review_tick(dt):
+    REVIEW["left"] -= 1
+    if REVIEW["left"] > 0:
+        return
+    if REVIEW["held"] is not None:
+        role, k = REVIEW["held"]
+        unreal.FMInputTools.input_key(STATE["pcs"][role], k, False)
+        REVIEW["held"] = None
+    if not REVIEW["steps"]:
+        _review_stop()
+        return
+    ticks, role, k = REVIEW["steps"].pop(0)
+    if REVIEW["loop"]:
+        REVIEW["steps"].append((ticks, role, k))
+    unreal.FMInputTools.input_key(STATE["pcs"][role], k, True)
+    REVIEW.update(held=(role, k), left=ticks)
+
+
+def _schedule(steps, loop=False):
+    """Holds each (ticks, role, key) in turn; loop repeats the sequence until stop_review()."""
+    _review_stop()
+    REVIEW.update(steps=list(steps), loop=loop, left=0)
+    REVIEW["handle"] = unreal.register_slate_post_tick_callback(_review_tick)
+
+
+def latency(ms):
+    for w in STATE["worlds"].values():
+        unreal.SystemLibrary.execute_console_command(w, "NetEmulation.PktLag %d" % (int(ms) // 2) if int(ms) > 0 else "NetEmulation.Off")
+    return "round trip %s ms on every world" % ms
+
+
+def advance(fraction, cap_ms):
+    """The advance knob for every world; the server reads it within a second."""
+    unreal.SystemLibrary.execute_console_command(None, "fm.MeleeAdvanceFraction %s" % fraction)
+    unreal.SystemLibrary.execute_console_command(None, "fm.MeleeAdvanceCapMs %s" % cap_ms)
+    return "advance %s of the round trip, capped at %s ms" % (fraction, cap_ms)
+
+
+def board(role="p2"):
+    _press(role, "board")
+    return "%s boards" % role
+
+
+def stand(role, x, y, yaw=0.0):
+    """Places the role on the deck at a ship-space point, facing yaw degrees off the ship's heading."""
+    ship = ship_in("S")
+    tf = ship.get_actor_transform()
+    loc = tf.transform_location(unreal.Vector(x, y, 250.0))
+    heading = ship.get_actor_rotation().yaw + yaw
+    STATE["pawns"][(role, "S")].harness_teleport(loc, heading)
+    STATE["pcs"][role].set_control_rotation(unreal.Rotator(0.0, 0.0, heading))
+    return "%s stands at (%.0f, %.0f) facing %.0f" % (role, x, y, heading)
+
+
+def walk(role, ticks=120, action="move_forward"):
+    _schedule([(ticks, role, _action_key(action))])
+    return "%s holds %s for %d ticks" % (role, action, ticks)
+
+
+def loop(role="p2", side=90):
+    """Walks a square on the deck until stop_review(): forward, right, back, left."""
+    _schedule([(side, role, _action_key(a)) for a in ("move_forward", "move_right", "move_back", "move_left")], loop=True)
+    return "%s walks a loop, %d ticks a side" % (role, side)
+
+
+def swing(role="p2", attack="overhead", side="right"):
+    """One attack: a one-degree turn toward the side, then the press."""
+    pc = STATE["pcs"][role]
+    rot = pc.get_control_rotation()
+    pc.set_control_rotation(unreal.Rotator(rot.roll, rot.pitch, rot.yaw + (1.0 if side == "right" else -1.0)))
+    _press(role, "attack_" + attack)
+    return "%s swings %s %s" % (role, attack, side)
+
+
+def parry(role="p2"):
+    _press(role, "parry")
+    return "%s parries" % role
+
+
+def feint(role="p2"):
+    _press(role, "feint")
+    return "%s feints" % role
+
+
+def face(role, other="p1"):
+    """Turns the role to face the other pawn on its own client."""
+    import math
+    tag = TAGS[role]
+    own = STATE["pawns"][(role, tag)]
+    d = _other_pawn(tag, own).get_actor_location() - own.get_actor_location()
+    yaw = math.degrees(math.atan2(d.y, d.x))
+    STATE["pcs"][role].set_control_rotation(unreal.Rotator(0.0, 0.0, yaw))
+    return "%s faces %s at %.0f cm" % (role, other, d.length())
+
+
+def stop_review():
+    _review_stop()
+    return "review behaviours stopped, keys released"

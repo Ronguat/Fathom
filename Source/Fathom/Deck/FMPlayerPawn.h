@@ -64,6 +64,11 @@ public:
 	UFUNCTION(BlueprintPure, Category="Fathom|Harness")
 	int32 GetSimFrame() const;
 
+	/** The sync state's location in its base's space; false when it stands on no base. */
+	bool ShipSpaceLocation(FVector& Out) const;
+	FString MovementModeName() const;
+	UFMCombatComponent* GetCombat() const { return Combat; }
+
 	UPROPERTY(EditAnywhere, Category="Fathom|Trace")
 	int32 PoseEveryFrames = 6;
 

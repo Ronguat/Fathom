@@ -17,7 +17,8 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT" || exit 2
 
 STANDING_DOCS=(CLAUDE.md Docs/Spec.md Docs/Decisions.md
-  Docs/Working-In-Unreal.md Docs/Unreal-Findings.md Docs/Debug-Instruments.md Docs/Closing-Down.md)
+  Docs/Working-In-Unreal.md Docs/Unreal-Findings.md Docs/Debug-Instruments.md Docs/Closing-Down.md
+  Docs/Checklist.md)
 
 FAILS=0; WARNS=0
 row()  { printf '%-22s %-6s %s\n' "$1" "$2" "$3"; }

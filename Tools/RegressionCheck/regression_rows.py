@@ -388,6 +388,24 @@ def deck_station(ctx, r, s):
     cost_sane(ctx, r)
 
 
+@row("deck.station-key")
+def deck_station_key(ctx, r, s):
+    pids = role_pids(ctx)
+    start = begin_frame(ctx)
+    count(r, "p1 BOARD on the server", len(ctx.lines("BOARD", "S")), 1)
+    based = [sf for sf in based_poses(ctx, "S", pids.get("p1", -1)) if sf >= start + 200]
+    band(r, "p1 based POSE lines on S after boarding", [len(based)], 10, 10 ** 6, "")
+    count(r, "wheel calls refused by distance, the tap's press and release", len(ctx.lines("SHIPNO", "S", "input=wheel")), 2)
+    applied = ctx.lines("SHIPIN", "S", "input=wheel")
+    count(r, "wheel calls applied by key from the wheel", len(applied), 2)
+    values = [ln.fields.get("value") for ln in applied]
+    r.add(values == [1.0, 0.0], "wheel value on press, then centre on release", "%s" % (values,))
+    before, after = server_at(ctx, 300), server_at(ctx, 540)
+    band(r, "heading change under the held key (deg)",
+         [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 15.0, 180.0, "deg")
+    cost_sane(ctx, r)
+
+
 @row("deck.swim")
 def deck_swim(ctx, r, s):
     pids = role_pids(ctx)

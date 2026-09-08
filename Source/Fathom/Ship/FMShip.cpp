@@ -4,6 +4,7 @@
 #include "Components/DynamicMeshComponent.h"
 #include "Deck/FMPlayerPawn.h"
 #include "EngineUtils.h"
+#include "GameFramework/PlayerState.h"
 #include "GeometryScript/MeshPrimitiveFunctions.h"
 #include "Materials/MaterialInterface.h"
 #include "Net/FMTrace.h"
@@ -82,6 +83,7 @@ void AFMShip::BeginPlay()
 			FTransform(FVector(0.0, 0.0, -K->HullHeight * 0.5)), K->HalfLength * 2.0f, K->HalfWidth * 2.0f, K->HullHeight);
 		UGeometryScriptLibrary_MeshPrimitiveFunctions::AppendBox(Target, Options,
 			FTransform(FVector(0.0, 0.0, K->HullHeight * 0.5)), 60.0f, 60.0f, 1200.0f);
+		AppendStationMarkers(Target, *K);
 		Mesh->NotifyMeshUpdated();
 	}
 	if (HasAuthority())
@@ -107,6 +109,57 @@ int32 AFMShip::CurrentFrame() const
 	return TraceSubsystem ? TraceSubsystem->GetFrame() : 0;
 }
 
+void AFMShip::AppendStationMarkers(UDynamicMesh* Target, const UFMShipSettings& K)
+{
+	FGeometryScriptPrimitiveOptions Options;
+	for (const FFMStation& Station : K.Stations)
+	{
+		const FVector Deck(Station.Local.X, Station.Local.Y, K.HullHeight * 0.5);
+		if (Station.Name == InputWheel)
+		{
+			UGeometryScriptLibrary_MeshPrimitiveFunctions::AppendCylinder(Target, Options, FTransform(Deck), 12.0f, 110.0f, 12);
+			UGeometryScriptLibrary_MeshPrimitiveFunctions::AppendCylinder(Target, Options,
+				FTransform(FRotator(90.0f, 0.0f, 0.0f), Deck + FVector(6.0, 0.0, 110.0)), 55.0f, 12.0f, 16);
+		}
+		else if (Station.Name == InputAnchor)
+		{
+			UGeometryScriptLibrary_MeshPrimitiveFunctions::AppendBox(Target, Options, FTransform(Deck), 80.0f, 80.0f, 80.0f);
+		}
+		else if (Station.Name == InputSailLength)
+		{
+			UGeometryScriptLibrary_MeshPrimitiveFunctions::AppendBox(Target, Options, FTransform(Deck), 120.0f, 120.0f, 30.0f);
+		}
+		else if (Station.Name == InputLadder)
+		{
+			const double Rail = FMath::Sign(Station.Local.Y) * (K.HalfWidth - 10.0);
+			UGeometryScriptLibrary_MeshPrimitiveFunctions::AppendBox(Target, Options,
+				FTransform(FVector(Station.Local.X, Rail, Deck.Z)), 100.0f, 20.0f, 220.0f);
+		}
+	}
+}
+
+float AFMShip::StationDistance(const FFMStation& Station, const AActor& Pawn) const
+{
+	const FVector Local = GetActorTransform().InverseTransformPosition(Pawn.GetActorLocation());
+	return static_cast<float>(FVector2D(Local.X - Station.Local.X, Local.Y - Station.Local.Y).Size());
+}
+
+void AFMShip::Land(AFMPlayerPawn& Pawn)
+{
+	Pawn.HarnessTeleport(GetActorTransform().TransformPosition(GetDefault<UFMShipSettings>()->LadderDeckPoint), State.Heading);
+}
+
+void AFMShip::Board(AFMPlayerPawn& Pawn)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	Land(Pawn);
+	const APlayerState* Player = Pawn.GetPlayerState();
+	FM_TRACE(this, TEXT("BOARD pid=%d sf=%d"), Player ? Player->GetPlayerId() : -1, State.Frame);
+}
+
 void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 {
 	if (!HasAuthority())
@@ -117,8 +170,7 @@ void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 	const FFMStation* Station = K->Stations.FindByPredicate([&](const FFMStation& S) { return S.Name == Input; });
 	if (Station)
 	{
-		const FVector Local = Caller ? GetActorTransform().InverseTransformPosition(Caller->GetActorLocation()) : FVector(1.0e6, 1.0e6, 0.0);
-		const float Distance = FVector2D(Local.X - Station->Local.X, Local.Y - Station->Local.Y).Size();
+		const float Distance = Caller ? StationDistance(*Station, *Caller) : 1.0e6f;
 		if (Distance > Station->Radius)
 		{
 			FM_TRACE(this, TEXT("SHIPNO id=%d sf=%d input=%s dist=%.0f"), ShipId, State.Frame, *Input.ToString(), Distance);
@@ -129,7 +181,7 @@ void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 	{
 		if (AFMPlayerPawn* Pawn = Cast<AFMPlayerPawn>(Caller))
 		{
-			Pawn->HarnessTeleport(GetActorTransform().TransformPosition(K->LadderDeckPoint), State.Heading);
+			Land(*Pawn);
 			FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d input=ladder value=%.2f"), ShipId, State.Frame, Value);
 		}
 		return;

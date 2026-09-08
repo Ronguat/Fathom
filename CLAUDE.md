@@ -74,6 +74,7 @@ in the same commit that makes them wrong.
 | `Docs/Unreal-Findings.md` | Agents | About to conclude something cannot be done |
 | `Docs/Debug-Instruments.md` | Agents | About to measure something |
 | `Docs/Closing-Down.md` | Agents | Winding down, whoever triggered it |
+| `Docs/Checklist.md` | The designer and agents | A human review session; every item red until the designer says its pass line held |
 
 `Docs/Decisions.md` opens with its working sections — the **review queue**, the supersession
 table, the **known traps**, the **tuning map**, the **rung briefs**, the **symbol index** — and

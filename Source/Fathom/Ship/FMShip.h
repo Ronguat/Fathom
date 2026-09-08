@@ -5,7 +5,9 @@
 #include "GameFramework/Actor.h"
 #include "FMShip.generated.h"
 
+class AFMPlayerPawn;
 class UBoxComponent;
+class UDynamicMesh;
 class UDynamicMeshComponent;
 class UFMOceanSubsystem;
 
@@ -99,7 +101,8 @@ struct FFMShipState
  * a replicated snapshot through the replicated input history to its own frame; the server's
  * state is the truth, a client re-integrates when a snapshot or an input arrives late. The hull
  * box is moved by transform and publishes its velocity. Stations are the named inputs wheel,
- * sail_length, sail_angle and anchor. Writes SHIP every TraceEveryFrames and SHIPIN on the server.
+ * sail_length, sail_angle and anchor, each with a placeholder on the deck. Writes SHIP every
+ * TraceEveryFrames, and SHIPIN, SHIPNO and BOARD on the server.
  */
 UCLASS()
 class FATHOM_API AFMShip : public AActor
@@ -114,10 +117,18 @@ public:
 	/** Applies a station input on the server at the current frame, if the caller stands within the station's radius. */
 	void Apply(FName Input, float Value, AActor* Caller);
 
+	/** Lands a pawn on the deck at the ladder point through its simulation. Server only. */
+	void Board(AFMPlayerPawn& Pawn);
+
+	/** A pawn's distance from a station along the deck, in ship space. */
+	float StationDistance(const FFMStation& Station, const AActor& Pawn) const;
+
 	/** The hull's pose between its previous frame and its current one, at the prediction framework's leftover fraction of a step. */
 	FTransform PresentedTransform() const;
 
 	const FFMShipState& GetState() const { return State; }
+	/** The station targets the server last applied. */
+	const FFMShipInputs& GetInputs() const { return Inputs; }
 
 	static void Step(FFMShipState& S, const FFMShipInputs& In, const UFMShipSettings& K, const UFMOceanSubsystem* Ocean, float Dt);
 
@@ -150,6 +161,8 @@ protected:
 
 private:
 	void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaSeconds);
+	void Land(AFMPlayerPawn& Pawn);
+	void AppendStationMarkers(UDynamicMesh* Target, const UFMShipSettings& K);
 	int32 CurrentFrame() const;
 	const FFMShipInputs& InputsAt(int32 Frame) const;
 	void RecordInput(const FFMShipInputs& In);
