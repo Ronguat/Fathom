@@ -194,6 +194,18 @@ SCENARIOS = {
         mutations=[("drop", "SHIPIN", 1), ("regex", r"SHIPNO", r"SHIPNIL"), ("drop", "BOARD", 1), ("set", "POSE", "base", "0")],
         allow=[],
     ),
+    "deck.jump": dict(
+        family="deck", covers=["determinism", "cost", "injection latency"],
+        worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (-1000.0, 15000.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0), (300, "p2", "ship", "wheel", 0.5), (420, "p1", "tap", "jump")],
+        stop=dict(duration=12.0),
+        mutations=[("set", "POSE", "base", "0"), ("regex", r"mode=Falling", r"mode=Walking"),
+                   ("regex", r"(\[S\] POSE pid=\d+ sf=\d+ .*? bx=)[-\d.]+", r"\g<1>999.00")],
+        allow=[],
+    ),
     "deck.swim": dict(
         family="deck", covers=["determinism", "cost"],
         worlds=("S", "C1", "C2"), latencies=(0, 50, 100, 150), loss=0.0,

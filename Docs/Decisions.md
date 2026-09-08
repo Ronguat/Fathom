@@ -22,6 +22,8 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
 | 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
+| 2026-09-08 | A jump keeps the hull as the base while the pawn is over it, the walking and falling modes of the project restoring the base their parents drop, and the base dropped with the hull's velocity imparted past the hull's extent plus `DeckMargin`, 50 cm; a pawn takes the deck only by touching it | `UFMDeckWalkingMode`, `UFMDeckFallingMode`, `UFMShipSettings` | |
+| 2026-09-08 | `deck.jump` at every latency: airborne within a second, the base kept through the air, landed within a metre of the take-off in the deck's frame | `Tools/RegressionCheck/scenarios.py` | |
 | 2026-09-08 | A key's release a hold the server fills in from the station's own position, a sentinel value above the stations' ranges, in place of the client's stale copy; the `SHIPIN` value the target applied | `AFMShip`, `AFMPlayerController` | |
 | 2026-09-08 | The view turning with the deck's yaw at each finalized frame on the owning client, the facing following through the orientation intent, so a player keeps facing the same part of a turning ship; the ship's roll and pitch left out of the view | `AFMPlayerPawn` | |
 | 2026-09-08 | The anchor line: a fall of 2 s before the anchor bites, then 8 m of run under a drag of 0.3 per second, then a spring of 9 per second squared with damping 2.4, under critical so the ship swings back; the stop row's band four seconds after the bite. First cut 5 m, 100 and 12, ruled too abrupt and too early by the designer's eye | `UFMShipSettings`, `Config/DefaultGame.ini` | |
@@ -154,7 +156,10 @@ the patch goes in a project-local copy of the plugin. Bites at Deck.
 player by the base component's velocity *(headers, 2026-09-04, the same file around line 158)*,
 which a component moved by hand has only if it is set every tick. The hull box sets
 `ComponentVelocity` from its frame-to-frame motion *(2026-09-05, unverified under a pawn)*.
-Bites at Deck.
+Bites at Deck. Discharged 2026-09-08: verified under a pawn, and the departure reads a different
+velocity, the base's physics velocity at the point of departure, zero for a kinematic hull, which
+is why a jump left the deck with no inertia; a jump now keeps the hull as its base, the human
+review entry of that date.
 
 **Whenever the Water plugin's ocean body is used — *it wants an island and a bounded zone.*** Its
 ocean is the outside of a spline inside a zone of finite extent; its wave clock is a locally
@@ -541,6 +546,30 @@ station's range, and the server fills in the station's position as it has it at 
 at 0 and 100 ms and asserts the hold keeps a little rudder. *Alternatives.* Predicting station
 inputs on the client, the Stretch line from Ship. *Reopens* on that line, or on a tap the row
 still loses.
+
+**D5: a jump flew off the deck.** *Cause.* When a pawn leaves a base, Mover adds the base's
+physics velocity at the point of departure, and the hull is a kinematic box moved by transform
+with no physics body, so it added nothing; the velocity the hull publishes for carrying a standing
+pawn goes through a different query. *Decision*, the designer's choice between two. A jump never
+leaves ship space: the project's walking and falling modes derive from Mover's, and after the
+parent's tick restore the hull as the base it dropped while the pawn's base-space position lies
+within the hull's extent plus a margin; the base then carries the pawn through the air as when
+walking, the pawn's own velocity stays relative to the deck, and landing is the floor check finding
+the deck. Past the extent the base is dropped and the hull's published velocity imparted, the base
+change. A pawn with no base falls in world space and takes the deck only by touching it, the
+designer's rule: overflying a ship never captures you. *Alternatives.* Imparting the hull's
+velocity at take-off and subtracting it on landing, which keeps a turn's and a roll's drift over
+the jump. *Reopens* on the designer's eye at D5, or on `deck.jump`. *A crash on the way*: the
+modes first created in the pawn's constructor, with the pawn as their outer, crashed the editor
+in Mover at a row's first frame; a mode finds its component by casting its outer, and the parent
+modes dereference it at registration. They stand in for the character mover's defaults through
+the pawn's object initializer instead, born with the mover as outer; the finding is in
+`Docs/Unreal-Findings.md`. *And a second finding*: keeping the base in the sync state carries
+nothing by itself. The first green-mechanism run froze the pawn's world position through the
+jump while its deck position ran 745 cm astern in a second; walking applies the base's movement
+inside its own tick, and a falling mode has no such step. The deck falling mode now applies it at
+its tick's start as walking does, and `deck.jump` reads the landing within a metre of the take-off
+at every latency, run `0908-164559`.
 
 ### Verified against written
 

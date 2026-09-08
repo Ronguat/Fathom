@@ -59,6 +59,8 @@ public:
 	UPROPERTY(config, EditAnywhere, Category="Hull") float HalfWidth = 400.0f;
 	UPROPERTY(config, EditAnywhere, Category="Hull") float HullHeight = 300.0f;
 	UPROPERTY(config, EditAnywhere, Category="Hull") float HullCenterAboveWater = 100.0f;
+	/** How far past the hull's extent a pawn in the air still counts as over the deck, keeping the hull as its base. */
+	UPROPERTY(config, EditAnywhere, Category="Hull") float DeckMargin = 50.0f;
 	UPROPERTY(config, EditAnywhere, Category="Hull") float FitStiffness = 6.0f;
 	UPROPERTY(config, EditAnywhere, Category="Hull") float FitDamping = 4.0f;
 

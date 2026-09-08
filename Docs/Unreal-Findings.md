@@ -240,6 +240,19 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
 
 An archive reached by search. Each entry keeps its date and the surface it measured on.
 
+## 2026-09-08 — A movement mode's outer is its mover component
+
+**A Mover movement mode created with the pawn as its outer crashes the editor at a row's first
+frame** *(C++, 2026-09-08)*: `UBaseMovementMode` finds its component by casting its outer, and the
+walking and falling modes dereference it when registered, an access violation in the Mover
+module reading a small address. A mode added from the pawn's constructor with
+`CreateDefaultSubobject` has the pawn as outer; only the runtime `AddMovementModeFromObject`
+reparents. **Stand in for a default mode through the pawn's object initializer**:
+`SetNestedDefaultSubobjectClass<UFMDeckWalkingMode>(TEXT("Mover.DefaultWalkingMode"))` in the
+pawn constructor's `Super(...)` call, and the mode is born inside the component with the right
+outer. A mode that never reads its component, the swim mode here, survives the wrong outer, which
+is why the earlier pattern looked safe.
+
 ## 2026-09-07 — The melee intake reads the delivery and bakes the blade from Python
 
 **The delivery answered its own contract from Python** *(Python, 2026-09-07)*: the skeleton's

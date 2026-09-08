@@ -8,6 +8,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Core/FMPlayerController.h"
 #include "Core/FMPlayerState.h"
+#include "Deck/FMDeckModes.h"
 #include "Deck/FMSwimMode.h"
 #include "DefaultMovementSet/CharacterMoverComponent.h"
 #include "Engine/SkeletalMesh.h"
@@ -39,7 +40,9 @@ UScriptStruct* FFMTeleportEffect::GetScriptStruct() const
 }
 
 AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer
+		.SetNestedDefaultSubobjectClass<UFMDeckWalkingMode>(TEXT("Mover.DefaultWalkingMode"))
+		.SetNestedDefaultSubobjectClass<UFMDeckFallingMode>(TEXT("Mover.DefaultFallingMode")))
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;

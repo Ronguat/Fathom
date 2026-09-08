@@ -213,7 +213,7 @@ Judged: —
 Needs: D4. Setup: sea 1, L150, under sail.
 Do: jump three times in place, then three times while walking.
 Pass only if: you land on the deck, not through it, roughly where you expected.
-Judged: —
+Judged: 2026-09-08, session 1, RED: a jump flew off the edge of the deck, no inertia on leaving ship space, the designer's words. The cause: Mover imparts a base's physics velocity on departure and the kinematic hull has none. Changed the same session: a jump keeps the deck as its base while the pawn is over the hull, so the deck carries it and it lands where it jumped; a pawn enters ship space only by touching the deck, the designer's rule. To be judged again.
 
 **D6 The other player walks the deck** · RED
 Needs: D3. Setup: sea 1, L150; p2 walking a loop amidships.

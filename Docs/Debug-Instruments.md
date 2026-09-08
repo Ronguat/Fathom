@@ -196,6 +196,7 @@ what is now untested. A loop that lags the surface still prints green.
 | `ship.stop` | S C1 C2 | 0, 50, 100, 150 | f60 p1 ship sail_length 1.0; f360 p2 ship anchor 1.0 | 14 s | determinism, cost |
 | `ship.turn` | S C1 C2 | 0, 50, 100, 150 | f60 p1 ship sail_length 1.0; f240 p2 ship wheel 1.0; f480 p2 ship wheel 0.0 | 12 s | determinism, cost |
 | `ship.turn-loss` | S C1 C2 | 0, 100 | f60 p1 ship sail_length 1.0; f240 p2 ship wheel 1.0; f480 p2 ship wheel 0.0 | 12 s | determinism, cost |
+| `deck.jump` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f420 p1 tap jump | 12 s | determinism, cost, injection latency |
 | `deck.stand` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5 | 14 s | determinism, cost |
 | `deck.station` | S C1 C2 | 0, 100 | f120 p2 ship wheel 1.0; f180 p1 ship wheel 1.0; f240 p1 ship wheel 0.0 | 6 s | two worlds, cost |
 | `deck.station-key` | S C1 C2 | 0, 100 | f120 p1 tap board; f180 p1 hold sail_down 150; f240 p1 tap wheel_right; f300 p2 tap wheel_left; +1 more | 13 s | two worlds, cost, injection latency |
@@ -223,9 +224,9 @@ what is now untested. A loop that lags the surface still prints green.
 | Mechanic | Rows asserting it |
 |---|---|
 | two worlds | `deck.station`, `deck.station-key`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
-| cost | `deck.stand`, `deck.station`, `deck.station-key`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
-| injection latency | `deck.station-key`, `deck.walk`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
-| determinism | `deck.stand`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
+| cost | `deck.jump`, `deck.stand`, `deck.station`, `deck.station-key`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
+| injection latency | `deck.jump`, `deck.station-key`, `deck.walk`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
+| determinism | `deck.jump`, `deck.stand`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
 | combat | `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing` |
 | rewind | `melee.hit`, `melee.hit-calm`, `melee.hit-walk` |
 | parry | `melee.parry`, `melee.parry-late` |

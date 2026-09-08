@@ -422,6 +422,29 @@ def deck_station_key(ctx, r, s):
     cost_sane(ctx, r)
 
 
+@row("deck.jump")
+def deck_jump(ctx, r, s):
+    deck_relative(ctx, r, s)
+    pids = role_pids(ctx)
+    pid = pids.get("p1", -1)
+    start = begin_frame(ctx)
+    server = poses(ctx, "S", pid)
+    airborne = sorted(sf for sf, ln in server.items() if sf >= start + 420 and ln.fields.get("mode") == "Falling")
+    band(r, "p1 airborne on the server within a second of the jump (frames after the press)",
+         [airborne[0] - (start + 420)] if airborne else [], 0, 60, "f")
+    band(r, "p1 in the air (POSE lines, one per six frames)", [len(airborne)], 2, 20, "")
+    count(r, "p1 kept the deck as its base while airborne", sum(1 for sf in airborne if server[sf].fields.get("base") == 1.0), len(airborne))
+    before = [ln for sf, ln in sorted(server.items()) if sf < start + 420 and ln.fields.get("base") == 1.0]
+    landed = [ln for sf, ln in sorted(server.items()) if airborne and sf > airborne[-1] and ln.fields.get("mode") == "Walking" and ln.fields.get("base") == 1.0]
+    if before and landed:
+        moved = ((landed[0].fields["bx"] - before[-1].fields["bx"]) ** 2 + (landed[0].fields["by"] - before[-1].fields["by"]) ** 2) ** 0.5
+        band(r, "p1 landed where it jumped, in the deck's frame (cm)", [moved], 0.0, 100.0, "cm")
+    else:
+        r.add(False, "p1 landed where it jumped, in the deck's frame (cm)", "no based POSE before the jump or after the landing")
+    ship_turned(ctx, r)
+    cost_sane(ctx, r)
+
+
 @row("deck.swim")
 def deck_swim(ctx, r, s):
     pids = role_pids(ctx)
