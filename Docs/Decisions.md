@@ -22,6 +22,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
 | 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
+| 2026-09-08 | A simulated proxy drawn through a base change from where it was, the gap closing at 300 cm a second, a gap over 400 cm a teleport that snaps | `AFMPlayerPawn` | |
 | 2026-09-08 | A jump keeps the hull as the base while the pawn is over it, the walking and falling modes of the project restoring the base their parents drop, and the base dropped with the hull's velocity imparted past the hull's extent plus `DeckMargin`, 50 cm; a pawn takes the deck only by touching it | `UFMDeckWalkingMode`, `UFMDeckFallingMode`, `UFMShipSettings` | |
 | 2026-09-08 | `deck.jump` at every latency: airborne within a second, the base kept through the air, landed within a metre of the take-off in the deck's frame | `Tools/RegressionCheck/scenarios.py` | |
 | 2026-09-08 | A key's release a hold the server fills in from the station's own position, a sentinel value above the stations' ranges, in place of the client's stale copy; the `SHIPIN` value the target applied | `AFMShip`, `AFMPlayerController` | |
@@ -570,6 +571,22 @@ jump while its deck position ran 745 cm astern in a second; walking applies the 
 inside its own tick, and a falling mode has no such step. The deck falling mode now applies it at
 its tick's start as walking does, and `deck.jump` reads the landing within a metre of the take-off
 at every latency, run `0908-164559`.
+
+**The snap other players see when someone jumps off.** The designer's report from play; asked
+whether the instruments could see it. *Measured*, the hands-on proxy tape at 100 ms, the ship at
+8.6 m/s, the other pawn walking off the starboard rail: the rendered other pawn on the watching
+client stepped 165 cm in one frame against a mean step of 8, and sat up to 181 cm from the
+server's truth after, 5 to 7 frames behind the server; the same tape with the ship at anchor read
+a largest step of 12 cm. *Cause.* A proxy on the deck is drawn from its past frame's deck position
+on the ship as it is now, the review fix of 2026-09-05; the frame it leaves the deck it is drawn at
+that past frame's world position, and the ship's travel over the view lag is the snap. *Decision.*
+A proxy that changes base keeps drawing from where it was drawn and closes the gap at
+`ProxySnapDecay`, 300 cm a second; a gap past `ProxySnapMax`, 400 cm, is a teleport and snaps,
+which keeps the ladder and the board key as they were. *Measured* after, the same tape, the same
+speed and latency: the largest step 16 cm, the mean 7.5, the error against the truth 108 cm at
+its widest as the gap closed. *Alternatives.* Drawing based proxies on
+the ship at their own past frame, which puts them off the deck by the lag, the defect the
+2026-09-05 review found. *Reopens* on the designer's eye at D9 from the other window.
 
 ### Verified against written
 

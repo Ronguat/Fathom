@@ -78,6 +78,13 @@ public:
 	UPROPERTY(EditAnywhere, Category="Fathom|Look")
 	float LookScale = 0.5f;
 
+	/** How fast a simulated proxy's drawn position closes the gap a base change opens, in cm per second; a gap wider than ProxySnapMax is a teleport and snaps. */
+	UPROPERTY(EditAnywhere, Category="Fathom|Look")
+	float ProxySnapDecay = 300.0f;
+
+	UPROPERTY(EditAnywhere, Category="Fathom|Look")
+	float ProxySnapMax = 400.0f;
+
 protected:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
@@ -95,6 +102,9 @@ protected:
 
 	/** Places a simulated proxy where its base-space state stands on the base as this world presents it, turned by the base's yaw alone so the body stays upright as the deck rolls. */
 	void PlaceOnBase(const FMoverDefaultSyncState& State, const UPrimitiveComponent& Base);
+
+	/** Draws a simulated proxy at its state's place plus the gap its last base change opened, the gap closing at ProxySnapDecay: a proxy is drawn on the deck as it is now but in world space at its own past frame, and the ship's travel between the two would show as a snap. */
+	void DrawProxy(const FVector& Placed, bool bBased);
 
 	/** Moves the visual root between the last two simulated frames by the framework's fraction, in base space when based, so a render frame between steps draws the pawn where the deck's presentation puts it. */
 	void SmoothVisual();
@@ -140,6 +150,10 @@ private:
 	int32 SmoothFrame = -1;
 	float BaseYawSeen = 0.0f;
 	bool bHasBaseYaw = false;
+	FVector ProxyGap = FVector::ZeroVector;
+	FVector ProxyDrawn = FVector::ZeroVector;
+	bool bProxyDrawn = false;
+	bool bProxyWasBased = false;
 	bool bFlying = false;
 	bool bJumpWasDown = false;
 	int32 Rollbacks = 0;

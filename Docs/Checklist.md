@@ -209,11 +209,11 @@ Needs: D3. Setup: as D3, L150.
 Pass only if: the same.
 Judged: —
 
-**D5 Jumping** · RED
+**D5 Jumping** · GREEN
 Needs: D4. Setup: sea 1, L150, under sail.
 Do: jump three times in place, then three times while walking.
 Pass only if: you land on the deck, not through it, roughly where you expected.
-Judged: 2026-09-08, session 1, RED: a jump flew off the edge of the deck, no inertia on leaving ship space, the designer's words. The cause: Mover imparts a base's physics velocity on departure and the kinematic hull has none. Changed the same session: a jump keeps the deck as its base while the pawn is over the hull, so the deck carries it and it lands where it jumped; a pawn enters ship space only by touching the deck, the designer's rule. To be judged again.
+Judged: 2026-09-08, session 1, RED: a jump flew off the edge of the deck, no inertia on leaving ship space, the designer's words. The cause: Mover imparts a base's physics velocity on departure and the kinematic hull has none. Changed the same session: a jump keeps the deck as its base while the pawn is over the hull, so the deck carries it and it lands where it jumped; a pawn enters ship space only by touching the deck, the designer's rule. Then GREEN. NOTE: from the other window, a player jumping off the ship snaps; taken up under D9.
 
 **D6 The other player walks the deck** · RED
 Needs: D3. Setup: sea 1, L150; p2 walking a loop amidships.
@@ -237,10 +237,10 @@ If red: the loop read one frame in 219 under the bar's letter; this item asks wh
 Judged: —
 
 **D9 Off the rail** · RED
-Needs: D3. Setup: sea 1, L0.
+Needs: D3. Setup: sea 1, L0; then once more at L150 watched from the other window.
 Do: walk off the side.
-Pass only if: you fall, enter the water, float near the surface, swim with WASD, and can turn to see the ship.
-Judged: —
+Pass only if: you fall, enter the water, float near the surface, swim with WASD, and can turn to see the ship; from the other window you leave the rail without a snap.
+Judged: 2026-09-08, session 1, the designer saw the snap from the other window ahead of this item; the proxy tape read it at 165 cm in one frame at 100 ms under way, and the gap now closes at 300 cm a second; to be judged.
 
 **D10 The ladder** · RED
 Claim: `Docs/Spec.md`, The deck; the base change.

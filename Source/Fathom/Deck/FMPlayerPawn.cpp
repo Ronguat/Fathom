@@ -370,9 +370,13 @@ void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const F
 {
 	const FMoverDefaultSyncState* State = SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
 	const UPrimitiveComponent* Base = State ? State->GetMovementBase() : nullptr;
-	if (Base && GetLocalRole() == ROLE_SimulatedProxy)
+	if (State && GetLocalRole() == ROLE_SimulatedProxy)
 	{
-		PlaceOnBase(*State, *Base);
+		if (Base)
+		{
+			PlaceOnBase(*State, *Base);
+		}
+		DrawProxy(GetActorLocation(), Base != nullptr);
 	}
 	const int32 Finalized = Mover->GetLastTimeStep().ServerFrame;
 	if (APlayerController* PC = Cast<APlayerController>(GetController()); PC && PC->IsLocalController() && Finalized != SmoothFrame)
@@ -436,6 +440,27 @@ void AFMPlayerPawn::PlaceOnBase(const FMoverDefaultSyncState& State, const UPrim
 	const float YawTurned = BaseNow.Rotator().Yaw - State.GetCapturedMovementBaseQuat().Rotator().Yaw;
 	const FQuat Orientation = FRotator(0.0f, YawTurned, 0.0f).Quaternion() * State.GetOrientation_WorldSpace().Quaternion();
 	SetActorLocationAndRotation(Location, Orientation, false, nullptr, ETeleportType::TeleportPhysics);
+}
+
+void AFMPlayerPawn::DrawProxy(const FVector& Placed, bool bBased)
+{
+	if (bProxyDrawn && bBased != bProxyWasBased)
+	{
+		const FVector Gap = ProxyDrawn - Placed;
+		ProxyGap = Gap.Size() <= ProxySnapMax ? Gap : FVector::ZeroVector;
+	}
+	else if (!ProxyGap.IsNearlyZero())
+	{
+		const float Step = ProxySnapDecay * GetWorld()->GetDeltaSeconds();
+		ProxyGap = ProxyGap.Size() <= Step ? FVector::ZeroVector : ProxyGap - ProxyGap.GetSafeNormal() * Step;
+	}
+	ProxyDrawn = Placed + ProxyGap;
+	bProxyDrawn = true;
+	bProxyWasBased = bBased;
+	if (!ProxyGap.IsNearlyZero())
+	{
+		SetActorLocation(ProxyDrawn, false, nullptr, ETeleportType::TeleportPhysics);
+	}
 }
 
 void AFMPlayerPawn::HandleRollback(const FMoverTimeStep& CurrentTimeStep, const FMoverTimeStep& ExpungedTimeStep)
