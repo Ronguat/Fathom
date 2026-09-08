@@ -14,6 +14,7 @@
 #include "GameFramework/PlayerState.h"
 #include "MoverDataModelTypes.h"
 #include "Net/FMTrace.h"
+#include "NetworkPredictionWorldManager.h"
 #include "Ocean/FMOceanSubsystem.h"
 #include "Ship/FMShip.h"
 
@@ -74,6 +75,7 @@ AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
 	Camera->bUsePawnControlRotation = true;
 
 	Mover = CreateDefaultSubobject<UCharacterMoverComponent>(TEXT("Mover"));
+	Mover->SmoothingMode = EMoverSmoothingMode::None;
 	Mover->MovementModes.Add(DefaultModeNames::Swimming, CreateDefaultSubobject<UFMSwimMode>(TEXT("SwimMode")));
 	Mover->Transitions.Add(CreateDefaultSubobject<UFMSwimTransition>(TEXT("SwimTransition")));
 	Mover->PersistentSyncStateDataTypes.Add(FMoverDataPersistence(FFMCombatState::StaticStruct(), true));
@@ -90,6 +92,7 @@ void AFMPlayerPawn::PostInitializeComponents()
 void AFMPlayerPawn::BeginPlay()
 {
 	Super::BeginPlay();
+	Mover->OnPreSimulationTick.AddDynamic(this, &AFMPlayerPawn::HandlePreSimulationTick);
 	Mover->OnPostFinalize.AddDynamic(this, &AFMPlayerPawn::HandlePostFinalize);
 	Mover->OnPostSimulationRollback.AddDynamic(this, &AFMPlayerPawn::HandleRollback);
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
@@ -98,6 +101,8 @@ void AFMPlayerPawn::BeginPlay()
 		{
 			PC->PlayerCameraManager->ViewPitchMax = 89.0f;
 			PC->PlayerCameraManager->ViewPitchMin = -89.0f;
+			PC->PlayerCameraManager->ViewRollMax = 0.0f;
+			PC->PlayerCameraManager->ViewRollMin = 0.0f;
 		}
 	}
 	const UFMCombatSettings* K = GetDefault<UFMCombatSettings>();
@@ -128,10 +133,35 @@ void AFMPlayerPawn::Tick(float DeltaSeconds)
 	}
 	if (!IsNetMode(NM_DedicatedServer))
 	{
+		if (GetLocalRole() != ROLE_SimulatedProxy)
+		{
+			SmoothVisual();
+		}
 		Pose(ArmsMesh, true);
 		Pose(BodyMesh, false);
 		Combat->DrawPending();
 	}
+}
+
+void AFMPlayerPawn::SmoothVisual()
+{
+	if (SmoothFrame < 0)
+	{
+		return;
+	}
+	const UNetworkPredictionWorldManager* Prediction = GetWorld()->GetSubsystem<UNetworkPredictionWorldManager>();
+	float Fraction = 1.0f;
+	if (Prediction)
+	{
+		const FFixedTickState& Tick = Prediction->GetFixedTickState();
+		Fraction = FMath::Clamp(Tick.UnspentTimeMS / static_cast<float>(FMath::Max(1, Tick.FixedStepMS)), 0.0f, 1.0f);
+	}
+	const FVector Local = FMath::Lerp(SmoothFrom, SmoothTo, Fraction);
+	const float Yaw = SmoothYawFrom + FMath::FindDeltaAngleDegrees(SmoothYawFrom, SmoothYawTo) * Fraction;
+	const UPrimitiveComponent* Base = SmoothBase.Get();
+	const FVector Location = Base ? PresentedBase(*Base).TransformPositionNoScale(Local) : Local;
+	const float WorldYaw = Base ? Yaw + PresentedBase(*Base).Rotator().Yaw : Yaw;
+	Visual->SetWorldLocationAndRotation(Location, FRotator(0.0f, WorldYaw, 0.0f));
 }
 
 bool AFMPlayerPawn::ShipSpaceLocation(FVector& Out) const
@@ -271,9 +301,15 @@ void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdC
 	const FRotator Control = PC->GetControlRotation();
 	const FRotator YawOnly(0.0f, Control.Yaw, 0.0f);
 	Inputs.ControlRotation = Control;
-	Inputs.SetMoveInput(EMoveInputType::DirectionalIntent, YawOnly.RotateVector(Intent.GetClampedToMaxSize(1.0f)));
-	Inputs.OrientationIntent = YawOnly.Vector();
 	Inputs.SuggestedMovementMode = NAME_None;
+	if (Pressed.Contains(TEXT("fly")))
+	{
+		bFlying = !bFlying;
+		Inputs.SuggestedMovementMode = bFlying ? DefaultModeNames::Flying : DefaultModeNames::Falling;
+	}
+	const FRotator MoveFrame = bFlying ? FRotator(Control.Pitch, Control.Yaw, 0.0f) : YawOnly;
+	Inputs.SetMoveInput(EMoveInputType::DirectionalIntent, MoveFrame.RotateVector(Intent.GetClampedToMaxSize(1.0f)));
+	Inputs.OrientationIntent = YawOnly.Vector();
 	Inputs.bUsingMovementBase = false;
 
 	const bool bJump = Down(TEXT("jump"));
@@ -315,6 +351,18 @@ void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdC
 	CombatInputs.AdvanceFrames = static_cast<uint8>(FMath::Clamp(Player ? Player->AdvanceFrames : 0, 0, 255));
 }
 
+void AFMPlayerPawn::HandlePreSimulationTick(const FMoverTimeStep& TimeStep, const FMoverInputCmdContext& InputCmd)
+{
+	if (!Ship.IsValid())
+	{
+		Ship = AFMShip::Find(GetWorld());
+	}
+	if (Ship.IsValid())
+	{
+		Ship->AdvanceTo(TimeStep.ServerFrame);
+	}
+}
+
 void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const FMoverAuxStateContext& AuxState)
 {
 	const FMoverDefaultSyncState* State = SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
@@ -322,6 +370,19 @@ void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const F
 	if (Base && GetLocalRole() == ROLE_SimulatedProxy)
 	{
 		PlaceOnBase(*State, *Base);
+	}
+	const int32 Finalized = Mover->GetLastTimeStep().ServerFrame;
+	if (State && GetLocalRole() != ROLE_SimulatedProxy && Finalized != SmoothFrame)
+	{
+		const FVector Local = Base ? State->GetLocation_BaseSpace() : State->GetLocation_WorldSpace();
+		const float Yaw = Base ? State->GetOrientation_BaseSpace().Yaw : State->GetOrientation_WorldSpace().Yaw;
+		const bool bContinuous = SmoothFrame >= 0 && Finalized == SmoothFrame + 1 && SmoothBase.Get() == Base;
+		SmoothFrom = bContinuous ? SmoothTo : Local;
+		SmoothYawFrom = bContinuous ? SmoothYawTo : Yaw;
+		SmoothTo = Local;
+		SmoothYawTo = Yaw;
+		SmoothBase = Base;
+		SmoothFrame = Finalized;
 	}
 	const APlayerState* Player = GetPlayerState();
 	if (PendingRollbackTo >= 0 && Player)

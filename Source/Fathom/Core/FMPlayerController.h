@@ -26,7 +26,7 @@ class FATHOM_API AFMPlayerController : public APlayerController
 public:
 	AFMPlayerController();
 
-	/** Action name to key: move_forward, move_back, move_left, move_right, jump, mark, attack_overhead, attack_horizontal, attack_thrust, parry, feint, wheel_left, wheel_right, sail_up, sail_down, angle_left, angle_right, anchor, ladder, board. */
+	/** Action name to key: move_forward, move_back, move_left, move_right, jump, mark, attack_overhead, attack_horizontal, attack_thrust, parry, feint, wheel_left, wheel_right, sail_up, sail_down, angle_left, angle_right, anchor, ladder, board, fly. */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TMap<FName, FKey> ActionKeys;
 

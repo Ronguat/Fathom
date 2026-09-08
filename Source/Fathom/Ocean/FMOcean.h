@@ -80,6 +80,16 @@ public:
 	/** How far the horizon plane sits under the deepest trough the session's sea state can make. */
 	UPROPERTY(config, EditAnywhere, Category="Plane")
 	float HorizonMargin = 20.0f;
+
+	/** Still columns on the floor, something the sea and the ship are seen to move against. */
+	UPROPERTY(config, EditAnywhere, Category="Landmarks")
+	TArray<FVector2D> Landmarks;
+
+	UPROPERTY(config, EditAnywhere, Category="Landmarks")
+	float LandmarkHeight = 2000.0f;
+
+	UPROPERTY(config, EditAnywhere, Category="Landmarks")
+	float LandmarkWidth = 200.0f;
 };
 
 /** The wave function in single floats, the same formulation as Shaders/FMOcean.ush. */

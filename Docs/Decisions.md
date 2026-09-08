@@ -12,6 +12,10 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-08 | The ship stepped from each pawn's pre-simulation tick to the frame about to run, the world tick's start catching up to the last frame run | `AFMShip`, `AFMPlayerPawn` | |
+| 2026-09-08 | The pawn smoothing its own visual root between its last two base-space poses by the framework's fraction, Mover's smoothing off | `AFMPlayerPawn` | |
+| 2026-09-08 | The camera's roll limits zero; the fly key F through the mover's flying mode, movement along the view while flying | `AFMPlayerPawn`, `AFMPlayerController` | |
+| 2026-09-08 | Five columns 20 m tall and 2 m wide along the floor's edge facing the ship, from the ocean settings; the sail a slab 6 m wide, 9 m tall at full, on the mast | `UFMOceanSettings`, `AFMShip` | |
 | 2026-09-08 | The ocean's look: the Gerstner normal from the shader function at the undisplaced point, deep water lerped to a sky tint by a fresnel of exponent 4, specular 1, roughness 0.12 | `Tools/Editor/make-ocean-assets.py`, `Shaders/FMOcean.ush` | |
 | 2026-09-08 | A simulated proxy placed with the base's yaw alone, upright as the deck rolls, the position still on the full transform | `AFMPlayerPawn` | |
 | 2026-09-08 | `FM.Latency` with one round trip per client: the server's delay the smallest half, each client the rest of its own | `UFMTraceSubsystem`, `Docs/Debug-Instruments.md` | |
@@ -111,8 +115,10 @@ it**, saying what discharged it.
 **Whenever a world tick runs two fixed ticks — *the hull is a frame behind for the second.*** The
 ship advances one frame at the world tick's start and the pawns simulate on that hull; a render
 frame slower than the simulation runs two fixed ticks on it *(2026-09-05)*, unmeasured. Bites when
-the render rate falls under the simulation's. Discharged by advancing the ship from the
-framework's tick rather than the world's.
+the render rate falls under the simulation's. Discharged 2026-09-08 by the ship stepping from
+each pawn's pre-simulation tick to the frame about to run, the world tick's start only catching
+up; the same change stopped the frame-ahead sawtooth the designer saw as jitter on frames faster
+than the simulation, the human review entry of that date.
 
 **Whenever a change touches what is rendered — *the loop cannot see it.*** The rows read the
 trace and never a frame; the ship flickered against the sky through every green Deck row until
@@ -437,6 +443,45 @@ and the body stays upright as the owner's does. The console command takes one ro
 client. *Alternatives.* A water-clipping mask inside the hull, deferred with the Stretch line for
 it; the proxy tilting with the deck as the owner does not, which is what was seen. *Reopens* on
 the designer's eye at D6 and O5.
+
+**S2's red: the ship jitters under way, less at anchor.** *Measured* before anything was
+touched, the judder tape at the play windows' size, sea 1, the ship under sail, a walk key held
+300 ticks: frame times 10.5 to 16.8 ms, median 12.2; the ship mesh's speed per frame 44 to
+2 246 cm/s around a median of 816, 131 of 259 frames off by more than a quarter; the camera 598
+to 3 097 around 954; the camera against the mesh 12 to 1 617 around 778. Steady frames, erratic
+steps. *Cause.* The ship advanced one frame at every world tick's start whether or not the
+prediction framework ran a fixed step that tick; on frames faster than 60 Hz it leapt a frame
+ahead of the pawns and waited for them, a one-frame sawtooth, 17 cm at sailing speed; at anchor
+only the heave and roll sawtoothed, the milder case. The Presentation entry's tape counted
+frames with no motion and never the spread of the steps, which is how it read 0 of 219 over this.
+*Decision.* The ship steps from each pawn's pre-simulation tick to the frame about to run, the
+world tick's start only catching up to the last frame run, the two-ticks trap discharged with
+it. *Alternatives.* Presenting the ship a frame later; capping the render rate at 60, ruled out on
+2026-09-05. *Reopens* on the designer's eye at S2, or on the ship rows reading a changed
+reconstruction. **The columns and the sail**, the designer's asks: five columns 20 m tall along
+the floor's edge facing the ship, from the ocean settings, and a slab on the mast as tall as the
+sail is set and turned to its angle; a fly key, F, a review affordance through the character
+mover's flying mode in the input command.
+
+**The other half of the jitter: the pawn.** *Measured* after the ship's fix, the same tape: the
+ship mesh 700 to 1 041 cm/s around 853, none off by a quarter; the camera 597 to 1 963 around
+1 035, 120 of 259 off; the camera against the mesh 13 to 1 016 around 529, 228 off. The pawn
+moved only on render frames that ran a fixed step: Mover's smoothing mode was on and the
+prediction backend never delivered a smoothed frame to the autonomous pawn here. *Decision.* The
+pawn moves its visual root itself: after each finalized frame it keeps the last two base-space
+poses, and every render frame places the root between them by the framework's fraction on the
+base as this world presents it, the same fraction and pose pair the ship uses; Mover's smoothing
+off. *Measured* from the stern under sail, a walk key held 150 ticks, frames 9.7 to 16.1 ms:
+the ship mesh 703 to 1 055 around 851, the camera 1 339 to 2 010 around 1 623, the camera against
+the mesh 637 to 956 around 772, none of 129 off by a quarter on any line. *Reopens* on a deck row
+reading the rendered offset past its band, or the designer's eye at S2 and D8.
+
+**The camera's roll.** The designer's screenshot of the sail showed the view rolled, a fault seen
+once before and never reproduced. *Cause.* Python's `unreal.Rotator` takes roll, pitch, yaw in
+that order; the capture passed a pitch first and set an 18° roll on the control rotation, which
+nothing clears, and the hands-on `aim` had done the same with its pitch since 2026-09-05, the demo
+the designer watched. *Decision.* The scripts corrected and the note in the driver's docstring;
+the camera manager's roll limits set to zero, so no source can leave the view rolled.
 
 ### Verified against written
 

@@ -32,7 +32,9 @@ starboard rail, each with a placeholder on the deck.
 
 **Keys.** WASD move, Space jump, left button horizontal, scroll down overhead, scroll up thrust,
 right button parry, Q feint; Left/Right the wheel, Up/Down the sail length, `[` `]` the sail angle,
-X the anchor, E the ladder, B board, M mark. The HUD's last two lines repeat this.
+X the anchor, E the ladder, B board, F fly where you look and F again to drop, M mark. The HUD's
+last two lines repeat this. The sail is the slab on the mast, as tall as it is set and turned to
+its angle; the five columns on the floor's edge are still, for the ship to be seen moving against.
 
 ## Before Z1 could run — the prep, built 2026-09-08
 
@@ -108,12 +110,12 @@ Do: pick one crest as it reaches the bow in your window; find it in the other.
 Pass only if: the same crest passes the same point at the same moment, as far as your eye can tell.
 Judged: 2026-09-08, session 1, GREEN, "pretty cohesive". NOTE: the higher-latency window draws the ship and the sea a little ahead; each client leads the server by its own lead, 6 frames plus its round trip, so the windows differ by the difference of their leads, about a tenth of a second here. Expected; the Ship entry of 2026-09-05 and the Spec's authority section.
 
-**O5 The sea follows you** · RED
+**O5 The sea follows you** · GREEN
 Needs: O2. Setup: sea 1, L0.
 Do: walk bow to stern and back twice, watching the water beside the hull.
 Pass only if: no edge appears as you move, and the water never visibly jumps when the plane re-snaps under you; a wave passing through the hull's sides is not this item.
 NOTE 2026-09-08: waves pierce the hull, the designer's words; the placeholder hull clips nothing, a facelift item beside the shader.
-Judged: 2026-09-08, session 1, RED: an edge to the sea, stopping before the horizon, seen from the deck at sea 1; the horizon plane and the 1 km near plane followed the same session. Then RED again, the designer's words: needs a better shader for the ocean, hard to see depth currently. Routed as the next presentation fix, the ocean material; the S items do not depend on it.
+Judged: 2026-09-08, session 1, RED: an edge to the sea, stopping before the horizon, seen from the deck at sea 1; the horizon plane and the 1 km near plane followed the same session. Then RED again, the designer's words: needs a better shader for the ocean, hard to see depth currently; the shaded material followed. Then GREEN: walking the deck's length, no jump or hop the designer could see.
 
 ## S — the ship
 
@@ -122,14 +124,14 @@ Claim: `Docs/Spec.md`, The ship; the hull fit.
 Needs: O1, O2. Setup: sea 0 then sea 1, anchored, L0.
 Do: from the rail, look down at the waterline on both sides; then from the bow and the stern.
 Pass only if: at calm the water meets the hull's sides at one height; at 1 the hull rises and falls with each passing wave, never floating above nor sunk below.
-Judged: —
+Judged: 2026-09-08, session 1, GREEN, driven by the waves. NOTE: the hull looks shallow, a bit lifted; `HullCenterAboveWater` in the ship settings, 100 cm, for the designer's verdict.
 
 **S2 The ship moves like a ship on water** · RED
-Needs: S1. Setup: sea 1, anchored, L0.
-Do: stand amidships and watch the horizon thirty seconds.
+Needs: S1. Setup: sea 1, anchored, L0; columns on the floor as a still reference.
+Do: stand amidships and watch the horizon and the columns thirty seconds, anchored, then under sail.
 Pass only if: roll and pitch are continuous and unhurried; no jitter, no snap, no rigid stillness.
-If red: the fit's stiffness and damping, knobs in the tuning map.
-Judged: —
+If red: the fit's stiffness and damping, knobs in the tuning map; a render rate under the simulation's, the two-fixed-ticks trap.
+Judged: 2026-09-08, session 1, RED: very jittery under way, milder but present at anchor. The session's defect; measured before it was touched: steady frames, the ship mesh's step swinging 44 to 2 246 cm/s, a one-frame sawtooth from the ship stepping per world tick rather than per simulation step, and the pawn moving only on frames that ran a step. Both fixed the same session, every line of the tape within a quarter of its median after; to be judged again.
 
 **S3 The stations can be found unaided** · RED
 Claim: the basic set, the station rows.

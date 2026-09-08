@@ -77,8 +77,10 @@ pawn's step between rendered frames; its review behaviours, `board`, `stand`, `w
 `swing`, `parry`, `feint`, `face`, `latency`, `advance` and `stop_review`, drive the other pawn
 for the items in `Docs/Checklist.md`. A
 view mode or show flag reaches the play viewport only through the controller's console.
-**A human at the play window** boards with B, drives the stations from their placeholders on
-the deck with Left/Right, Up/Down, `[` `]`, X and E, reads `AFMHUD`, the world tag, frame,
+**A human at the play window** boards with B, flies where the view points with F and drops with
+F again, drives the stations from their placeholders on
+the deck with Left/Right, Up/Down, `[` `]`, X and E, sees the sail as a slab on the mast and the
+floor's edge as five still columns, reads `AFMHUD`, the world tag, frame,
 measured lag, advance, mode, ship-space place, nearest station and its radius, the ship's speed
 and station values, sea state, wind, combat phase, tallies and the controller's notice, and
 sets a round trip on every world in the process with `FM.Latency <ms>`, or one per client with

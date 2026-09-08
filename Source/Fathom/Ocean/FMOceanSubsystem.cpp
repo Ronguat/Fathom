@@ -1,5 +1,9 @@
 #include "Ocean/FMOceanSubsystem.h"
 
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/StaticMeshActor.h"
+
 #include "Core/FMGameState.h"
 #include "Engine/Engine.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -93,6 +97,17 @@ void UFMOceanSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 	if (Horizon && Material)
 	{
 		Horizon->Build(Settings->HorizonSize, 1, Material);
+	}
+	UStaticMesh* Cylinder = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	for (const FVector2D& At : Settings->Landmarks)
+	{
+		AStaticMeshActor* Column = InWorld.SpawnActor<AStaticMeshActor>(FVector(At.X, At.Y, Settings->LandmarkHeight * 0.5), FRotator::ZeroRotator);
+		if (Column && Cylinder)
+		{
+			Column->GetStaticMeshComponent()->SetStaticMesh(Cylinder);
+			Column->GetStaticMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Column->SetActorScale3D(FVector(Settings->LandmarkWidth / 100.0, Settings->LandmarkWidth / 100.0, Settings->LandmarkHeight / 100.0));
+		}
 	}
 }
 

@@ -120,6 +120,9 @@ public:
 	/** Lands a pawn on the deck at the ladder point through its simulation. Server only. */
 	void Board(AFMPlayerPawn& Pawn);
 
+	/** Steps the ship to the frame a pawn is about to simulate and presents it there, from inside the fixed tick: the hull moves only when the simulation does, once per fixed step however many a world tick runs. */
+	void AdvanceTo(int32 Frame);
+
 	/** A pawn's distance from a station along the deck, in ship space. */
 	float StationDistance(const FFMStation& Station, const AActor& Pawn) const;
 
@@ -158,6 +161,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<UDynamicMeshComponent> Mesh;
+
+	/** A slab hanging from the mast's yard, unfurled downward as far as the sail is set and turned to its angle. */
+	UPROPERTY(VisibleAnywhere, Category="Fathom")
+	TObjectPtr<UStaticMeshComponent> Sail;
 
 private:
 	void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaSeconds);

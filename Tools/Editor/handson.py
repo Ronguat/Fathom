@@ -11,6 +11,7 @@ and per-frame tapes of what is rendered.
     -c "import handson; print(handson.stop())"
 
 A view mode or show flag reaches the play viewport only through the controller: console('p1', 'viewmode unlit').
+unreal.Rotator takes roll, pitch, yaw in that order; a pitch passed first becomes a roll on the control rotation.
 """
 import unreal
 
@@ -106,7 +107,7 @@ def aim(role="p1", pitch=12.0):
     tag = TAGS[role]
     d = ship_in(tag).get_actor_location() - STATE["pawns"][(role, tag)].get_actor_location()
     yaw = math.degrees(math.atan2(d.y, d.x))
-    STATE["pcs"][role].set_control_rotation(unreal.Rotator(pitch, 0.0, yaw))
+    STATE["pcs"][role].set_control_rotation(unreal.Rotator(0.0, pitch, yaw))
     return "aimed yaw %.0f at %.0f cm" % (yaw, d.length())
 
 

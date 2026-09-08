@@ -8,6 +8,7 @@
 #include "FMPlayerPawn.generated.h"
 
 struct FMoverDefaultSyncState;
+class AFMShip;
 class UAnimSequence;
 class UPrimitiveComponent;
 
@@ -82,6 +83,9 @@ protected:
 	virtual void ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdContext& InputCmdResult) override;
 
 	UFUNCTION()
+	void HandlePreSimulationTick(const FMoverTimeStep& TimeStep, const FMoverInputCmdContext& InputCmd);
+
+	UFUNCTION()
 	void HandlePostFinalize(const FMoverSyncState& SyncState, const FMoverAuxStateContext& AuxState);
 
 	UFUNCTION()
@@ -89,6 +93,9 @@ protected:
 
 	/** Places a simulated proxy where its base-space state stands on the base as this world presents it, turned by the base's yaw alone so the body stays upright as the deck rolls. */
 	void PlaceOnBase(const FMoverDefaultSyncState& State, const UPrimitiveComponent& Base);
+
+	/** Moves the visual root between the last two simulated frames by the framework's fraction, in base space when based, so a render frame between steps draws the pawn where the deck's presentation puts it. */
+	void SmoothVisual();
 
 	/** The base's transform as drawn this frame: a ship's mesh between its last two frames, any other base as it is. */
 	static FTransform PresentedBase(const UPrimitiveComponent& Base);
@@ -122,6 +129,14 @@ private:
 	FString RoleName() const;
 
 	FName HarnessRole;
+	TWeakObjectPtr<AFMShip> Ship;
+	TWeakObjectPtr<const UPrimitiveComponent> SmoothBase;
+	FVector SmoothFrom = FVector::ZeroVector;
+	FVector SmoothTo = FVector::ZeroVector;
+	float SmoothYawFrom = 0.0f;
+	float SmoothYawTo = 0.0f;
+	int32 SmoothFrame = -1;
+	bool bFlying = false;
 	bool bJumpWasDown = false;
 	int32 Rollbacks = 0;
 	int32 PendingRollbackTo = -1;

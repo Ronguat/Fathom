@@ -36,6 +36,7 @@ AFMPlayerController::AFMPlayerController()
 	ActionKeys.Add(TEXT("anchor"), EKeys::X);
 	ActionKeys.Add(TEXT("ladder"), EKeys::E);
 	ActionKeys.Add(TEXT("board"), EKeys::B);
+	ActionKeys.Add(TEXT("fly"), EKeys::F);
 }
 
 void AFMPlayerController::BeginPlay()

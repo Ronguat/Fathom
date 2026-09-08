@@ -58,6 +58,20 @@ AFMShip::AFMShip()
 	{
 		Mesh->SetMaterial(0, HullMaterial.Object);
 	}
+
+	Sail = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Sail"));
+	Sail->SetupAttachment(Mesh);
+	Sail->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Sail->SetCanEverAffectNavigation(false);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
+	if (Cube.Succeeded())
+	{
+		Sail->SetStaticMesh(Cube.Object);
+	}
+	if (HullMaterial.Succeeded())
+	{
+		Sail->SetMaterial(0, HullMaterial.Object);
+	}
 }
 
 AFMShip* AFMShip::Find(const UWorld* World)
@@ -311,6 +325,16 @@ void AFMShip::Reintegrate(int32 ToFrame)
 	Advance(ToFrame);
 }
 
+void AFMShip::AdvanceTo(int32 Frame)
+{
+	if (!bHasState || Frame <= State.Frame)
+	{
+		return;
+	}
+	Advance(Frame);
+	Present();
+}
+
 void AFMShip::EndPlay(const EEndPlayReason::Type Reason)
 {
 	FWorldDelegates::OnWorldTickStart.Remove(TickStartHandle);
@@ -323,7 +347,7 @@ void AFMShip::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaSe
 	{
 		return;
 	}
-	Advance(CurrentFrame() + 1);
+	Advance(CurrentFrame());
 	if (HasAuthority())
 	{
 		const UFMShipSettings* K = GetDefault<UFMShipSettings>();
@@ -377,6 +401,11 @@ void AFMShip::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	if (bHasState)
 	{
+		const UFMShipSettings* K = GetDefault<UFMShipSettings>();
+		const float Height = FMath::Max(2.0f, State.SailLength * 900.0f);
+		const double Yard = K->HullHeight * 0.5 + 1000.0;
+		Sail->SetRelativeLocationAndRotation(FVector(0.0, 0.0, Yard - Height * 0.5), FRotator(0.0f, State.SailAngle, 0.0f));
+		Sail->SetRelativeScale3D(FVector(0.2, 6.0, Height / 100.0));
 		Mesh->SetWorldTransform(PresentedTransform());
 	}
 }
