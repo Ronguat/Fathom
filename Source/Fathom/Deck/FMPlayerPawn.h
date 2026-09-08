@@ -35,7 +35,9 @@ struct FFMTeleportEffect : public FTeleportEffect
  * for everyone else in the engine's default material, each posed from the combat state at the
  * presented frame. Input is the
  * controller's key table, read when the input command is authored; the attack's side is the last
- * turn of the control yaw. Writes INPUT on every key edge and POSE every PoseEveryFrames frames.
+ * turn of the control yaw. On the owning client the view turns with the deck's yaw at each
+ * finalized frame, so a player standing on a turning ship keeps facing the same part of it.
+ * Writes INPUT on every key edge and POSE every PoseEveryFrames frames.
  */
 UCLASS()
 class FATHOM_API AFMPlayerPawn : public APawn, public IMoverInputProducerInterface
@@ -136,6 +138,8 @@ private:
 	float SmoothYawFrom = 0.0f;
 	float SmoothYawTo = 0.0f;
 	int32 SmoothFrame = -1;
+	float BaseYawSeen = 0.0f;
+	bool bHasBaseYaw = false;
 	bool bFlying = false;
 	bool bJumpWasDown = false;
 	int32 Rollbacks = 0;

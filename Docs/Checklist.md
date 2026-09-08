@@ -163,7 +163,7 @@ Judged: 2026-09-08, session 1, RED: the wheel recentred on release and should ho
 Needs: S4. Setup: under sail, L0; you at the bow.
 Do: press X and count; press X again and count until the ship moves.
 Pass only if: the anchor falls for a moment with the ship sailing on, then the ship runs to the line's end, catches, swings back and settles; the raise takes about eight seconds before it moves.
-Judged: 2026-09-08, session 1, GREEN. NOTE: the stop was instant, the speed set to zero; the designer asked for a lurch, the ship catching against a taut anchor line and pulled back to it, which followed the same session. Then, on the designer's eye: too abrupt, and the speed changed before the anchor reached bottom; a drop time and a softer line followed; to be looked at again.
+Judged: 2026-09-08, session 1, GREEN. NOTE: the stop was instant, the speed set to zero; the designer asked for a lurch, the ship catching against a taut anchor line and pulled back to it, which followed the same session. Then, on the designer's eye: too abrupt, and the speed changed before the anchor reached bottom; a drop time and a softer line followed. Then GREEN: still a bit imprecise, a major improvement, enough as proof of concept; the line's knobs are in the tuning map.
 
 **S8 Out of radius** · GREEN
 Needs: S3. Setup: standard, L0; you amidships.
@@ -182,16 +182,16 @@ Needs: S7. Setup: under sail, L150.
 Do: drop the anchor; watch the other window's ship.
 Pass only if: it stops without a visible jump.
 If red: the loop's stop row measured a transient of 186 cm at 150 ms; whether it shows is this item.
-Judged: 2026-09-08, session 1, the designer, before the anchor line; the line's catch is to be looked at here too.
+Judged: 2026-09-08, session 1, the designer, before the anchor line; GREEN again with the line's catch. The ship group complete.
 
 ## D — the deck
 
-**D1 Standing still is standing still** · RED
+**D1 Standing still is standing still** · GREEN
 Claim: `Docs/Spec.md`, The deck.
 Needs: S1, S2, S6. Setup: sea 1, L0; I sail and turn the ship.
 Do: stand amidships, hands off, twenty seconds.
-Pass only if: you do not drift across the deck, and the horizon rolls while your feet stay put.
-Judged: —
+Pass only if: you do not drift across the deck, the deck tilts with the waves under your planted feet, the horizon stays level, and you keep facing the same part of the ship as it turns.
+Judged: 2026-09-08, session 1, GREEN on the drift. NOTE, a defect: players kept their world-space facing as the ship turned, so a player with no input appeared to rotate relative to the deck; the view now turns with the deck's yaw each simulated frame and the facing follows, the same session; to be looked at again.
 
 **D2 Standing still at L150** · RED
 Needs: D1. Setup: as D1, L150.

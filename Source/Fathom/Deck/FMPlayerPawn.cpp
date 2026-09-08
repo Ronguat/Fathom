@@ -372,6 +372,16 @@ void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const F
 		PlaceOnBase(*State, *Base);
 	}
 	const int32 Finalized = Mover->GetLastTimeStep().ServerFrame;
+	if (APlayerController* PC = Cast<APlayerController>(GetController()); PC && PC->IsLocalController() && Finalized != SmoothFrame)
+	{
+		const float BaseYaw = Base ? Base->GetComponentRotation().Yaw : 0.0f;
+		if (Base && bHasBaseYaw && SmoothBase.Get() == Base)
+		{
+			PC->SetControlRotation(PC->GetControlRotation() + FRotator(0.0f, FMath::FindDeltaAngleDegrees(BaseYawSeen, BaseYaw), 0.0f));
+		}
+		BaseYawSeen = BaseYaw;
+		bHasBaseYaw = Base != nullptr;
+	}
 	if (State && GetLocalRole() != ROLE_SimulatedProxy && Finalized != SmoothFrame)
 	{
 		const FVector Local = Base ? State->GetLocation_BaseSpace() : State->GetLocation_WorldSpace();

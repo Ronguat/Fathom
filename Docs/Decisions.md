@@ -22,6 +22,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
 | 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
+| 2026-09-08 | The view turning with the deck's yaw at each finalized frame on the owning client, the facing following through the orientation intent, so a player keeps facing the same part of a turning ship; the ship's roll and pitch left out of the view | `AFMPlayerPawn` | |
 | 2026-09-08 | The anchor line: a fall of 2 s before the anchor bites, then 8 m of run under a drag of 0.3 per second, then a spring of 9 per second squared with damping 2.4, under critical so the ship swings back; the stop row's band four seconds after the bite. First cut 5 m, 100 and 12, ruled too abrupt and too early by the designer's eye | `UFMShipSettings`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | The headwind floor a fifth of full drive, `HeadwindSpeed`, scaled by the sail as everything else is | `UFMShipSettings` | |
 | 2026-09-08 | The wheel holding where it is left on release, the designer's verdict at S6 | `AFMPlayerController` | |
@@ -513,7 +514,20 @@ seconds: stiffness 100 gives a natural rate of 10 per second, damping 12 sits un
 the ship swings back once, and 5 m of run makes the coast half a second. Under full sail at
 anchor the line stretches about 3 m and holds. *Alternatives.* A lateral velocity in the ship's
 state, so an anchor abeam could swing the bow; deferred with the anchor turn. *Reopens* on the
-designer's eye at S7 and S10, or on the stop row.
+designer's eye at S7 and S10, or on the stop row. The line was then ruled too abrupt and too
+early: the anchor now falls two seconds before it bites, the run is 8 m under a drag of 0.3, the
+spring 9 with damping 2.4; the stop row finds the bite in the trace and asserts four seconds
+after it. Passed as proof of concept, imprecise still, the knobs the designer's.
+
+**D1: a player turned relative to the deck.** The designer, standing hands off while the ship
+turned, saw players keep their world-space facing and so rotate relative to the deck. The view is
+a world-space control rotation and the pawn's facing follows it through the orientation intent,
+so neither turned with the ship. *Decision.* On the owning client, at each finalized frame, the
+control rotation turns by the hull's yaw change since the last one; the intent follows and every
+world's pawn turns with the ship. The roll and pitch stay out of the view, which clamps its own
+roll. *Alternatives.* The intent expressed in base space and rotated by the framework, which Mover
+does not do here for an explicit intent. *Reopens* on the designer's eye at D1 and D6, or on a deck
+row reading a walk that changed direction under a turn.
 
 ### Verified against written
 
