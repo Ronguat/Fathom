@@ -215,21 +215,27 @@ void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 		return;
 	}
 	FFMShipInputs Next = Inputs;
+	const bool bHold = Value >= HoldValue;
+	float Applied = Value;
 	if (Input == InputWheel)
 	{
-		Next.Wheel = FMath::Clamp(Value, -1.0f, 1.0f);
+		Next.Wheel = bHold ? State.Rudder : FMath::Clamp(Value, -1.0f, 1.0f);
+		Applied = Next.Wheel;
 	}
 	else if (Input == InputSailLength)
 	{
-		Next.SailLength = FMath::Clamp(Value, 0.0f, 1.0f);
+		Next.SailLength = bHold ? State.SailLength : FMath::Clamp(Value, 0.0f, 1.0f);
+		Applied = Next.SailLength;
 	}
 	else if (Input == InputSailAngle)
 	{
-		Next.SailAngle = FMath::Clamp(Value, -90.0f, 90.0f);
+		Next.SailAngle = bHold ? State.SailAngle : FMath::Clamp(Value, -90.0f, 90.0f);
+		Applied = Next.SailAngle;
 	}
 	else if (Input == InputAnchor)
 	{
 		Next.bAnchorDown = Value > 0.5f;
+		Applied = Next.bAnchorDown ? 1.0f : 0.0f;
 	}
 	else
 	{
@@ -238,7 +244,7 @@ void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 	Next.Frame = State.Frame;
 	Inputs = Next;
 	RecordInput(Next);
-	FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d input=%s value=%.2f"), ShipId, Next.Frame, *Input.ToString(), Value);
+	FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d input=%s value=%.2f"), ShipId, Next.Frame, *Input.ToString(), Applied);
 }
 
 void AFMShip::RecordInput(const FFMShipInputs& In)

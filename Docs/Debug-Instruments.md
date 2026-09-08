@@ -38,7 +38,8 @@ and `gpu=none`; `inv=<cm>` on the same line is the height inversion's residual a
 `SHIP id=<n> sf=<frame> x= y= z= yaw= pitch= roll= speed= sail= angle= rudder= anchor=` is
 written every sixth frame by every world, the server's the truth and a client's its
 reconstruction; `SHIPIN id=<n> sf=<frame> input=<station> value=<v>` by the server at the frame
-a station input took effect, and `SHIPNO id= sf= input= dist=` when the caller stood farther
+a station input took effect, `value` the target applied, which a key's release sends as a hold
+the server fills in from the station's position; and `SHIPNO id= sf= input= dist=` when the caller stood farther
 from the station than its radius. `COMBAT pid= sf= phase=<idle|windup|release|recovery|parry>
 attack=<name|-> start=<frame> parry=<frame>` is written by every world for every pawn at a phase
 change, `start` the frame the attack began in the sync state, `parry` the parry's; the melee rows
@@ -197,7 +198,7 @@ what is now untested. A loop that lags the surface still prints green.
 | `ship.turn-loss` | S C1 C2 | 0, 100 | f60 p1 ship sail_length 1.0; f240 p2 ship wheel 1.0; f480 p2 ship wheel 0.0 | 12 s | determinism, cost |
 | `deck.stand` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5 | 14 s | determinism, cost |
 | `deck.station` | S C1 C2 | 0, 100 | f120 p2 ship wheel 1.0; f180 p1 ship wheel 1.0; f240 p1 ship wheel 0.0 | 6 s | two worlds, cost |
-| `deck.station-key` | S C1 C2 | 0, 100 | f120 p1 tap board; f180 p1 hold sail_down 150; f240 p1 tap wheel_right; f300 p2 hold wheel_right 240 | 12 s | two worlds, cost, injection latency |
+| `deck.station-key` | S C1 C2 | 0, 100 | f120 p1 tap board; f180 p1 hold sail_down 150; f240 p1 tap wheel_right; f300 p2 tap wheel_left; +1 more | 13 s | two worlds, cost, injection latency |
 | `deck.swim` | S C1 C2 | 0, 50, 100, 150 | f360 p1 ship ladder 1.0 | 10 s | determinism, cost |
 | `deck.walk` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f420 p1 move 0.0 1.0 90 | 14 s | determinism, cost, injection latency |
 | `melee.advance-half` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f372 p2 tap parry | 10 s | advance, combat, cost |

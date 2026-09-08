@@ -165,7 +165,6 @@ void AFMPlayerController::DriveFromKeys()
 	{
 		return;
 	}
-	const FFMShipState& S = Ship->GetState();
 	if (Pressed(TEXT("wheel_right")))
 	{
 		DriveByKey(TEXT("wheel"), 1.0f);
@@ -176,7 +175,7 @@ void AFMPlayerController::DriveFromKeys()
 	}
 	if ((Released(TEXT("wheel_right")) || Released(TEXT("wheel_left"))) && !Down(TEXT("wheel_right")) && !Down(TEXT("wheel_left")))
 	{
-		DriveByKey(TEXT("wheel"), S.Rudder);
+		DriveByKey(TEXT("wheel"), AFMShip::HoldValue);
 	}
 	if (Pressed(TEXT("sail_down")))
 	{
@@ -188,7 +187,7 @@ void AFMPlayerController::DriveFromKeys()
 	}
 	if (Released(TEXT("sail_up")) || Released(TEXT("sail_down")))
 	{
-		DriveByKey(TEXT("sail_length"), S.SailLength);
+		DriveByKey(TEXT("sail_length"), AFMShip::HoldValue);
 	}
 	if (Pressed(TEXT("angle_right")))
 	{
@@ -200,7 +199,7 @@ void AFMPlayerController::DriveFromKeys()
 	}
 	if (Released(TEXT("angle_right")) || Released(TEXT("angle_left")))
 	{
-		DriveByKey(TEXT("sail_angle"), S.SailAngle);
+		DriveByKey(TEXT("sail_angle"), AFMShip::HoldValue);
 	}
 	if (Pressed(TEXT("anchor")))
 	{

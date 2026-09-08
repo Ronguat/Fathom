@@ -129,7 +129,10 @@ public:
 
 	static AFMShip* Find(const UWorld* World);
 
-	/** Applies a station input on the server at the current frame, if the caller stands within the station's radius. */
+	/** A station value meaning "hold where the server has it now": a key's release under latency, before the press's effect has come back to the client. */
+	static constexpr float HoldValue = 1000.0f;
+
+	/** Applies a station input on the server at the current frame, if the caller stands within the station's radius; HoldValue takes the station's current position. */
 	void Apply(FName Input, float Value, AActor* Caller);
 
 	/** Lands a pawn on the deck at the ladder point through its simulation. Server only. */

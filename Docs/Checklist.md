@@ -157,7 +157,7 @@ Judged: 2026-09-08, session 1, GREEN. NOTE: facing directly into the wind softlo
 Needs: S4. Setup: under sail, L0; you at the stern.
 Do: hold Right five seconds; release; hold Left. Then the same at rest.
 Pass only if: the ship turns the way you pressed, visibly faster under sail than at rest, and the rudder holds where you let go.
-Judged: 2026-09-08, session 1, RED: the wheel recentred on release and should hold its position, the designer's words; changed the same session, then GREEN.
+Judged: 2026-09-08, session 1, RED: the wheel recentred on release and should hold its position, the designer's words; changed the same session, then GREEN. NOTE, reported afterwards: at 170 ms very short taps were eaten while holds went through; a release now holds where the server has the rudder, the same session, the row tapping it at 100 ms; worth a tap under 150 ms when convenient.
 
 **S7 Anchor** · GREEN
 Needs: S4. Setup: under sail, L0; you at the bow.

@@ -22,6 +22,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
 | 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
+| 2026-09-08 | A key's release a hold the server fills in from the station's own position, a sentinel value above the stations' ranges, in place of the client's stale copy; the `SHIPIN` value the target applied | `AFMShip`, `AFMPlayerController` | |
 | 2026-09-08 | The view turning with the deck's yaw at each finalized frame on the owning client, the facing following through the orientation intent, so a player keeps facing the same part of a turning ship; the ship's roll and pitch left out of the view | `AFMPlayerPawn` | |
 | 2026-09-08 | The anchor line: a fall of 2 s before the anchor bites, then 8 m of run under a drag of 0.3 per second, then a spring of 9 per second squared with damping 2.4, under critical so the ship swings back; the stop row's band four seconds after the bite. First cut 5 m, 100 and 12, ruled too abrupt and too early by the designer's eye | `UFMShipSettings`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | The headwind floor a fifth of full drive, `HeadwindSpeed`, scaled by the sail as everything else is | `UFMShipSettings` | |
@@ -528,6 +529,18 @@ world's pawn turns with the ship. The roll and pitch stay out of the view, which
 roll. *Alternatives.* The intent expressed in base space and rotated by the framework, which Mover
 does not do here for an explicit intent. *Reopens* on the designer's eye at D1 and D6, or on a deck
 row reading a walk that changed direction under a turn.
+
+**Short rudder taps eaten at 170 ms.** The designer's report from an earlier play: moderate and
+long holds went through, very short taps were discarded. *Cause.* A wheel key's release sent the
+rudder position as the client's own reconstruction had it, and station inputs are not predicted
+on the client; under latency the press's effect had not come back when a short tap released, so
+the release sent zero and undid the press. The sails' releases had the same flaw. The loop never
+tapped a wheel briefly under latency. *Decision.* A release sends a hold, a sentinel above every
+station's range, and the server fills in the station's position as it has it at that frame; the
+`SHIPIN` line reports the target applied. `deck.station-key` gains a two-frame tap of the wheel
+at 0 and 100 ms and asserts the hold keeps a little rudder. *Alternatives.* Predicting station
+inputs on the client, the Stretch line from Ship. *Reopens* on that line, or on a tap the row
+still loses.
 
 ### Verified against written
 

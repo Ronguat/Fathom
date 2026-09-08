@@ -12,9 +12,9 @@ struct FInputKeyEventArgs;
  * Owns the key table the pawn reads and the marker hotkey; tells the server its world tag on
  * BeginPlay and carries the client's trace relay. Latches every action key's press until the
  * pawn takes it, which is how the mouse wheel's one-event keys reach a command. The station keys
- * drive the ship from the controller's tick, a value on press and one on release: the wheel to
- * its side, Down unfurling the sail and Up furling it, each holding where it stands on release,
- * the anchor a
+ * drive the ship from the controller's tick, a value on press and a hold on release: the wheel to
+ * its side, Down unfurling the sail and Up furling it, each held on release where the server has
+ * it, so a tap under latency keeps its effect; the anchor a
  * toggle, the ladder and the board key a call. A call from outside a station's radius is sent
  * regardless and the refusal the server will make is shown for a moment. Adds
  * DefaultMappingContexts to the local player's Enhanced Input subsystem at BeginPlay, in array order.

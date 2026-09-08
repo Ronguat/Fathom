@@ -411,10 +411,12 @@ def deck_station_key(ctx, r, s):
     band(r, "sail set by the release, where it stood (fraction)", [sail[-1].fields.get("value", 0.0)] if sail else [], 0.9, 1.0, "")
     count(r, "wheel calls refused by distance, the tap's press and release", len(ctx.lines("SHIPNO", "S", "input=wheel")), 2)
     applied = ctx.lines("SHIPIN", "S", "input=wheel")
-    count(r, "wheel calls applied by key from the wheel", len(applied), 2)
+    count(r, "wheel calls applied by key from the wheel, a tap and a hold", len(applied), 4)
     values = [ln.fields.get("value") for ln in applied]
-    r.add(len(values) == 2 and values[0] == 1.0 and values[1] >= 0.9, "wheel value on press, then where it stood on release", "%s" % (values,))
-    before, after = server_at(ctx, 300), server_at(ctx, 540)
+    r.add(len(values) == 4 and values[0] == -1.0 and -0.2 <= values[1] <= -0.01,
+          "a two-frame tap keeps its effect: press left, then held a little left", "%s" % (values[:2],))
+    r.add(len(values) == 4 and values[2] == 1.0 and values[3] >= 0.9, "the hold: press right, then held where it stood", "%s" % (values[2:],))
+    before, after = server_at(ctx, 420), server_at(ctx, 660)
     band(r, "heading change under the held key (deg)",
          [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 15.0, 180.0, "deg")
     cost_sane(ctx, r)
