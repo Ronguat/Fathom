@@ -262,6 +262,13 @@ def server_at(ctx, rel_frame):
 @row("ship.sail")
 def ship_sail(ctx, r, s):
     ship_reconstruction(ctx, r, s, settle_after=60 + 30)
+    server = ship_lines(ctx, "S")
+    start = begin_frame(ctx)
+    caller = s["roles"]["p1"][0]
+    client = ship_lines(ctx, caller)
+    window = [f for f in sorted(set(server) & set(client)) if start + 60 <= f <= start + 180]
+    band(r, "%s sail against S in the two seconds after its own press, the call predicted (fraction)" % caller,
+         [abs(server[f].fields["sail"] - client[f].fields["sail"]) for f in window], 0.0, 0.03, "")
     last = server_at(ctx, 700)
     band(r, "speed on the server near the end (cm/s)", [last.fields["speed"]] if last else [], 800.0, 1100.0, "cm/s")
     first = server_at(ctx, 0)

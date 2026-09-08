@@ -232,10 +232,7 @@ void AFMPlayerPawn::HarnessTeleport(FVector Location, float Yaw)
 
 void AFMPlayerPawn::DriveShip(FName Input, float Value)
 {
-	if (AFMPlayerController* PC = Cast<AFMPlayerController>(GetController()))
-	{
-		PC->DriveShip(Input, Value);
-	}
+	PendingStations.Emplace(Input, Value);
 }
 
 FVector AFMPlayerPawn::GetSimLocation() const
@@ -253,12 +250,20 @@ void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdC
 {
 	FCharacterDefaultInputs& Inputs = InputCmdResult.InputCollection.FindOrAddMutableDataByType<FCharacterDefaultInputs>();
 	FFMCombatInputs& CombatInputs = InputCmdResult.InputCollection.FindOrAddMutableDataByType<FFMCombatInputs>();
+	FFMStationInputs& StationInputs = InputCmdResult.InputCollection.FindOrAddMutableDataByType<FFMStationInputs>();
+	StationInputs = FFMStationInputs();
 	AFMPlayerController* PC = Cast<AFMPlayerController>(GetController());
 	if (!PC || !PC->IsLocalController())
 	{
 		Inputs = FCharacterDefaultInputs();
 		CombatInputs = FFMCombatInputs();
 		return;
+	}
+	if (PendingStations.Num() > 0)
+	{
+		StationInputs.Station = AFMShip::StationIndex(PendingStations[0].Key);
+		StationInputs.Value = PendingStations[0].Value;
+		PendingStations.RemoveAt(0);
 	}
 
 	TSet<FName> Latched;
@@ -363,6 +368,11 @@ void AFMPlayerPawn::HandlePreSimulationTick(const FMoverTimeStep& TimeStep, cons
 	if (Ship.IsValid())
 	{
 		Ship->AdvanceTo(TimeStep.ServerFrame);
+		const FFMStationInputs* Station = InputCmd.InputCollection.FindDataByType<FFMStationInputs>();
+		if (Station && Station->Station != 0)
+		{
+			Ship->Apply(AFMShip::StationName(Station->Station), Station->Value, this);
+		}
 	}
 }
 

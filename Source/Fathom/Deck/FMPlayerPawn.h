@@ -55,7 +55,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Fathom|Harness")
 	void HarnessTeleport(FVector Location, float Yaw);
 
-	/** Drives one of the ship's stations through the controller: wheel, sail_length, sail_angle, anchor. */
+	/** Queues a station call for the next input command, one per command: wheel, sail_length, sail_angle, anchor, ladder. Every world applies it at that command's frame, this client as a prediction. */
 	UFUNCTION(BlueprintCallable, Category="Fathom|Ship")
 	void DriveShip(FName Input, float Value);
 
@@ -142,6 +142,7 @@ private:
 
 	FName HarnessRole;
 	TWeakObjectPtr<AFMShip> Ship;
+	TArray<TPair<FName, float>> PendingStations;
 	TWeakObjectPtr<const UPrimitiveComponent> SmoothBase;
 	FVector SmoothFrom = FVector::ZeroVector;
 	FVector SmoothTo = FVector::ZeroVector;

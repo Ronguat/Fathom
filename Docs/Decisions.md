@@ -22,6 +22,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
 | 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
 | 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
+| 2026-09-08 | A station call as a block of the input command, one call per command queued on the pawn, the station an index into the ship's five names; applied by every world at the command's frame in the pawn's pre-simulation tick after the ship has stepped to it; a client's entry marked predicted and pruned when the server's input passes its frame | `FFMStationInputs`, `AFMShip`, `AFMPlayerPawn` | |
 | 2026-09-08 | A simulated proxy drawn through a base change from where it was, the gap closing at 300 cm a second, a gap over 400 cm a teleport that snaps | `AFMPlayerPawn` | |
 | 2026-09-08 | A jump keeps the hull as the base while the pawn is over it, the walking and falling modes of the project restoring the base their parents drop, and the base dropped with the hull's velocity imparted past the hull's extent plus `DeckMargin`, 50 cm; a pawn takes the deck only by touching it | `UFMDeckWalkingMode`, `UFMDeckFallingMode`, `UFMShipSettings` | |
 | 2026-09-08 | `deck.jump` at every latency: airborne within a second, the base kept through the air, landed within a metre of the take-off in the deck's frame | `Tools/RegressionCheck/scenarios.py` | |
@@ -112,6 +113,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-04 — Fathom is bootstrapped: the spine, the regime and the inheritance | 2026-09-04 — The repository stands alone, and forgets its parent | The reference model's ownership: the file is dissolved into its homes and the ownership check removed; the Harness brief builds on the loop skeleton here rather than a reference elsewhere |
 | 2026-09-05 — Ship: a body every world integrates from the same state, its Stretch deferral of smoothed presentation | 2026-09-05 — Presentation between frames | The deferral, built on the designer's ruling that presentation never relies on a render cap |
 | 2026-09-05 — Ship: a body every world integrates from the same state, its anchor as a strong drag | 2026-09-08 — The human review: a human reaches what the loop reaches | The anchor falls for two seconds, then lies where the ship was, the ship running to the end of its line and caught by a spring that swings it back, on the designer's ask for a lurch; the stop row's bar moves from two seconds after the press to four after the bite, and gains the run past the bite |
+| 2026-09-05 — Ship: a body every world integrates from the same state, its inputs replicated with their frame, unpredicted | 2026-09-08 — The human review: a human reaches what the loop reaches | A station call rides the caller's input command and every world applies it at that command's frame, the caller's client as a prediction the server's replicated input confirms; on the designer's eye, the sail snapping forward and reverting on release under latency |
 | 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | Eight release curves counted; seven exist, none for underhand left, and the intake leaves the underhand pair unused |
 | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | 2026-09-08 — The human review: a human reaches what the loop reaches | The blade baked from the clip as a segment in pawn space, no weapon on the pawn: the designer rules it does not accomplish what the project set out to do, the point being to test tracers on a ship drawn from a weapon; flagged as needing work, the trap of that date, and not debugged |
 
@@ -308,7 +310,8 @@ the bar into numbers.
   replay-system recon behind the text trace; a Blender bridge, triggered only by a feature blocked
   on a shape primitives cannot make; a ship art pack, declined as cosmetic. Deferred 2026-09-05: a
   capsule placeholder from Geometry Script, the engine's cylinder standing in. Deferred
-  2026-09-05, from Ship: a predicted station input for the local player; ~~a smoothed presentation
+  2026-09-05, from Ship: ~~a predicted station input for the local player~~, built 2026-09-08 on
+  the designer's eye at S4, the human review entry; ~~a smoothed presentation
   of the reconstructed ship~~, built 2026-09-05 on the designer's ruling, the Presentation entry.
   Deferred 2026-09-07, from Melee: pitch in the swing, the blade turning with yaw only; the
   underhand attacks and the exhausted, riposte and deflect clips; a defender in the water; the
@@ -587,6 +590,32 @@ speed and latency: the largest step 16 cm, the mean 7.5, the error against the t
 its widest as the gap closed. *Alternatives.* Drawing based proxies on
 the ship at their own past frame, which puts them off the deck by the lag, the defect the
 2026-09-05 review found. *Reopens* on the designer's eye at D9 from the other window.
+
+**The sail that snapped forward and reverted on release.** The designer's eye at the sail under
+latency: an adjustment appears instantly, then steps back a little on release. *Cause.* The Ship
+rung left station inputs unpredicted: a key sent a server call, the server applied it at its own
+frame, and the client learned of it a round trip later and re-integrated from that earlier frame,
+the sail jumping forward by the time the call was in flight; on release the client kept
+unfurling for a round trip and the server's held value, from before that, stepped it back.
+*Decision.* A station call rides the caller's input command as a block beside the combat presses,
+one call per command; the server and the caller's client apply it in the pawn's pre-simulation
+tick at the command's frame, after the ship has stepped to it, so both record it at the same
+frame and the hold resolves to the same value on both from the same reconstruction. The client's
+entry is marked predicted; the server's replicated input, identical at that frame, replaces it
+without a re-integration, and predictions older than the server's latest input are pruned. The
+controller's server call for stations is gone; scripts' `ship` op and the keys share the queue.
+`ship.sail` asserts each client's sail within 0.03 of the server's through the two seconds after
+the press. *Alternatives.* Predicting at a guessed server frame from the round trip, which
+leaves a residual jump; smoothing the presentation, which hides the timeline. *Reopens* on a
+command the server ticks past, the press-riding-one-command trap, which now loses a station
+call as it loses an attack. *Measured on the way*: the prediction landed at the server's frame
+exactly, `SHIPPRED` and `SHIPIN` both at 74 and the replication confirming it unchanged, yet the
+caller's sail ran 0.12 ahead for two seconds. The client's history had no entry from before the
+call, the server's initial zero inputs matching the client's default so their replication never
+fired, and `InputsAt` answered a frame before its first entry with that first entry, so every
+re-integration from a snapshot applied the call from the snapshot's frame, up to fourteen frames
+early. A fault from the Ship rung, worth three frames while the client learned late and invisible
+under the reconstruction band; the frames before the first entry now read no input.
 
 ### Verified against written
 

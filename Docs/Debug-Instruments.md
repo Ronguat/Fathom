@@ -38,9 +38,13 @@ and `gpu=none`; `inv=<cm>` on the same line is the height inversion's residual a
 `SHIP id=<n> sf=<frame> x= y= z= yaw= pitch= roll= speed= sail= angle= rudder= anchor=` is
 written every sixth frame by every world, the server's the truth and a client's its
 reconstruction; `SHIPIN id=<n> sf=<frame> input=<station> value=<v>` by the server at the frame
-a station input took effect, `value` the target applied, which a key's release sends as a hold
-the server fills in from the station's position; and `SHIPNO id= sf= input= dist=` when the caller stood farther
-from the station than its radius. `COMBAT pid= sf= phase=<idle|windup|release|recovery|parry>
+of the input command that carried the station call, which the caller's client applies at the same
+frame as a prediction, `value` the target applied, a key's release a hold filled in from the
+station's position; and `SHIPNO id= sf= input= dist=` when the caller stood farther
+from the station than its radius. `SHIPPRED id= sf= input= value= changed=` is the caller's
+client recording the same call at the same frame as its prediction, and `SHIPREP id= sf=
+frame= sail= changed= pruned=` a client receiving the server's latest input, `changed` whether
+it differed from what the client held at that frame, which a confirmed prediction never does. `COMBAT pid= sf= phase=<idle|windup|release|recovery|parry>
 attack=<name|-> start=<frame> parry=<frame>` is written by every world for every pawn at a phase
 change, `start` the frame the attack began in the sync state, `parry` the parry's; the melee rows
 compare `start` and the phase order across worlds. `HIT pid=<attacker> sf= target= rf= rp= k=

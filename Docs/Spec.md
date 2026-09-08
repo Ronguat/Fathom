@@ -57,7 +57,9 @@ speed curve with a floor head to wind, so a ship under sail can always turn; yaw
 driven at a rate and scaled by speed, holding where it is left; a dropped anchor falls for a
 fixed time with the ship sailing on, then lies where the ship was, and the ship runs to the end
 of its line, catches, and is held there by a spring until the anchor is raised over a fixed
-time. A **station** is a place one player occupies to
+time. A station call rides the caller's input command, so the server and the caller's client
+apply it at the same frame and the client's prediction is exact. A **station** is a place one
+player occupies to
 drive one ship input: wheel, sail length, sail angle, anchor, ladder, and later cannon.
 
 ## The deck

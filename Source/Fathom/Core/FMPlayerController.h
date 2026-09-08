@@ -12,9 +12,9 @@ struct FInputKeyEventArgs;
  * Owns the key table the pawn reads and the marker hotkey; tells the server its world tag on
  * BeginPlay and carries the client's trace relay. Latches every action key's press until the
  * pawn takes it, which is how the mouse wheel's one-event keys reach a command. The station keys
- * drive the ship from the controller's tick, a value on press and a hold on release: the wheel to
- * its side, Down unfurling the sail and Up furling it, each held on release where the server has
- * it, so a tap under latency keeps its effect; the anchor a
+ * queue station calls on the pawn for its next input command, a value on press and a hold on
+ * release: the wheel to its side, Down unfurling the sail and Up furling it, each held on release
+ * where the ship has it at that frame; the anchor a
  * toggle, the ladder and the board key a call. A call from outside a station's radius is sent
  * regardless and the refusal the server will make is shown for a moment. Adds
  * DefaultMappingContexts to the local player's Enhanced Input subsystem at BeginPlay, in array order.
@@ -37,13 +37,6 @@ public:
 	/** A client's trace lines, into the server's session file. */
 	UFUNCTION(Server, Reliable)
 	void ServerRelayTrace(const TArray<FString>& Lines);
-
-	/** Drives one of the ship's stations: wheel, sail_length, sail_angle, anchor, ladder. Sent to the server from the next tick. */
-	UFUNCTION(BlueprintCallable, Category="Fathom|Ship")
-	void DriveShip(FName Input, float Value);
-
-	UFUNCTION(Server, Reliable)
-	void ServerDriveShip(FName Input, float Value);
 
 	/** Lands the pawn on the deck at the ladder point, from anywhere. */
 	UFUNCTION(Server, Reliable)
@@ -75,7 +68,7 @@ protected:
 	virtual void PlayerTick(float DeltaTime) override;
 
 private:
-	/** The station keys' edges this tick, into DriveShip. */
+	/** The station keys' edges this tick, into the pawn's next input command. */
 	void DriveFromKeys();
 	/** A station call from a key: the notice when the pawn stands outside the radius, then the call. */
 	void DriveByKey(FName Station, float Value);
@@ -83,7 +76,6 @@ private:
 	void Notify(const FString& Text);
 
 	FString ClientWorldTag;
-	TArray<TPair<FName, float>> PendingDrives;
 	TSet<FName> Latched;
 	TSet<FName> EventDown;
 	FString NoticeText;

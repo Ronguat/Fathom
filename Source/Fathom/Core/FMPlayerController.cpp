@@ -125,18 +125,6 @@ void AFMPlayerController::PlayerTick(float DeltaTime)
 	{
 		DriveFromKeys();
 	}
-	for (const TPair<FName, float>& Drive : PendingDrives)
-	{
-		if (HasAuthority())
-		{
-			ServerDriveShip_Implementation(Drive.Key, Drive.Value);
-		}
-		else
-		{
-			ServerDriveShip(Drive.Key, Drive.Value);
-		}
-	}
-	PendingDrives.Reset();
 }
 
 void AFMPlayerController::DriveFromKeys()
@@ -203,7 +191,7 @@ void AFMPlayerController::DriveFromKeys()
 	}
 	if (Pressed(TEXT("anchor")))
 	{
-		DriveByKey(TEXT("anchor"), Ship->GetInputs().bAnchorDown ? 0.0f : 1.0f);
+		DriveByKey(TEXT("anchor"), Ship->LatestInputs().bAnchorDown ? 0.0f : 1.0f);
 	}
 	if (Pressed(TEXT("ladder")))
 	{
@@ -220,7 +208,10 @@ void AFMPlayerController::DriveByKey(FName Station, float Value)
 			? FString::Printf(TEXT("%s: out of radius, %.1f m away"), *Station.ToString(), Distance / 100.0f)
 			: FString::Printf(TEXT("%s: off the ship"), *Station.ToString()));
 	}
-	DriveShip(Station, Value);
+	if (AFMPlayerPawn* Controlled = Cast<AFMPlayerPawn>(GetPawn()))
+	{
+		Controlled->DriveShip(Station, Value);
+	}
 }
 
 bool AFMPlayerController::WithinStation(FName Station, float& OutDistance) const
@@ -251,19 +242,6 @@ FString AFMPlayerController::Notice() const
 void AFMPlayerController::ServerHello_Implementation(const FString& WorldTag)
 {
 	ClientWorldTag = WorldTag;
-}
-
-void AFMPlayerController::DriveShip(FName Input, float Value)
-{
-	PendingDrives.Emplace(Input, Value);
-}
-
-void AFMPlayerController::ServerDriveShip_Implementation(FName Input, float Value)
-{
-	if (AFMShip* Ship = AFMShip::Find(GetWorld()))
-	{
-		Ship->Apply(Input, Value, GetPawn());
-	}
 }
 
 void AFMPlayerController::ServerBoard_Implementation()

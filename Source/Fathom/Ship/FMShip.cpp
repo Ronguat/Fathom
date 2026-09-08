@@ -33,6 +33,70 @@ namespace
 		float Turns = (Degrees + 180.0f) / 360.0f;
 		return (Turns - FMath::FloorToFloat(Turns)) * 360.0f - 180.0f;
 	}
+
+	const FName StationNames[] = { NAME_None, InputWheel, InputSailLength, InputSailAngle, InputAnchor, InputLadder };
+
+	bool SameInputs(const FFMShipInputs& A, const FFMShipInputs& B)
+	{
+		return A.SailLength == B.SailLength && A.SailAngle == B.SailAngle && A.Wheel == B.Wheel && A.bAnchorDown == B.bAnchorDown && A.Frame == B.Frame;
+	}
+}
+
+FMoverDataStructBase* FFMStationInputs::Clone() const
+{
+	return new FFMStationInputs(*this);
+}
+
+bool FFMStationInputs::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
+{
+	Super::NetSerialize(Ar, Map, bOutSuccess);
+	Ar << Station;
+	Ar << Value;
+	bOutSuccess = true;
+	return true;
+}
+
+void FFMStationInputs::ToString(FAnsiStringBuilderBase& Out) const
+{
+	Out.Appendf("Station=%d Value=%.2f\n", Station, Value);
+}
+
+bool FFMStationInputs::ShouldReconcile(const FMoverDataStructBase& AuthorityState) const
+{
+	const FFMStationInputs& Other = static_cast<const FFMStationInputs&>(AuthorityState);
+	return Station != Other.Station || Value != Other.Value;
+}
+
+void FFMStationInputs::Interpolate(const FMoverDataStructBase& From, const FMoverDataStructBase& To, float Pct)
+{
+	*this = static_cast<const FFMStationInputs&>(To);
+}
+
+void FFMStationInputs::Merge(const FMoverDataStructBase& From)
+{
+	const FFMStationInputs& Prior = static_cast<const FFMStationInputs&>(From);
+	if (Station == 0)
+	{
+		Station = Prior.Station;
+		Value = Prior.Value;
+	}
+}
+
+uint8 AFMShip::StationIndex(FName Input)
+{
+	for (uint8 Index = 1; Index < UE_ARRAY_COUNT(StationNames); ++Index)
+	{
+		if (StationNames[Index] == Input)
+		{
+			return Index;
+		}
+	}
+	return 0;
+}
+
+FName AFMShip::StationName(uint8 Index)
+{
+	return Index < UE_ARRAY_COUNT(StationNames) ? StationNames[Index] : NAME_None;
 }
 
 AFMShip::AFMShip()
@@ -190,7 +254,7 @@ void AFMShip::Board(AFMPlayerPawn& Pawn)
 
 void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 {
-	if (!HasAuthority())
+	if (!bHasState)
 	{
 		return;
 	}
@@ -201,20 +265,24 @@ void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 		const float Distance = Caller ? StationDistance(*Station, *Caller) : 1.0e6f;
 		if (Distance > Station->Radius)
 		{
-			FM_TRACE(this, TEXT("SHIPNO id=%d sf=%d input=%s dist=%.0f"), ShipId, State.Frame, *Input.ToString(), Distance);
+			if (HasAuthority())
+			{
+				FM_TRACE(this, TEXT("SHIPNO id=%d sf=%d input=%s dist=%.0f"), ShipId, State.Frame, *Input.ToString(), Distance);
+			}
 			return;
 		}
 	}
 	if (Input == InputLadder)
 	{
-		if (AFMPlayerPawn* Pawn = Cast<AFMPlayerPawn>(Caller))
+		AFMPlayerPawn* Pawn = Cast<AFMPlayerPawn>(Caller);
+		if (Pawn && HasAuthority())
 		{
 			Land(*Pawn);
 			FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d input=ladder value=%.2f"), ShipId, State.Frame, Value);
 		}
 		return;
 	}
-	FFMShipInputs Next = Inputs;
+	FFMShipInputs Next = InputsAt(State.Frame);
 	const bool bHold = Value >= HoldValue;
 	float Applied = Value;
 	if (Input == InputWheel)
@@ -242,12 +310,21 @@ void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 		return;
 	}
 	Next.Frame = State.Frame;
-	Inputs = Next;
-	RecordInput(Next);
-	FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d input=%s value=%.2f"), ShipId, Next.Frame, *Input.ToString(), Applied);
+	Next.bPredicted = !HasAuthority();
+	if (HasAuthority())
+	{
+		Inputs = Next;
+		RecordInput(Next);
+		FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d input=%s value=%.2f"), ShipId, Next.Frame, *Input.ToString(), Applied);
+	}
+	else
+	{
+		const bool bChanged = RecordInput(Next);
+		FM_TRACE(this, TEXT("SHIPPRED id=%d sf=%d input=%s value=%.2f changed=%d"), ShipId, Next.Frame, *Input.ToString(), Applied, bChanged ? 1 : 0);
+	}
 }
 
-void AFMShip::RecordInput(const FFMShipInputs& In)
+bool AFMShip::RecordInput(const FFMShipInputs& In)
 {
 	int32 Index = 0;
 	while (Index < History.Num() && History[Index].Frame <= In.Frame)
@@ -256,12 +333,12 @@ void AFMShip::RecordInput(const FFMShipInputs& In)
 	}
 	if (Index > 0 && History[Index - 1].Frame == In.Frame)
 	{
+		const bool bChanged = !SameInputs(History[Index - 1], In);
 		History[Index - 1] = In;
+		return bChanged;
 	}
-	else
-	{
-		History.Insert(In, Index);
-	}
+	History.Insert(In, Index);
+	return true;
 }
 
 const FFMShipInputs& AFMShipInputsFallback()
@@ -280,7 +357,7 @@ const FFMShipInputs& AFMShip::InputsAt(int32 Frame) const
 			Best = &In;
 		}
 	}
-	return Best ? *Best : (History.Num() ? History[0] : AFMShipInputsFallback());
+	return Best ? *Best : AFMShipInputsFallback();
 }
 
 void AFMShip::Step(FFMShipState& S, const FFMShipInputs& In, const UFMShipSettings& K, const UFMOceanSubsystem* Ocean, float Dt)
@@ -490,8 +567,10 @@ void AFMShip::OnRep_Snapshot()
 
 void AFMShip::OnRep_Inputs()
 {
-	RecordInput(Inputs);
-	if (bHasState && Inputs.Frame < State.Frame)
+	const int32 Pruned = History.RemoveAll([&](const FFMShipInputs& In) { return In.bPredicted && In.Frame < Inputs.Frame; });
+	const bool bChanged = RecordInput(Inputs);
+	FM_TRACE(this, TEXT("SHIPREP id=%d sf=%d frame=%d sail=%.2f changed=%d pruned=%d"), ShipId, State.Frame, Inputs.Frame, Inputs.SailLength, bChanged ? 1 : 0, Pruned);
+	if (bChanged && bHasState && Inputs.Frame < State.Frame)
 	{
 		Reintegrate(State.Frame);
 	}

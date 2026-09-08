@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
 #include "GameFramework/Actor.h"
+#include "MoverTypes.h"
 #include "FMShip.generated.h"
 
 class AFMPlayerPawn;
@@ -71,7 +72,7 @@ public:
 	UPROPERTY(config, EditAnywhere, Category="Spawn") float SpawnHeading = 0.0f;
 };
 
-/** The station targets, with the frame they took effect. */
+/** The station targets, with the frame they took effect; on a client, whether they are its own prediction awaiting the server's. */
 USTRUCT()
 struct FFMShipInputs
 {
@@ -82,6 +83,31 @@ struct FFMShipInputs
 	UPROPERTY() float Wheel = 0.0f;
 	UPROPERTY() bool bAnchorDown = false;
 	UPROPERTY() int32 Frame = 0;
+	UPROPERTY() bool bPredicted = false;
+};
+
+/** A station call of one frame in the input command, authored on the owning client and applied by every world at that frame: the station as an index into the ship's station names, 0 for none. */
+USTRUCT()
+struct FATHOM_API FFMStationInputs : public FMoverDataStructBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() uint8 Station = 0;
+	UPROPERTY() float Value = 0.0f;
+
+	virtual FMoverDataStructBase* Clone() const override;
+	virtual bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess) override;
+	virtual UScriptStruct* GetScriptStruct() const override { return StaticStruct(); }
+	virtual void ToString(FAnsiStringBuilderBase& Out) const override;
+	virtual bool ShouldReconcile(const FMoverDataStructBase& AuthorityState) const override;
+	virtual void Interpolate(const FMoverDataStructBase& From, const FMoverDataStructBase& To, float Pct) override;
+	virtual void Merge(const FMoverDataStructBase& From) override;
+};
+
+template<>
+struct TStructOpsTypeTraits<FFMStationInputs> : public TStructOpsTypeTraitsBase2<FFMStationInputs>
+{
+	enum { WithNetSerializer = true, WithCopy = true };
 };
 
 /** The compact state at a frame, from which any world integrates forward. */
@@ -114,7 +140,9 @@ struct FFMShipState
 /**
  * A deterministic kinematic ship. Every world steps the same integrator one frame at a time from
  * a replicated snapshot through the replicated input history to its own frame; the server's
- * state is the truth, a client re-integrates when a snapshot or an input arrives late. Surge
+ * state is the truth, a client re-integrates when a snapshot or an input arrives late. A station
+ * call rides the caller's input command, so the server and the caller's client apply it at the
+ * same frame, the client's entry a prediction the server's replicated input confirms. Surge
  * comes from the sail against the wind with a floor head to wind; a dropped anchor lies where
  * the ship was, and the ship runs to the end of its line, catches, and is held there. The hull
  * box is moved by transform and publishes its velocity. Stations are the named inputs wheel,
@@ -134,8 +162,15 @@ public:
 	/** A station value meaning "hold where the server has it now": a key's release under latency, before the press's effect has come back to the client. */
 	static constexpr float HoldValue = 1000.0f;
 
-	/** Applies a station input on the server at the current frame, if the caller stands within the station's radius; HoldValue takes the station's current position. */
+	/** Applies a station input at the ship's current frame if the caller stands within the station's radius: the truth on the server, a prediction on a client; HoldValue takes the station's current position. */
 	void Apply(FName Input, float Value, AActor* Caller);
+
+	/** The station names by index, 1 to 5: wheel, sail_length, sail_angle, anchor, ladder; 0 for none. */
+	static uint8 StationIndex(FName Input);
+	static FName StationName(uint8 Index);
+
+	/** The station targets in force at the ship's current frame, a client's predictions included. */
+	const FFMShipInputs& LatestInputs() const { return InputsAt(State.Frame); }
 
 	/** Lands a pawn on the deck at the ladder point through its simulation. Server only. */
 	void Board(AFMPlayerPawn& Pawn);
@@ -195,8 +230,10 @@ private:
 	void Land(AFMPlayerPawn& Pawn);
 	void AppendStationMarkers(UDynamicMesh* Target, const UFMShipSettings& K);
 	int32 CurrentFrame() const;
+	/** The targets in force at a frame: the latest entry at or before it, and no input at all before the first. */
 	const FFMShipInputs& InputsAt(int32 Frame) const;
-	void RecordInput(const FFMShipInputs& In);
+	/** Records an input at its frame, replacing one already there; true when the history changed. */
+	bool RecordInput(const FFMShipInputs& In);
 	void Reintegrate(int32 ToFrame);
 	void Advance(int32 ToFrame);
 	void Present();
