@@ -127,6 +127,14 @@ that makes it bite and re-read when that rung starts. These are not design quest
 here needs play to settle; they need checking. **Discharge a trap in the same commit that fixes
 it**, saying what discharged it.
 
+**Whenever the loop taps a key — *the injected key can read up for one command.*** `harness.jump`
+at 100 ms in the closedown matrix `0909-172910` wrote four input edges for one tap, pressed,
+released, pressed, released on four consecutive commands, the runner having injected one press
+and one release; the row was green at the other three round trips, in the morning's family run
+and on its rerun. The pawn reads a key through the controller's event set and `IsInputKeyDown`;
+which of the two blinked is unmeasured *(2026-09-09)*. Bites on any row counting input edges or
+timing a tap; a red on one tap is re-read before it is believed.
+
 **Whenever a world tick runs two fixed ticks — *the hull is a frame behind for the second.*** The
 ship advances one frame at the world tick's start and the pawns simulate on that hull; a render
 frame slower than the simulation runs two fixed ticks on it *(2026-09-05)*, unmeasured. Bites when
@@ -369,16 +377,19 @@ Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
 
 ### Next session's brief
 
-**The human review stands at M**, `Docs/Checklist.md`: Z, O, S and D are green, every item, and
-the melee group waits for the rework by the designer's ruling below; F is held by the
-designer's word until everything before it is complete, and C follows F. The work is on
-`wip/human-review-prep`, main untouched: the ship and deck families are green on the binary
-before the swimmer's HUD line, the harness and ocean families last ran on the morning's,
-`0908-120337` and `0908-120455`, and the melee family was not run, by the designer's word, so the
-gate for main is the full matrix green, run when the checklist is. **Open**: whether the Melee
-rung reopens on the ladder for the weapon-traced hit, a queue row and the designer's; the melee
-family's rows on this binary; the draw, unverified and not to be debugged; the packaged client,
-waiting for F; the queue's paper pass, last. Budget: none set.
+**Pick up at the melee rework**, by the designer's word that melee work begins next session: the
+hit drawn from a weapon on the pawn in place of the blade baked from the clip, the trap of
+2026-09-08; whether that reopens the Melee rung on the ladder is the designer's to say at its
+start, the queue row of that date. The human review, `Docs/Checklist.md`, stands at M with Z,
+O, S and D green, every item; F is held by the designer's word until everything before it is
+complete, and C follows F. Main carries the work: the closedown's full matrix ran 92 rows on
+the binary before the side fix, 89 green, and the three reds re-ran green on the final binary
+one row each, `melee.direction` at both round trips and `harness.jump` at 100 ms. **The melee
+family was not rerun on the final binary, by the designer's word**, and every attack's side now
+goes through the changed reading, so that family on this binary is claimed, not verified.
+**Open**: the rework and the ladder; the draw, unverified and not to be debugged; the packaged
+client, waiting for F; the queue's paper pass, last; the injected-key flicker, a trap. Budget:
+none set.
 
 ### The plan, written before execution
 
@@ -671,6 +682,15 @@ A swimmer returned to the deck after a time or a distance, which decides a mecha
 rung never asked for; the board key made a player key, which hides the finding. *Reopens* at
 Ship Combat with respawn.
 
+**The deck's turn wrote the attack's side.** The closedown's full matrix, 2026-09-09: 
+`melee.direction` red at 0 and 100 ms, both attacks `horizontal_r` after a turn to the left.
+*Cause.* An attack's side is the sign of the control yaw's change between input commands, and
+since D1 the view turns with the deck's yaw each finalized frame, so a turning ship wrote the
+side every frame and the player's own turn never won. *Decision.* The deck's carry is added to
+the yaw the side reading compares against, so only the player's own turn moves it; the view
+turns as before. *Measured* by `melee.direction` at both round trips and the melee family
+rerun, in the Verified section.
+
 ### Verified against written
 
 **Verified.** The build, both binaries newer than every source. The harness family, 14 rows,
@@ -688,7 +708,13 @@ tallies and the `HIT` line agreeing. The station delay: the ship family, 14 rows
 window in `0908-190449`; the deck family, 20 rows, `0908-185740` and `0908-190113`, every row
 green with every mutation proven; the delay 10 to 53 frames as the measured lag moved, every
 replicated input on a client 7 to 27 frames before its frame, a two-frame tap of the wheel
-released at 0.03 by the projection.
+released at 0.03 by the projection. The closedown's full matrix on the binary with the
+swimmer's line, 92 rows, `0909-172910`, 89 green in 919 s: `melee.direction` red at both round
+trips, the side written by the deck's turn, fixed above; `harness.jump` at 100 ms red on four
+input edges for a tap, the injected key read up for one command between its press and its
+release, the trap of that date. On the final binary, the side fix built: `melee.direction` green
+at both round trips with its mutation proven, `0909-174550`; `harness.jump` at 100 ms green,
+`0909-174619`. The melee family beyond the direction row was not rerun, by the designer's word.
 
 **Written, not verified.** The draw, in no capture; the notice and the placeholders' shapes,
 seen by no eye; `FM.Latency` from a console, exercised only through the driver's equivalent; the

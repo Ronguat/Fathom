@@ -397,7 +397,9 @@ void AFMPlayerPawn::HandlePostFinalize(const FMoverSyncState& SyncState, const F
 		const float BaseYaw = Base ? Base->GetComponentRotation().Yaw : 0.0f;
 		if (Base && bHasBaseYaw && SmoothBase.Get() == Base)
 		{
-			PC->SetControlRotation(PC->GetControlRotation() + FRotator(0.0f, FMath::FindDeltaAngleDegrees(BaseYawSeen, BaseYaw), 0.0f));
+			const float Carry = FMath::FindDeltaAngleDegrees(BaseYawSeen, BaseYaw);
+			PC->SetControlRotation(PC->GetControlRotation() + FRotator(0.0f, Carry, 0.0f));
+			LastControlYaw = FRotator::NormalizeAxis(LastControlYaw + Carry);
 		}
 		BaseYawSeen = BaseYaw;
 		bHasBaseYaw = Base != nullptr;
