@@ -27,6 +27,8 @@ evaluator pairs it with the INPUT line's shared simulation frame.
 
 Latency: the row's round trip is split evenly, NetEmulation.PktLag on every world; loss is
 NetEmulation.PktLoss on every world; both are cleared with NetEmulation.Off at the row's end.
+A row warms up for WARM_FRAMES under its emulation before BEGIN, so the station delay the
+server sets from the measured round trip has reached every world.
 The emulation counts wall milliseconds, so the frame rate is capped at the fixed rate for the
 run; otherwise the editor runs the fixed step faster than real time and a lag shrinks in frames.
 
@@ -64,6 +66,7 @@ STOP_FILE = os.path.join(REG_DIR, "stop")
 WORLD_TIMEOUT_S = 30.0
 UNTIL_TIMEOUT_S = 120.0
 SETTLE_FRAMES = 30
+WARM_FRAMES = 180
 TRACE_RE = re.compile(r"LogFMTrace: \[(\d+)\] \[(S|C\d+)\] ([A-Z][A-Z ]*?)(?: (.*))?$")
 
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
@@ -175,6 +178,7 @@ class Run(object):
         self.log_offset, self.log_partial, self.last_until_frame = 0, "", -1
         self.pie_wall = 0.0
         self.settle_at = None
+        self.warm_from = 0
 
     # -- lifecycle ----------------------------------------------------------------
     def mark(self, text):
@@ -357,6 +361,15 @@ class Run(object):
                 for pawn in unreal.GameplayStatics.get_all_actors_of_class(world, unreal.FMPlayerPawn):
                     if pawn.get_local_role() == unreal.NetRole.ROLE_SIMULATED_PROXY:
                         pawn.set_editor_property("pose_every_frames", every)
+        self.warm_from = self.sim_frame()
+        self.goto("warm")
+
+    def phase_warm(self):
+        """WARM_FRAMES under the row's emulation before BEGIN, so the station delay has followed
+        the measured round trip to every world, as a session has settled when a hand reaches a key."""
+        if self.sim_frame() - self.warm_from < WARM_FRAMES:
+            return
+        s = SC.SCENARIOS[self.sid]
         server = self.worlds["S"]
         self.begin_game_time = unreal.GameplayStatics.get_time_seconds(server)
         self.begin_frame = self.sim_frame()

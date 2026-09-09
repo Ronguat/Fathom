@@ -1,6 +1,7 @@
 #include "Core/FMHUD.h"
 
 #include "Combat/FMCombatComponent.h"
+#include "Core/FMGameState.h"
 #include "Core/FMPlayerController.h"
 #include "Core/FMPlayerState.h"
 #include "Deck/FMPlayerPawn.h"
@@ -35,9 +36,10 @@ TArray<TPair<FString, FLinearColor>> AFMHUD::Lines() const
 	const UFMOceanSubsystem* Ocean = UFMOceanSubsystem::Get(this);
 	const AFMShip* Ship = AFMShip::Find(GetWorld());
 
-	Out.Emplace(FString::Printf(TEXT("%s  frame %d  lag %d ms  advance %d f"),
+	const AFMGameState* Session = GetWorld()->GetGameState<AFMGameState>();
+	Out.Emplace(FString::Printf(TEXT("%s  frame %d  lag %d ms  advance %d f  station delay %d f"),
 		Trace ? *Trace->GetWorldTag() : TEXT("?"), Trace ? Trace->GetFrame() : 0,
-		Player ? Player->RoundTripMs : 0, Player ? Player->AdvanceFrames : 0), White);
+		Player ? Player->RoundTripMs : 0, Player ? Player->AdvanceFrames : 0, Session ? Session->StationDelayFrames : 0), White);
 	if (!Pawn)
 	{
 		Out.Emplace(TEXT("no pawn"), Yellow);

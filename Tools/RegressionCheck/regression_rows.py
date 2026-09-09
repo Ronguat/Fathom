@@ -249,26 +249,51 @@ def ship_reconstruction(ctx, r, s, settle_after):
         r.add(True, "%s transient before settle" % world, "peak %.1f cm, %d sample(s) over 10 cm" % (peak, len(over)))
 
 
-def server_at(ctx, rel_frame):
-    """The server's SHIP line at or after a frame counted from the row's start."""
+def sail_agreement(ctx, r, s, first, last, label):
+    """Each client's sail against the server's at the same frame from first to last: a station
+    call takes effect a delay after its command, so every world has it before its frame and none
+    corrects for it."""
     server = ship_lines(ctx, "S")
-    target = begin_frame(ctx) + rel_frame
+    for world in s["worlds"]:
+        if world == "S":
+            continue
+        client = ship_lines(ctx, world)
+        window = [f for f in sorted(set(server) & set(client)) if first <= f <= last]
+        band(r, "%s sail against S %s (fraction)" % (world, label),
+             [abs(server[f].fields["sail"] - client[f].fields["sail"]) for f in window], 0.0, 0.005, "")
+        arrivals = [ln for ln in ctx.lines("SHIPREP", world) if "frame" in ln.fields and first <= ln.fields["frame"] <= last]
+        late = [ln for ln in arrivals if ln.fields["frame"] < ln.fields["sf"]]
+        r.add(bool(arrivals) and not late, "%s station inputs %s arrived before their frame, none corrected for" % (world, label),
+              "%d arrived, %d late by %s frames" % (len(arrivals), len(late), [int(ln.fields["sf"] - ln.fields["frame"]) for ln in late[:3]]))
+
+
+def server_from(ctx, frame):
+    """The server's SHIP line at or after a frame."""
+    server = ship_lines(ctx, "S")
     for f in sorted(server):
-        if f >= target:
+        if frame is not None and f >= frame:
             return server[f]
     return None
+
+
+def server_at(ctx, rel_frame):
+    """The server's SHIP line at or after a frame counted from the row's start."""
+    return server_from(ctx, begin_frame(ctx) + rel_frame)
+
+
+def effect_frame(ctx, station, nth=0):
+    """The frame the nth call of a station the server applied takes effect, from its SHIPIN line:
+    a row times a station's consequences from there, not from the plan's frame, the call delayed
+    by the session's station delay."""
+    calls = [ln for ln in ctx.lines("SHIPIN", "S", "input=%s" % station) if "sf" in ln.fields]
+    return int(calls[nth].fields["sf"]) if len(calls) > nth else None
 
 
 @row("ship.sail")
 def ship_sail(ctx, r, s):
     ship_reconstruction(ctx, r, s, settle_after=60 + 30)
-    server = ship_lines(ctx, "S")
     start = begin_frame(ctx)
-    caller = s["roles"]["p1"][0]
-    client = ship_lines(ctx, caller)
-    window = [f for f in sorted(set(server) & set(client)) if start + 60 <= f <= start + 180]
-    band(r, "%s sail against S in the two seconds after its own press, the call predicted (fraction)" % caller,
-         [abs(server[f].fields["sail"] - client[f].fields["sail"]) for f in window], 0.0, 0.03, "")
+    sail_agreement(ctx, r, s, start + 60, start + 240, "through the three seconds after the press")
     last = server_at(ctx, 700)
     band(r, "speed on the server near the end (cm/s)", [last.fields["speed"]] if last else [], 800.0, 1100.0, "cm/s")
     first = server_at(ctx, 0)
@@ -278,8 +303,9 @@ def ship_sail(ctx, r, s):
 
 def ship_turn_common(ctx, r, s):
     ship_reconstruction(ctx, r, s, settle_after=480 + 30)
-    before, after = server_at(ctx, 240), server_at(ctx, 480)
-    band(r, "heading change over four seconds of rudder (deg)",
+    turn = effect_frame(ctx, "wheel")
+    before, after = server_from(ctx, turn), server_from(ctx, turn + 240 if turn is not None else None)
+    band(r, "heading change over four seconds from the rudder's effect (deg)",
          [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 30.0, 180.0, "deg")
     cost_sane(ctx, r)
 
@@ -298,11 +324,11 @@ def ship_stop(ctx, r, s):
     moving = server_at(ctx, 350)
     band(r, "speed before the anchor (cm/s)", [moving.fields["speed"]] if moving else [], 300.0, 1100.0, "cm/s")
     server = ship_lines(ctx, "S")
-    start = begin_frame(ctx)
-    bites = [f for f in sorted(server) if f >= start + 360 and server[f].fields.get("anchor") == 0.0]
+    dropped = effect_frame(ctx, "anchor")
+    bites = [f for f in sorted(server) if dropped is not None and f >= dropped and server[f].fields.get("anchor") == 0.0]
     bite = bites[0] if bites else None
-    band(r, "the anchor bites after its fall (frames after the press)", [bite - (start + 360)] if bite else [], 90, 180, "f")
-    settled = server_at(ctx, (bite - start) + 240) if bite else None
+    band(r, "the anchor bites after its fall (frames after the call's effect)", [bite - dropped] if bite else [], 90, 180, "f")
+    settled = server_from(ctx, bite + 240) if bite else None
     band(r, "speed four seconds after the bite (cm/s)", [abs(settled.fields["speed"])] if settled else [], 0.0, 20.0, "cm/s")
     if bite and settled:
         run = ((settled.fields["x"] - server[bite].fields["x"]) ** 2 + (settled.fields["y"] - server[bite].fields["y"]) ** 2) ** 0.5
@@ -363,8 +389,11 @@ def deck_relative(ctx, r, s, tolerance_cm=5.0, rendered_cm=50.0):
 
 
 def ship_turned(ctx, r):
-    before, after = server_at(ctx, 300), server_at(ctx, 700)
-    band(r, "the ship turned under the pawns (deg)", [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 15.0, 180.0, "deg")
+    server = ship_lines(ctx, "S")
+    before = server_from(ctx, effect_frame(ctx, "wheel"))
+    after = server[max(server)] if server else None
+    band(r, "the ship turned under the pawns, from the rudder's effect to the row's end (deg)",
+         [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 15.0, 180.0, "deg")
 
 
 @row("deck.stand")
@@ -416,6 +445,9 @@ def deck_station_key(ctx, r, s):
     sail = ctx.lines("SHIPIN", "S", "input=sail_length")
     count(r, "sail calls applied by key at the mast, the hold's press and release", len(sail), 2)
     band(r, "sail set by the release, where it stood (fraction)", [sail[-1].fields.get("value", 0.0)] if sail else [], 0.9, 1.0, "")
+    band(r, "the sail calls' delay after their commands (frames)", [ln.fields["sf"] - ln.fields["cmd"] for ln in sail if "cmd" in ln.fields], 8, 60, "f")
+    if sail:
+        sail_agreement(ctx, r, s, int(sail[0].fields["cmd"]), int(sail[-1].fields["sf"]) + 60, "through the hold and a second past the release")
     count(r, "wheel calls refused by distance, the tap's press and release", len(ctx.lines("SHIPNO", "S", "input=wheel")), 2)
     applied = ctx.lines("SHIPIN", "S", "input=wheel")
     count(r, "wheel calls applied by key from the wheel, a tap and a hold", len(applied), 4)
@@ -423,8 +455,9 @@ def deck_station_key(ctx, r, s):
     r.add(len(values) == 4 and values[0] == -1.0 and -0.2 <= values[1] <= -0.01,
           "a two-frame tap keeps its effect: press left, then held a little left", "%s" % (values[:2],))
     r.add(len(values) == 4 and values[2] == 1.0 and values[3] >= 0.9, "the hold: press right, then held where it stood", "%s" % (values[2:],))
-    before, after = server_at(ctx, 420), server_at(ctx, 660)
-    band(r, "heading change under the held key (deg)",
+    held = effect_frame(ctx, "wheel", nth=2)
+    before, after = server_from(ctx, held), server_from(ctx, held + 240 if held is not None else None)
+    band(r, "heading change under the held key, from its effect (deg)",
          [yaw_gap(after.fields["yaw"], before.fields["yaw"])] if before and after else [], 15.0, 180.0, "deg")
     cost_sane(ctx, r)
 

@@ -6,6 +6,7 @@
 #include "Combat/FMCombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Core/FMGameState.h"
 #include "Core/FMPlayerController.h"
 #include "Core/FMPlayerState.h"
 #include "Deck/FMDeckModes.h"
@@ -261,8 +262,10 @@ void AFMPlayerPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdC
 	}
 	if (PendingStations.Num() > 0)
 	{
+		const AFMGameState* Session = GetWorld()->GetGameState<AFMGameState>();
 		StationInputs.Station = AFMShip::StationIndex(PendingStations[0].Key);
 		StationInputs.Value = PendingStations[0].Value;
+		StationInputs.Delay = static_cast<uint8>(FMath::Clamp(Session ? Session->StationDelayFrames : 0, 0, 255));
 		PendingStations.RemoveAt(0);
 	}
 
@@ -371,7 +374,7 @@ void AFMPlayerPawn::HandlePreSimulationTick(const FMoverTimeStep& TimeStep, cons
 		const FFMStationInputs* Station = InputCmd.InputCollection.FindDataByType<FFMStationInputs>();
 		if (Station && Station->Station != 0)
 		{
-			Ship->Apply(AFMShip::StationName(Station->Station), Station->Value, this);
+			Ship->Apply(AFMShip::StationName(Station->Station), Station->Value, this, Station->Delay);
 		}
 	}
 }

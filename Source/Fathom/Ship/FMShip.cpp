@@ -52,19 +52,20 @@ bool FFMStationInputs::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSu
 	Super::NetSerialize(Ar, Map, bOutSuccess);
 	Ar << Station;
 	Ar << Value;
+	Ar << Delay;
 	bOutSuccess = true;
 	return true;
 }
 
 void FFMStationInputs::ToString(FAnsiStringBuilderBase& Out) const
 {
-	Out.Appendf("Station=%d Value=%.2f\n", Station, Value);
+	Out.Appendf("Station=%d Value=%.2f Delay=%d\n", Station, Value, Delay);
 }
 
 bool FFMStationInputs::ShouldReconcile(const FMoverDataStructBase& AuthorityState) const
 {
 	const FFMStationInputs& Other = static_cast<const FFMStationInputs&>(AuthorityState);
-	return Station != Other.Station || Value != Other.Value;
+	return Station != Other.Station || Value != Other.Value || Delay != Other.Delay;
 }
 
 void FFMStationInputs::Interpolate(const FMoverDataStructBase& From, const FMoverDataStructBase& To, float Pct)
@@ -79,6 +80,7 @@ void FFMStationInputs::Merge(const FMoverDataStructBase& From)
 	{
 		Station = Prior.Station;
 		Value = Prior.Value;
+		Delay = Prior.Delay;
 	}
 }
 
@@ -252,13 +254,31 @@ void AFMShip::Board(AFMPlayerPawn& Pawn)
 	FM_TRACE(this, TEXT("BOARD pid=%d sf=%d"), Player ? Player->GetPlayerId() : -1, State.Frame);
 }
 
-void AFMShip::Apply(FName Input, float Value, AActor* Caller)
+void AFMShip::Project(int32 ToFrame, float& OutSail, float& OutSailAngle, float& OutRudder) const
+{
+	const UFMShipSettings* K = GetDefault<UFMShipSettings>();
+	const UFMOceanSubsystem* Ocean = GetWorld()->GetSubsystem<UFMOceanSubsystem>();
+	const float Dt = Ocean ? Ocean->TimeOfFrame(1) : 1.0f / 60.0f;
+	OutSail = State.SailLength;
+	OutSailAngle = State.SailAngle;
+	OutRudder = State.Rudder;
+	for (int32 Frame = State.Frame; Frame < ToFrame; ++Frame)
+	{
+		const FFMShipInputs& In = InputsAt(Frame);
+		OutSail = MoveToward(OutSail, In.SailLength, K->SailRate * Dt);
+		OutSailAngle = MoveToward(OutSailAngle, In.SailAngle, K->SailAngleRate * Dt);
+		OutRudder = MoveToward(OutRudder, In.Wheel, K->RudderRate * Dt);
+	}
+}
+
+void AFMShip::Apply(FName Input, float Value, AActor* Caller, int32 DelayFrames)
 {
 	if (!bHasState)
 	{
 		return;
 	}
 	const UFMShipSettings* K = GetDefault<UFMShipSettings>();
+	const int32 At = FMath::Max(State.Frame + FMath::Clamp(DelayFrames, 0, K->StationDelayMaxFrames), NewestInputs().Frame + 1);
 	const FFMStation* Station = K->Stations.FindByPredicate([&](const FFMStation& S) { return S.Name == Input; });
 	if (Station)
 	{
@@ -282,22 +302,27 @@ void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 		}
 		return;
 	}
-	FFMShipInputs Next = InputsAt(State.Frame);
+	FFMShipInputs Next = InputsAt(At);
 	const bool bHold = Value >= HoldValue;
+	float HeldSail = 0.0f, HeldAngle = 0.0f, HeldRudder = 0.0f;
+	if (bHold)
+	{
+		Project(At, HeldSail, HeldAngle, HeldRudder);
+	}
 	float Applied = Value;
 	if (Input == InputWheel)
 	{
-		Next.Wheel = bHold ? State.Rudder : FMath::Clamp(Value, -1.0f, 1.0f);
+		Next.Wheel = bHold ? HeldRudder : FMath::Clamp(Value, -1.0f, 1.0f);
 		Applied = Next.Wheel;
 	}
 	else if (Input == InputSailLength)
 	{
-		Next.SailLength = bHold ? State.SailLength : FMath::Clamp(Value, 0.0f, 1.0f);
+		Next.SailLength = bHold ? HeldSail : FMath::Clamp(Value, 0.0f, 1.0f);
 		Applied = Next.SailLength;
 	}
 	else if (Input == InputSailAngle)
 	{
-		Next.SailAngle = bHold ? State.SailAngle : FMath::Clamp(Value, -90.0f, 90.0f);
+		Next.SailAngle = bHold ? HeldAngle : FMath::Clamp(Value, -90.0f, 90.0f);
 		Applied = Next.SailAngle;
 	}
 	else if (Input == InputAnchor)
@@ -309,18 +334,18 @@ void AFMShip::Apply(FName Input, float Value, AActor* Caller)
 	{
 		return;
 	}
-	Next.Frame = State.Frame;
+	Next.Frame = At;
 	Next.bPredicted = !HasAuthority();
 	if (HasAuthority())
 	{
 		Inputs = Next;
 		RecordInput(Next);
-		FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d input=%s value=%.2f"), ShipId, Next.Frame, *Input.ToString(), Applied);
+		FM_TRACE(this, TEXT("SHIPIN id=%d sf=%d cmd=%d input=%s value=%.2f"), ShipId, Next.Frame, State.Frame, *Input.ToString(), Applied);
 	}
 	else
 	{
 		const bool bChanged = RecordInput(Next);
-		FM_TRACE(this, TEXT("SHIPPRED id=%d sf=%d input=%s value=%.2f changed=%d"), ShipId, Next.Frame, *Input.ToString(), Applied, bChanged ? 1 : 0);
+		FM_TRACE(this, TEXT("SHIPPRED id=%d sf=%d cmd=%d input=%s value=%.2f changed=%d"), ShipId, Next.Frame, State.Frame, *Input.ToString(), Applied, bChanged ? 1 : 0);
 	}
 }
 
@@ -345,6 +370,11 @@ const FFMShipInputs& AFMShipInputsFallback()
 {
 	static const FFMShipInputs None;
 	return None;
+}
+
+const FFMShipInputs& AFMShip::NewestInputs() const
+{
+	return History.Num() > 0 ? History.Last() : AFMShipInputsFallback();
 }
 
 const FFMShipInputs& AFMShip::InputsAt(int32 Frame) const

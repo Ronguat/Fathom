@@ -37,14 +37,18 @@ material, and the GPU-against-CPU error over a 16 by 16 grid; a dedicated server
 and `gpu=none`; `inv=<cm>` on the same line is the height inversion's residual at those points.
 `SHIP id=<n> sf=<frame> x= y= z= yaw= pitch= roll= speed= sail= angle= rudder= anchor=` is
 written every sixth frame by every world, the server's the truth and a client's its
-reconstruction; `SHIPIN id=<n> sf=<frame> input=<station> value=<v>` by the server at the frame
-of the input command that carried the station call, which the caller's client applies at the same
-frame as a prediction, `value` the target applied, a key's release a hold filled in from the
-station's position; and `SHIPNO id= sf= input= dist=` when the caller stood farther
-from the station than its radius. `SHIPPRED id= sf= input= value= changed=` is the caller's
-client recording the same call at the same frame as its prediction, and `SHIPREP id= sf=
+reconstruction; `SHIPIN id=<n> sf=<frame> cmd=<frame> input=<station> value=<v>` by the server
+when it records a station call, `cmd` the frame of the input command that carried it and `sf`
+the frame it takes effect, the command's plus the session's station delay, which the caller's
+client applies alike as a prediction, `value` the target applied, a key's release a hold filled
+in from the station's projected position at that frame; and `SHIPNO id= sf= input= dist=` when
+the caller stood farther from the station than its radius. `SHIPPRED id= sf= cmd= input= value=
+changed=` is the caller's client recording the same call as its prediction, and `SHIPREP id= sf=
 frame= sail= changed= pruned=` a client receiving the server's latest input, `changed` whether
-it differed from what the client held at that frame, which a confirmed prediction never does. `COMBAT pid= sf= phase=<idle|windup|release|recovery|parry>
+it differed from what the client held at that frame, which a confirmed prediction never does,
+and `frame` under `sf` an input that arrived after its frame, which the delay exists to prevent.
+`STATIONDELAY frames= worst_ms= clients=` is the server setting the station delay, at its first
+tick and whenever it changes. `COMBAT pid= sf= phase=<idle|windup|release|recovery|parry>
 attack=<name|-> start=<frame> parry=<frame>` is written by every world for every pawn at a phase
 change, `start` the frame the attack began in the sync state, `parry` the parry's; the melee rows
 compare `start` and the phase order across worlds. `HIT pid=<attacker> sf= target= rf= rp= k=
@@ -87,7 +91,7 @@ F again, drives the stations from their placeholders on
 the deck with Left/Right, Up/Down, `[` `]`, X and E, sees the sail as a slab hanging from the
 yard, the wind as a pennant at the masthead and the
 floor's edge as five still columns, reads `AFMHUD`, the world tag, frame,
-measured lag, advance, mode, ship-space place, nearest station and its radius, the ship's speed
+measured lag, advance, the session's station delay, mode, ship-space place, nearest station and its radius, the ship's speed
 and station values, sea state, wind, combat phase, tallies and the controller's notice, and
 sets a round trip on every world in the process with `FM.Latency <ms>`, or one per client with
 `FM.Latency <ms1> <ms2>`, the server carrying the smallest half. Every hit and parry the
@@ -167,7 +171,10 @@ its proxies are drawn from read 19, 24, 31 and 37 at 0, 50, 100 and 150 ms with 
 once-a-second chunks of 64 lines, and 11, 17, 22 and 26 in tenth-second chunks of sixteen
 *(2026-09-07)*. A row's steady state is asserted outside a settle
 window: thirty frames after the last applied ship input, `settle_frames` on a scenario to widen
-it, and eighteen frames after a pawn's own input edge; the transients inside are reported.
+it, and eighteen frames after a pawn's own input edge; the transients inside are reported. A row
+warms up 180 frames under its emulation before BEGIN, so the station delay the server sets
+from the measured round trip has reached every world, and times a station's consequences from
+the call's effect frame on its `SHIPIN` line rather than the plan's *(2026-09-08)*.
 
 **The shape of a run.** `regression-run.sh` preflights, arms `ue_regression_runner.py` inside the
 editor through the remote-execution pipe, and follows the log for the `REGRESSION` markers each

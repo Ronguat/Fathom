@@ -191,7 +191,7 @@ void AFMPlayerController::DriveFromKeys()
 	}
 	if (Pressed(TEXT("anchor")))
 	{
-		DriveByKey(TEXT("anchor"), Ship->LatestInputs().bAnchorDown ? 0.0f : 1.0f);
+		DriveByKey(TEXT("anchor"), Ship->NewestInputs().bAnchorDown ? 0.0f : 1.0f);
 	}
 	if (Pressed(TEXT("ladder")))
 	{

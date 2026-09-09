@@ -145,7 +145,7 @@ Judged: 2026-09-08, session 1, the designer.
 Needs: S3. Setup: sea 1, anchor raised, L0; you at the mast.
 Do: hold Down; watch the sail unfurl, the HUD's speed and the water past the hull.
 Pass only if: the ship visibly moves, the water moves past, and the speed reaches its top within about ten seconds.
-Judged: 2026-09-08, session 1, "I think passes"; furling the sail glides the ship to a stop. NOTE, reported later: under latency an adjustment appeared instantly and reverted a little on release, the unpredicted station input; station calls now ride the input command and are predicted exactly, the same session; worth a look under 150 ms.
+Judged: 2026-09-08, session 1, "I think passes"; furling the sail glides the ship to a stop. NOTE, reported later: under latency an adjustment appeared instantly and reverted a little on release, the unpredicted station input; station calls now ride the input command and are predicted exactly, the same session; worth a look under 150 ms. NOTE 2, from the other window: the sail overshot and snapped back on the caller's release; by the designer's ruling a station call now takes effect a session-wide delay after its command, the HUD's "station delay", so no window corrects for it; the caller waits that long. Worth a look from both windows at L150.
 
 **S5 Sail angle** · GREEN
 Needs: S4. Setup: under sail, L0.

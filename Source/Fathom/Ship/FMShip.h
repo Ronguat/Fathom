@@ -65,6 +65,11 @@ public:
 	UPROPERTY(config, EditAnywhere, Category="Hull") float FitStiffness = 6.0f;
 	UPROPERTY(config, EditAnywhere, Category="Hull") float FitDamping = 4.0f;
 
+	/** A station call takes effect this many frames after its command: the factor times the worst round trip in the session, in frames, plus the base, so every client has been told before the frame arrives; capped. */
+	UPROPERTY(config, EditAnywhere, Category="Net") float StationDelayFactor = 1.5f;
+	UPROPERTY(config, EditAnywhere, Category="Net") int32 StationDelayBaseFrames = 8;
+	UPROPERTY(config, EditAnywhere, Category="Net") int32 StationDelayMaxFrames = 60;
+
 	UPROPERTY(config, EditAnywhere, Category="Net") int32 SnapshotEveryFrames = 12;
 	UPROPERTY(config, EditAnywhere, Category="Net") int32 TraceEveryFrames = 6;
 
@@ -86,7 +91,7 @@ struct FFMShipInputs
 	UPROPERTY() bool bPredicted = false;
 };
 
-/** A station call of one frame in the input command, authored on the owning client and applied by every world at that frame: the station as an index into the ship's station names, 0 for none. */
+/** A station call in the input command, authored on the owning client: the station as an index into the ship's station names, 0 for none, its value, and the frames after the command's frame at which it takes effect, the session's station delay when authored. */
 USTRUCT()
 struct FATHOM_API FFMStationInputs : public FMoverDataStructBase
 {
@@ -94,6 +99,7 @@ struct FATHOM_API FFMStationInputs : public FMoverDataStructBase
 
 	UPROPERTY() uint8 Station = 0;
 	UPROPERTY() float Value = 0.0f;
+	UPROPERTY() uint8 Delay = 0;
 
 	virtual FMoverDataStructBase* Clone() const override;
 	virtual bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess) override;
@@ -141,8 +147,9 @@ struct FFMShipState
  * A deterministic kinematic ship. Every world steps the same integrator one frame at a time from
  * a replicated snapshot through the replicated input history to its own frame; the server's
  * state is the truth, a client re-integrates when a snapshot or an input arrives late. A station
- * call rides the caller's input command, so the server and the caller's client apply it at the
- * same frame, the client's entry a prediction the server's replicated input confirms. Surge
+ * call rides the caller's input command and takes effect a session-wide number of frames after
+ * it, enough for every client to have received the server's copy before the frame arrives, so
+ * the caller's client predicts it exactly and no client corrects for it. Surge
  * comes from the sail against the wind with a floor head to wind; a dropped anchor lies where
  * the ship was, and the ship runs to the end of its line, catches, and is held there. The hull
  * box is moved by transform and publishes its velocity. Stations are the named inputs wheel,
@@ -159,11 +166,11 @@ public:
 
 	static AFMShip* Find(const UWorld* World);
 
-	/** A station value meaning "hold where the server has it now": a key's release under latency, before the press's effect has come back to the client. */
+	/** A station value meaning "hold where the station will be when this takes effect": a key's release. */
 	static constexpr float HoldValue = 1000.0f;
 
-	/** Applies a station input at the ship's current frame if the caller stands within the station's radius: the truth on the server, a prediction on a client; HoldValue takes the station's current position. */
-	void Apply(FName Input, float Value, AActor* Caller);
+	/** Applies a station input DelayFrames after the ship's current frame, never at or before the newest entry's frame, if the caller stands within the station's radius: the truth on the server, a prediction on a client; HoldValue takes the station's projected position at that frame. */
+	void Apply(FName Input, float Value, AActor* Caller, int32 DelayFrames);
 
 	/** The station names by index, 1 to 5: wheel, sail_length, sail_angle, anchor, ladder; 0 for none. */
 	static uint8 StationIndex(FName Input);
@@ -171,6 +178,8 @@ public:
 
 	/** The station targets in force at the ship's current frame, a client's predictions included. */
 	const FFMShipInputs& LatestInputs() const { return InputsAt(State.Frame); }
+	/** The newest input recorded, a delayed call still to take effect included: what a toggle reads. */
+	const FFMShipInputs& NewestInputs() const;
 
 	/** Lands a pawn on the deck at the ladder point through its simulation. Server only. */
 	void Board(AFMPlayerPawn& Pawn);
@@ -229,6 +238,8 @@ private:
 	void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaSeconds);
 	void Land(AFMPlayerPawn& Pawn);
 	void AppendStationMarkers(UDynamicMesh* Target, const UFMShipSettings& K);
+	/** The sail, its angle and the rudder at a later frame, each moving at its rate toward the targets in force frame by frame. */
+	void Project(int32 ToFrame, float& OutSail, float& OutSailAngle, float& OutRudder) const;
 	int32 CurrentFrame() const;
 	/** The targets in force at a frame: the latest entry at or before it, and no input at all before the first. */
 	const FFMShipInputs& InputsAt(int32 Frame) const;

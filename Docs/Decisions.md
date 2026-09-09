@@ -12,6 +12,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-08 | The station delay's shape: the server sets it every tick from the worst average lag among its client connections, `StationDelayFactor` 1.5 of it in frames plus `StationDelayBaseFrames` 8, capped at `StationDelayMaxFrames` 60 and the cap while a client is unmeasured, replicated on the game state; the client authors it into the command so both apply at the same frame, never at or before the newest entry's; a release holds where the station will stand at that frame, projected; the anchor's toggle reads the newest entry; the loop warms a row up 180 frames under its emulation before BEGIN and times a station's consequences from the call's effect frame | `AFMGameState`, `FFMStationInputs`, `AFMShip`, `UFMShipSettings`, `Tools/RegressionCheck/ue_regression_runner.py`, `Tools/RegressionCheck/regression_rows.py` | |
 | 2026-09-08 | The ship stepped from each pawn's pre-simulation tick to the frame about to run, the world tick's start catching up to the last frame run | `AFMShip`, `AFMPlayerPawn` | |
 | 2026-09-08 | The pawn smoothing its own visual root between its last two base-space poses by the framework's fraction, Mover's smoothing off | `AFMPlayerPawn` | |
 | 2026-09-08 | The camera's roll limits zero; the fly key F through the mover's flying mode, movement along the view while flying | `AFMPlayerPawn`, `AFMPlayerController` | |
@@ -116,6 +117,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-05 — Ship: a body every world integrates from the same state, its inputs replicated with their frame, unpredicted | 2026-09-08 — The human review: a human reaches what the loop reaches | A station call rides the caller's input command and every world applies it at that command's frame, the caller's client as a prediction the server's replicated input confirms; on the designer's eye, the sail snapping forward and reverting on release under latency |
 | 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | Eight release curves counted; seven exist, none for underhand left, and the intake leaves the underhand pair unused |
 | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | 2026-09-08 — The human review: a human reaches what the loop reaches | The blade baked from the clip as a segment in pawn space, no weapon on the pawn: the designer rules it does not accomplish what the project set out to do, the point being to test tracers on a ship drawn from a weapon; flagged as needing work, the trap of that date, and not debugged |
+| 2026-09-08 — The human review: a human reaches what the loop reaches, its station call applied at the command's frame | 2026-09-08 — The human review: a human reaches what the loop reaches | The call takes effect a session-wide delay after its command, chosen so every client has it before the frame, on the designer's ruling that a ship command may wait rather than be corrected: from the other window the sail overshot and snapped back on the caller's release |
 
 ## Known traps, indexed by what sets them off
 
@@ -283,6 +285,7 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | The probe's cost | `ProbeEveryFrames` and `ProbeCells` in the ocean settings; the readback is synchronous | The trace cadence |
 | Ship handling | The speed curve and `HeadwindSpeed`, its floor; the rudder rate; `AnchorDropSeconds` before the anchor bites, `AnchorDrag` once it has, and the line's `AnchorLineLength`, `AnchorLineStiffness` and `AnchorLineDamping`, the catch's run, its firmness and how many swings it settles in *(2026-09-08)* | The hull sample points, which shape the fit rather than the handling |
 | The ship's reconstruction | `SnapshotEveryFrames` in the ship settings, 12; every input carries its frame | The integrator, which every world runs alike |
+| A station call's wait, or a window correcting for another's call | `StationDelayFactor`, `StationDelayBaseFrames` and `StationDelayMaxFrames` in the ship settings, 1.5, 8 and 60: a correction raises the factor or the base, a caller waiting too long lowers them, the cap the most a caller waits *(2026-09-08)* | Applying the call at the command's frame, which corrects every client that learns late |
 
 ## Rung briefs — read the one you are picking up
 
@@ -365,15 +368,16 @@ Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
 
 ### Next session's brief
 
-**Pick up at the human review, `Docs/Checklist.md`, item Z1**, the designer at the keyboard and
-the agent driving p2 through the hands-on driver's review behaviours; the ocean, ship and deck
-groups first, the melee group waiting for the rework by the designer's ruling below. The work is
-on `wip/human-review-prep`, main untouched: the harness, ocean, ship and deck families are green
-on this binary and the melee family was not run, by the designer's word, so the gate for main is
-that family green, run when the designer allows. **Open**: the melee family's rows on this
-binary; the draw, unverified and not to be debugged; whether the Melee rung reopens on the ladder,
-a queue row; the packaged client, waiting for the F group; the queue's paper pass, last.
-Budget: none set.
+**Pick up at the human review, `Docs/Checklist.md`, item D6**, the designer at the keyboard and
+the agent driving p2 through the hands-on driver's review behaviours; Z, O and S are green, D1
+to D5 green, the melee group waiting for the rework by the designer's ruling below. The work is
+on `wip/human-review-prep`, main untouched: the ship and deck families are green on this binary,
+the harness and ocean families last ran on the morning's, `0908-120337` and `0908-120455`, and
+the melee family was not run, by the designer's word, so the gate for main is the full matrix
+green, run when the checklist is. **Open**: the station delay from both windows at L150, the
+designer's eye; the melee family's rows on this binary; the draw, unverified and not to be
+debugged; whether the Melee rung reopens on the ladder, a queue row; the packaged client,
+waiting for the F group; the queue's paper pass, last. Budget: none set.
 
 ### The plan, written before execution
 
@@ -617,6 +621,45 @@ re-integration from a snapshot applied the call from the snapshot's frame, up to
 early. A fault from the Ship rung, worth three frames while the client learned late and invisible
 under the reconstruction band; the frames before the first entry now read no input.
 
+**The sail that overshot and snapped back from the other window.** The designer's eye with the
+call predicted at the command's frame: as the caller releases, the watcher's sail runs on past
+the held value and steps back. *Cause.* A watcher's ship runs at its own predicted frame, six
+frames and its round trip ahead of the server, and the server's copy of the call reaches it half
+a round trip after the server applies it, so the watcher has integrated past the call's frame
+before the call arrives and re-integrates from it: the overshoot is the frames in flight, the
+snap the re-integration. *Decision*, the designer's ruling: a ship command is not a combat input
+and the ship does not answer on a round trip's timescale, so it may wait rather than be
+corrected. A station call takes effect a delay after its command's frame, the delay authored
+into the command so the server and the caller's client apply it at the same frame; the server
+sets it every tick from the worst average lag among its client connections, `StationDelayFactor`
+times it in frames plus `StationDelayBaseFrames`, capped at `StationDelayMaxFrames` and the cap
+while a client has no measurement, replicated on the game state and on the HUD's first line. A
+watcher needs six frames and a round trip and a half; the base of eight covers the six and the
+ship's net update, 30 a second. A release holds where the station will stand at that frame,
+projected through the inputs already recorded, and the anchor's toggle reads the newest entry,
+so a second press inside the delay still reverses it. A call's frame never precedes the newest
+entry's, so a delay that shrinks between a press and its release keeps them in order. `SHIPIN`
+and `SHIPPRED` carry the command's frame beside the effect's. `ship.sail` asserts every client's
+sail within 0.005 of the server's through the three seconds after the press and every `SHIPREP`
+on a client at or before its input's frame, `deck.station-key` the same through the hold and a
+second past its release, with the delay itself between 8 and 60 frames. *Alternatives.* Easing
+the presentation toward the reconstruction, begun and struck: it hides the timeline the review
+judges. A longer snapshot interval, which only spaces the snaps. *Reopens* on a round trip past
+the cap, where the correction returns; on a caller who finds the wait too long, the tuning
+map's row. *Measured on the way.* The ship family's first run on the delay, `0908-182359`,
+applied every call 8 frames after its command at every round trip: the rows press a second after
+BEGIN, the emulation is set at BEGIN, and a connection's average lag is a one-second statistic
+read once a second into the player state, so no measurement had reached the delay; at 150 ms the
+watcher received the input two frames after its frame and corrected, which the six-frame samples
+missed and the row's band passed. Hence the delay read from the connections every tick, the cap
+until a client is measured, the arrivals asserted directly, and the loop warming a row up for
+180 frames under its emulation before BEGIN, as a session has settled when a hand reaches a key.
+The second run, `0908-184640`, delayed the calls by 11 to 53 frames as the measured lag moved,
+every arrival early by 8 to 15 frames, and `ship.turn` at 150 ms read 27° over a window that
+began at the plan's frame and lost 38 frames to the delay: a row now times a station's
+consequences from the call's effect frame on its `SHIPIN` line, `effect_frame`, the turn rows,
+the stop row's bite and the held key's heading alike, and the recorded slices re-read green.
+
 ### Verified against written
 
 **Verified.** The build, both binaries newer than every source. The harness family, 14 rows,
@@ -629,12 +672,18 @@ from amidships at 1 029 cm, applied at the stern as 1.00 on press and 0.00 on re
 turned under the held key. The HUD's lines read in a capture on the deck: world tag, frame, lag,
 advance, mode and ship-space place, the nearest station and its radius, the ship's values, sea
 and wind, the combat phase and tallies, the legend. A hit registered in the capture session, the
-tallies and the `HIT` line agreeing.
+tallies and the `HIT` line agreeing. The station delay: the ship family, 14 rows, `0908-184640`,
+13 green and `ship.turn` at 150 ms red on the plan-frame window, green on the effect-frame
+window in `0908-190449`; the deck family, 20 rows, `0908-185740` and `0908-190113`, every row
+green with every mutation proven; the delay 10 to 53 frames as the measured lag moved, every
+replicated input on a client 7 to 27 frames before its frame, a two-frame tap of the wheel
+released at 0.03 by the projection.
 
 **Written, not verified.** The draw, in no capture; the notice and the placeholders' shapes,
 seen by no eye; `FM.Latency` from a console, exercised only through the driver's equivalent; the
 review behaviours beyond `stand`, `face` and the swing; the melee family on this binary, not run
-by the designer's word; the packaged client, waiting for the F group.
+by the designer's word; the packaged client, waiting for the F group; the delay on the HUD's
+first line and the anchor's toggle across a pending call, seen by no eye.
 
 **Beyond the plan.** The ruling and its record: two queue verdicts, a supersession row, a trap,
 the melee group of the checklist marked as waiting. Nothing else.
