@@ -12,6 +12,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-09 | What a swimmer overboard is told: a HUD line while Swimming, the ship sails on, the ladder at the starboard rail and E, or B from anywhere; the distance to the ship on the mode line. Nothing else recognises a lost swimmer; respawn belongs to Ship Combat's brief | `AFMHUD` | |
 | 2026-09-08 | The station delay's shape: the server sets it every tick from the worst average lag among its client connections, `StationDelayFactor` 1.5 of it in frames plus `StationDelayBaseFrames` 8, capped at `StationDelayMaxFrames` 60 and the cap while a client is unmeasured, replicated on the game state; the client authors it into the command so both apply at the same frame, never at or before the newest entry's; a release holds where the station will stand at that frame, projected; the anchor's toggle reads the newest entry; the loop warms a row up 180 frames under its emulation before BEGIN and times a station's consequences from the call's effect frame | `AFMGameState`, `FFMStationInputs`, `AFMShip`, `UFMShipSettings`, `Tools/RegressionCheck/ue_regression_runner.py`, `Tools/RegressionCheck/regression_rows.py` | |
 | 2026-09-08 | The ship stepped from each pawn's pre-simulation tick to the frame about to run, the world tick's start catching up to the last frame run | `AFMShip`, `AFMPlayerPawn` | |
 | 2026-09-08 | The pawn smoothing its own visual root between its last two base-space poses by the framework's fraction, Mover's smoothing off | `AFMPlayerPawn` | |
@@ -368,16 +369,16 @@ Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
 
 ### Next session's brief
 
-**Pick up at the human review, `Docs/Checklist.md`, item D6**, the designer at the keyboard and
-the agent driving p2 through the hands-on driver's review behaviours; Z, O and S are green, D1
-to D5 green, the melee group waiting for the rework by the designer's ruling below. The work is
-on `wip/human-review-prep`, main untouched: the ship and deck families are green on this binary,
-the harness and ocean families last ran on the morning's, `0908-120337` and `0908-120455`, and
-the melee family was not run, by the designer's word, so the gate for main is the full matrix
-green, run when the checklist is. **Open**: the station delay from both windows at L150, the
-designer's eye; the melee family's rows on this binary; the draw, unverified and not to be
-debugged; whether the Melee rung reopens on the ladder, a queue row; the packaged client,
-waiting for the F group; the queue's paper pass, last. Budget: none set.
+**The human review stands at M**, `Docs/Checklist.md`: Z, O, S and D are green, every item, and
+the melee group waits for the rework by the designer's ruling below; F is held by the
+designer's word until everything before it is complete, and C follows F. The work is on
+`wip/human-review-prep`, main untouched: the ship and deck families are green on the binary
+before the swimmer's HUD line, the harness and ocean families last ran on the morning's,
+`0908-120337` and `0908-120455`, and the melee family was not run, by the designer's word, so the
+gate for main is the full matrix green, run when the checklist is. **Open**: whether the Melee
+rung reopens on the ladder for the weapon-traced hit, a queue row and the designer's; the melee
+family's rows on this binary; the draw, unverified and not to be debugged; the packaged client,
+waiting for F; the queue's paper pass, last. Budget: none set.
 
 ### The plan, written before execution
 
@@ -659,6 +660,16 @@ every arrival early by 8 to 15 frames, and `ship.turn` at 150 ms read 27° over 
 began at the plan's frame and lost 38 frames to the delay: a row now times a station's
 consequences from the call's effect frame on its `SHIPIN` line, `effect_frame`, the turn rows,
 the stop row's bite and the held key's heading alike, and the recorded slices re-read green.
+
+**Lost overboard, told nothing.** D11, the designer, 2026-09-09: B teleports back, but if the game
+is supposed to do something or recognise a player has gone overboard, there is nothing.
+*Decision.* The screen tells the swimmer what happens now: a HUD line while Swimming, the ship
+sails on, the ladder at the starboard rail and E, or B from anywhere, and the distance to the
+ship on the mode line. Nothing else recognises a lost swimmer; the spec's deck section says the
+ladder returns a player and no more, and respawn sits in Ship Combat's brief. *Alternatives.*
+A swimmer returned to the deck after a time or a distance, which decides a mechanic the ladder
+rung never asked for; the board key made a player key, which hides the finding. *Reopens* at
+Ship Combat with respawn.
 
 ### Verified against written
 

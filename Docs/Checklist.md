@@ -193,21 +193,21 @@ Do: stand amidships, hands off, twenty seconds.
 Pass only if: you do not drift across the deck, the deck tilts with the waves under your planted feet, the horizon stays level, and you keep facing the same part of the ship as it turns.
 Judged: 2026-09-08, session 1, GREEN on the drift. NOTE, a defect: players kept their world-space facing as the ship turned, so a player with no input appeared to rotate relative to the deck; the view now turns with the deck's yaw each simulated frame and the facing follows, the same session; to be looked at again.
 
-**D2 Standing still at L150** · RED
+**D2 Standing still at L150** · GREEN
 Needs: D1. Setup: as D1, L150.
 Pass only if: the same.
-Judged: —
+Judged: 2026-09-09, session 1, the designer.
 
-**D3 Walking the deck** · RED
+**D3 Walking the deck** · GREEN
 Needs: D1. Setup: sea 1, L0, under sail and turning.
 Do: bow to stern and back, twice, releasing the key at each end.
 Pass only if: no pop, no slide after release, no sinking into or floating above the deck.
-Judged: —
+Judged: 2026-09-09, session 1, the designer.
 
-**D4 Walking the deck at L150** · RED
+**D4 Walking the deck at L150** · GREEN
 Needs: D3. Setup: as D3, L150.
 Pass only if: the same.
-Judged: —
+Judged: 2026-09-09, session 1, the designer.
 
 **D5 Jumping** · GREEN
 Needs: D4. Setup: sea 1, L150, under sail.
@@ -220,41 +220,41 @@ Needs: D3. Setup: sea 1, L150; p2 walking a loop amidships.
 Do: watch p2 thirty seconds.
 Pass only if: on the deck, feet planted, continuous; no slide, no teleport, no pop, no wobble.
 If red: seen ahead of its turn on 2026-09-08, the other player wobbling with the deck's roll while your own body stays upright; the proxy was placed with the base's full turn, pitch and roll included, and now takes its yaw alone.
-Judged: —
+Judged: 2026-09-09, session 1, the designer, "looks good"; p2 on a 45-tick square amidships at L150.
 
-**D7 You, as they see you** · RED
+**D7 You, as they see you** · GREEN
 Needs: D6. Setup: sea 1, L150.
 Do: walk a loop while watching the other window.
 Pass only if: the same.
-Judged: —
+Judged: 2026-09-09, session 1, the designer: D6's test also proves D7 objectively, passed with it.
 
-**D8 Smooth motion under held input** · RED
+**D8 Smooth motion under held input** · GREEN
 Claim: the Presentation entry's bar, `Docs/Decisions.md`.
 Needs: D4, D6. Setup: sea 1, L100, under sail; p2 standing at the wheel.
 Do: hold W along the deck ten seconds, watching the mast, the camera and p2.
 Pass only if: you see no hitch.
 If red: the loop read one frame in 219 under the bar's letter; this item asks whether it shows.
-Judged: —
+Judged: 2026-09-09, session 1, the designer, "looks great"; the ship at 9 m/s under full sail.
 
 **D9 Off the rail** · RED
 Needs: D3. Setup: sea 1, L0; then once more at L150 watched from the other window.
 Do: walk off the side.
 Pass only if: you fall, enter the water, float near the surface, swim with WASD, and can turn to see the ship; from the other window you leave the rail without a snap.
-Judged: 2026-09-08, session 1, the designer saw the snap from the other window ahead of this item; the proxy tape read it at 165 cm in one frame at 100 ms under way, and the gap now closes at 300 cm a second; to be judged.
+Judged: 2026-09-08, session 1, the designer saw the snap from the other window ahead of this item; the proxy tape read it at 165 cm in one frame at 100 ms under way, and the gap now closes at 300 cm a second. GREEN 2026-09-09, session 1, the designer, verified at both passes.
 
-**D10 The ladder** · RED
+**D10 The ladder** · GREEN
 Claim: `Docs/Spec.md`, The deck; the base change.
 Needs: D9, S3. Setup: from D9, L0, then again at L150.
 Do: swim to the starboard side amidships; press E.
 Pass only if: you are back on the deck at once and can walk, at both latencies.
-Judged: —
+Judged: 2026-09-09, session 1, the designer, the ladder used many times through the session.
 
-**D11 Lost overboard** · RED
+**D11 Lost overboard** · GREEN
 Needs: D9. Setup: from D9, L0; I sail the ship away.
 Do: swim thirty seconds.
 Pass only if: you can get back, or the screen tells you what happens now.
 If red: nothing but the board key brings a lost swimmer back, and B is a review key. The finding is what a player is told.
-Judged: —
+Judged: 2026-09-09, session 1, RED, the designer: "I could press B to teleport back to the ship, but if the game's supposed to be doing something or recognize that I've gone overboard, then there's nothing." The HUD now tells a swimmer, the same session: the ship sails on, the ladder at the starboard rail and E, or B from anywhere; the distance to the ship on the mode line. GREEN on the next binary, the designer: "perhaps a bit unnecessary, but that's fine". The deck group complete.
 
 ## M — melee
 

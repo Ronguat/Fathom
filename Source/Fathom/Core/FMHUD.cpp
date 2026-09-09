@@ -47,9 +47,19 @@ TArray<TPair<FString, FLinearColor>> AFMHUD::Lines() const
 	}
 	FVector Local;
 	const bool bOnShip = Pawn->ShipSpaceLocation(Local);
-	Out.Emplace(bOnShip
-		? FString::Printf(TEXT("%s  on the ship at (%.0f, %.0f, %.0f)"), *Pawn->MovementModeName(), Local.X, Local.Y, Local.Z)
-		: FString::Printf(TEXT("%s  off the ship"), *Pawn->MovementModeName()), White);
+	if (bOnShip)
+	{
+		Out.Emplace(FString::Printf(TEXT("%s  on the ship at (%.0f, %.0f, %.0f)"), *Pawn->MovementModeName(), Local.X, Local.Y, Local.Z), White);
+	}
+	else
+	{
+		const float Away = Ship ? FVector::Dist2D(Ship->GetActorLocation(), Pawn->GetActorLocation()) / 100.0f : 0.0f;
+		Out.Emplace(FString::Printf(TEXT("%s  off the ship, %.0f m away"), *Pawn->MovementModeName(), Away), White);
+		if (Pawn->MovementModeName() == TEXT("Swimming"))
+		{
+			Out.Emplace(TEXT("overboard, the ship sails on: swim to the ladder at the starboard rail and press E, or press B to board from anywhere"), Yellow);
+		}
+	}
 	if (Ship)
 	{
 		const FFMStation* Nearest = nullptr;

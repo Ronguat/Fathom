@@ -91,7 +91,7 @@ F again, drives the stations from their placeholders on
 the deck with Left/Right, Up/Down, `[` `]`, X and E, sees the sail as a slab hanging from the
 yard, the wind as a pennant at the masthead and the
 floor's edge as five still columns, reads `AFMHUD`, the world tag, frame,
-measured lag, advance, the session's station delay, mode, ship-space place, nearest station and its radius, the ship's speed
+measured lag, advance, the session's station delay, mode, ship-space place or the distance to the ship and, swimming, the way back, nearest station and its radius, the ship's speed
 and station values, sea state, wind, combat phase, tallies and the controller's notice, and
 sets a round trip on every world in the process with `FM.Latency <ms>`, or one per client with
 `FM.Latency <ms1> <ms2>`, the server carrying the smallest half. Every hit and parry the
