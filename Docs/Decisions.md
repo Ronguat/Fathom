@@ -62,9 +62,9 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-07 | The rendered frame and the advance in every input command, the advance clamped by the server to its own | Melee entry, Decisions | |
 | 2026-09-07 | The rewind in the ship's space from the server's per-frame body history, no ship reconstructed; a defender off the ship met in world space, unmeasured | Melee entry, Decisions | |
 | 2026-09-07 | The parry judged at the rendered frame: a 30-frame window on press, a 120 degree cone | `Config/DefaultGame.ini`, Melee entry | |
-| 2026-09-07 | Feint on Q; the swing turns with yaw only; the head a 15 cm sphere 80 cm above the capsule's centre; the eye at the head socket | `Config/DefaultGame.ini`, `AFMPlayerController` | |
+| 2026-09-07 | Feint on Q; the swing turns with yaw only; the head a 15 cm sphere 80 cm above the capsule's centre; the eye at the head socket | `Config/DefaultGame.ini`, `AFMPlayerController` | 2026-09-12: yaw alone proves nothing; the swing steered by the view is Stretch's first item, the designer's word |
 | 2026-09-07 | Keys event-timed: presses latched at the key event, the down state the events' gated by the poll, the mouse wheel momentary | Melee entry, Decisions | |
-| 2026-09-07 | Presentation by explicit time on single-node animation in the engine's default material; idle the first frame of overhead left, parry the first frame of the reference's parry pose | Melee entry, Decisions | |
+| 2026-09-07 | Presentation by explicit time on single-node animation in the engine's default material; idle the first frame of overhead left, parry the first frame of the reference's parry pose | Melee entry, Decisions | 2026-09-12: the parry to play the reference's standalone parry clip when melee returns, ripostes out of scope |
 | 2026-09-07 | The still-target bar split: the rolling row asserts the rewound body's point, a calm-sea row the contact point, the deck's roll having moved the contact 27 cm between rows | Melee entry, Decisions | |
 | 2026-09-07 | The walking target crosses a thrust's line along the ship's length, 110 cm out; the parry press twelve frames after the attack's; every attack row turns one degree before its press to pin the side; the universal injection spread judged per client | `Tools/RegressionCheck/scenarios.py`, `Tools/RegressionCheck/regression_eval.py` | |
 | 2026-09-07 | The melee rows: the feint row's injection tolerance 2, `pose_every` one on the walking-target row's proxies, the COMBAT, HIT, PARRY, SWING and SCORE vocabulary with `rf` and `rp` | `Tools/RegressionCheck/scenarios.py`, `Docs/Debug-Instruments.md` | |
@@ -129,6 +129,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | Eight release curves counted; seven exist, none for underhand left, and the intake leaves the underhand pair unused |
 | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | 2026-09-08 — The human review: a human reaches what the loop reaches | The blade baked from the clip as a segment in pawn space, no weapon on the pawn: the designer rules it does not accomplish what the project set out to do, the point being to test tracers on a ship drawn from a weapon; flagged as needing work, the trap of that date, and not debugged |
 | 2026-09-07 — Melee: the swing, the rewind and the knob, measured, its blade as a segment baked from the first-person clip | 2026-09-12 — Melee reopened: the hit traced from the weapon in the hand | Eight tracers between two sockets on the Greatsword, baked from the third-person clip and each swept from its last frame; the segment and its sub-steps gone |
+| 2026-09-07 — Melee: the swing, the rewind and the knob, measured, its swing turning with yaw only | 2026-09-12 — Melee reopened: the hit traced from the weapon in the hand | The designer: yaw alone proves nothing; the swing steered by the view on the deck is Stretch's first item |
 | 2026-09-07 — Melee: the swing, the rewind and the knob, measured, its brief's "Melee shipped" | 2026-09-12 — Melee reopened: the hit traced from the weapon in the hand | The rung reopens on the ladder on the designer's word, its scope the hit traced from a weapon drawn on the pawn; the 2026-09-08 ruling flagged the blade, this entry reopens the rung |
 | 2026-09-08 — The human review: a human reaches what the loop reaches, its station call applied at the command's frame | 2026-09-08 — The human review: a human reaches what the loop reaches | The call takes effect a session-wide delay after its command, chosen so every client has it before the frame, on the designer's ruling that a ship command may wait rather than be corrected: from the other window the sail overshot and snapped back on the caller's release |
 | 2026-09-08 — The human review: a human reaches what the loop reaches, its draw written and flagged | 2026-09-12 — Melee reopened: the hit traced from the weapon in the hand | The draw showed all along in the `Shot` backbuffer; the high-resolution screenshot that judged it omits debug draws |
@@ -279,6 +280,12 @@ eight tracers between its sockets baked from the third-person clip and read with
 drawn weapon on both clients by `melee.weapon`, and the draw seen in a `Shot` capture, the entry of that
 date.
 
+**Whenever Melee is read as proven — *the swing is steered by yaw alone.*** The tracers follow the
+pawn's yaw each frame and never the view's pitch; the designer's standard *(2026-09-12)* is a swing
+steered continuously by the view on the moving deck without an artifact from the deck's motion,
+deferred to Stretch as its first item by the same word. Bites when the ladder is read, and at the M
+group, judged without pitch. Discharged by that item.
+
 **Whenever the attacker judges a hit by the blade they see — *the first-person weapon is not the traced
 one.*** The arms carry the same weapon on their own rig, raised into the view, and its tip runs 27 to 74 cm
 from the traced blade over a release *(2026-09-12)*, reported by `melee.weapon` and asserted by nothing;
@@ -338,7 +345,16 @@ the bar into numbers.
   rung four, met.
 - **Ship to Ship** — Contact response between two kinematic ships, and boarding across ships as a
   base change. **Bar**: per `Docs/Spec.md`.
-- **Stretch** — Receives every deferral, one dated line each. Deferred 2026-09-04, from the basic
+- **Stretch** — Receives every deferral, one dated line each. **First, deferred 2026-09-12 by the
+  designer's word, the remainder of Melee**: the swing steered continuously by the view, pitch and
+  yaw, on the moving deck without an artifact from the deck's motion, which is what proves melee by
+  the mission's standard; the sketch of that day, so it is not re-derived: the aim world-referenced
+  and carried in the command, the baked tracers rotated about a pivot near the shoulder each frame on
+  server and clients alike, the body's upper spine pitched on a posed copy, the parry played from the
+  reference's standalone parry clip in place of a riposte clip's first frame, ripostes being out of
+  scope, and rows steering an overhead mid-swing on the calm and the rolling sea with the BLADE band
+  holding. The standard in the designer's words: nothing so jank it clutters what is built, and
+  tracers manipulable on the moving deck of a ship without new artifacts. Then the rest. Deferred 2026-09-04, from the basic
   set: storm regions and sea-state change over time; wind drift and gusts; a wave spectrum and
   chop; rope pairs and per-mast sails; class quirks; heel and wheel travel; the anchor turn and
   crew scaling; special shot; above-waterline holes and mast and wheel damage; a sink motion;
@@ -412,7 +428,9 @@ the universal set alone, an injection spread of 2 over its eight presses, green 
 tolerance on the rerun `0912-202501`; the hit draw seen in a `Shot` capture.
 The human review, `Docs/Checklist.md`, stands at M, the twelve items red for the designer's
 sitting; a trap of this date names the first-person weapon's divergence from the traced blade,
-27 to 74 cm over a release, for M9 and M12. **Open**: the M group, then F and C; the queue's paper
+27 to 74 cm over a release, for M9 and M12. The remainder of Melee, the swing steered by the view
+on the deck, is deferred to Stretch as its first item by the designer's word; the M items are judged
+without pitch. **Open**: the M group, then F and C; the queue's paper
 pass, last; the walk cycle, presentation the loop never reads, seen in one capture; the injected-key
 flicker trap. Budget: none set. The editor is closed, the tree clean, every commit on the remote.
 
@@ -592,6 +610,16 @@ staging branch: the rename inside its editor rewrites every referencer, the file
 the audit saves only what loading dirtied, the packages being this engine's already; the
 mannequin skeleton stays as this project holds it. *Alternatives.* The 5.3 copy, which misled
 earlier sessions by the designer's account. *Reopens* never.
+
+**The remainder of Melee deferred to Stretch, first.** The designer, on finding the swing steered by
+yaw alone: these problems will prove more complex than they sound; defer the rest of Melee to
+Stretch as one of its first items. *Decision*, the designer's. Melee keeps its strikethrough for the
+bar it registered; the unproven claim is a trap above and Stretch's first item, with the sketch
+attached so it is not re-derived; the parry, when melee returns, plays the reference's standalone
+parry clip, ripostes being out of scope; the M items are judged without pitch. *Alternatives.*
+Reopening the rung now, which the agent proposed and the designer declined for its size; Ship Combat
+first solves the smaller half of the same hurdle, a cannon aimed by the view from a rolling deck.
+*Reopens* at Stretch's first item.
 
 **Line endings.** The system gitconfig's `core.autocrlf=true` rewrote 38 files CRLF at a checkout
 after the 2026-09-09 closedown; `gen-matrix.py --check` compared bytes and `docs-check` failed on

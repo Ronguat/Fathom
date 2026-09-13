@@ -260,7 +260,8 @@ Judged: 2026-09-09, session 1, RED, the designer: "I could press B to teleport b
 
 *The rework landed 2026-09-12*: the Greatsword in every hand, eight tracers between its sockets
 doing the hitting, the first-person arms cosmetic and their divergence a trap in `Docs/Decisions.md`.
-The items stay as written, red, until the designer judges them.
+The items stay as written, red, until the designer judges them, and are judged without pitch:
+the swing steers by yaw alone until Stretch's first item.
 
 **M1 Your arms and sword** · RED
 Claim: `Docs/Spec.md`, Combat; the delivery.
