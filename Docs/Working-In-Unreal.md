@@ -320,7 +320,7 @@ filter did not match — and here the filter did not even run.
 **Bash's grep cannot see a carriage return** *(Bash, 2026-09-05)*: against a file written with CRLF
 endings, `grep -c $'\r'` returned 0, and the same pattern inside a command substitution once counted
 every line, an empty pattern; `-P` is refused in this locale. The line-ending check is
-`git ls-files --eol` or `od -c`. The working tree here is LF and git stores LF. A backslash-r
+`git ls-files --eol` or `od -c`. Git stores LF; the system gitconfig sets `core.autocrlf=true`, which rewrote 38 files CRLF at a checkout after the 2026-09-09 closedown and failed `gen-matrix.py --check` by bytes *(Bash, 2026-09-12)*; this clone sets it false locally and the check normalises newlines. A backslash-r
 in a Bash tool command can arrive as a bare CR byte, and a backslash-octal such as `\047` as the
 character it names *(2026-09-05)*; build one from its code where it matters, or write the script
 through the Write tool, which passes backslashes untouched.

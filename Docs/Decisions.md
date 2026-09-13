@@ -12,6 +12,16 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 
 | Date | Decision taken alone | Recorded in | Verdict |
 |---|---|---|---|
+| 2026-09-12 | The Greatsword's blade sockets: the tip at the far end of the mesh bounds, the base 15 cm from the origin toward it, `BASE_FROM_ORIGIN`; eight tracers, `TracerCount`; the mount identity at `weapon_rSocket` | `Tools/Editor/weapon-sockets.py`, `UFMCombatSettings`, `Config/DefaultGame.ini` | |
+| 2026-09-12 | The weapon's frame the mesh's reference pose, read through a component built without a world, in the bake and the socket script | `Tools/Editor/bake-attacks.py`, `Tools/Editor/weapon-sockets.py` | |
+| 2026-09-12 | Each posed mesh evaluated at once with its children updated, the body on every client and the arms on the owner; the weapons forced to their bind pose | `AFMPlayerPawn` | |
+| 2026-09-12 | Frames to seconds and the fraction between steps by `FixedStepRealTimeMS` in the combat presentation, the pawn, the ship and the ocean | `UFMCombatComponent`, `AFMPlayerPawn`, `AFMShip`, `UFMOceanSubsystem` | |
+| 2026-09-12 | The arms raised 20 cm by `ArmsOffset`; the first-person weapon's divergence reported by the row, never asserted | `UFMCombatSettings`, `Tools/RegressionCheck/regression_rows.py` | |
+| 2026-09-12 | `BLADE` on every rendered release frame on every client; `melee.weapon` at 0 and 150 ms over all six attacks, bands 5 cm and 1 cm, two mutations; the `tracers` mechanic | `Tools/RegressionCheck/scenarios.py`, `Tools/RegressionCheck/regression_rows.py`, `Docs/Debug-Instruments.md` | |
+| 2026-09-12 | Idle and walk clips looped by time, the walk above `WalkSpeedMin` 20 cm/s of base-space speed: `Idle_2h_FPP`, `Idle_Stance_2h`, `fpp_2h_walking`, `LOCO_N_Walk_F`, the walk cycle's footstep notifies stripped | `AFMPlayerPawn`, `Config/DefaultGame.ini` | |
+| 2026-09-12 | Debug draws at depth priority 0; the driver's console through the world context; the hit draw verified by `Shot`, a high-resolution screenshot omitting debug draws | `UFMCombatComponent`, `Tools/Editor/handson.py` | |
+| 2026-09-12 | The delivery audit saving only what loading dirtied; the staging by rename on the reference's 5.8 clone, the mannequin skeleton not re-copied, the weapon's material stripped | `Tools/Editor/audit-melee-delivery.py`, `Tools/Editor/stage-delivery.py` | |
+| 2026-09-12 | The clone's `core.autocrlf` off and the matrix check comparing with newlines normalised | `Tools/RegressionCheck/gen-matrix.py`, `Docs/Working-In-Unreal.md` | |
 | 2026-09-09 | What a swimmer overboard is told: a HUD line while Swimming, the ship sails on, the ladder at the starboard rail and E, or B from anywhere; the distance to the ship on the mode line. Nothing else recognises a lost swimmer; respawn belongs to Ship Combat's brief | `AFMHUD` | |
 | 2026-09-08 | The station delay's shape: the server sets it every tick from the worst average lag among its client connections, `StationDelayFactor` 1.5 of it in frames plus `StationDelayBaseFrames` 8, capped at `StationDelayMaxFrames` 60 and the cap while a client is unmeasured, replicated on the game state; the client authors it into the command so both apply at the same frame, never at or before the newest entry's; a release holds where the station will stand at that frame, projected; the anchor's toggle reads the newest entry; the loop warms a row up 180 frames under its emulation before BEGIN and times a station's consequences from the call's effect frame | `AFMGameState`, `FFMStationInputs`, `AFMShip`, `UFMShipSettings`, `Tools/RegressionCheck/ue_regression_runner.py`, `Tools/RegressionCheck/regression_rows.py` | |
 | 2026-09-08 | The ship stepped from each pawn's pre-simulation tick to the frame about to run, the world tick's start catching up to the last frame run | `AFMShip`, `AFMPlayerPawn` | |
@@ -23,7 +33,7 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-08 | `FM.Latency` with one round trip per client: the server's delay the smallest half, each client the rest of its own | `UFMTraceSubsystem`, `Docs/Debug-Instruments.md` | |
 | 2026-09-08 | The sea-state ceiling a settings knob, `SeaStateMax`, 2.4 with these components from the loop bound of the summed steepness, in place of the clamp at 1 | `UFMOceanSettings`, `AFMGameState` | |
 | 2026-09-08 | The horizon: a flat 40 km plane in the same material, dropped under the deepest trough the sea state can make by a 20 cm margin; the near plane 1 km at 2.5 m steps | `UFMOceanSubsystem`, `Config/DefaultGame.ini` | |
-| 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | |
+| 2026-09-08 | Whether the Melee rung reopens on the ladder for the weapon-traced hit or the rework rides Ship Combat: the ladder untouched until the designer's word, the rework carried by the trap | Human review entry, Decisions | 2026-09-12: reopened on the ladder by the designer; the rework is the scope of the reopened rung, the plan of that date |
 | 2026-09-08 | A station call as a block of the input command, one call per command queued on the pawn, the station an index into the ship's five names; applied by every world at the command's frame in the pawn's pre-simulation tick after the ship has stepped to it; a client's entry marked predicted and pruned when the server's input passes its frame | `FFMStationInputs`, `AFMShip`, `AFMPlayerPawn` | |
 | 2026-09-08 | A simulated proxy drawn through a base change from where it was, the gap closing at 300 cm a second, a gap over 400 cm a teleport that snaps | `AFMPlayerPawn` | |
 | 2026-09-08 | A jump keeps the hull as the base while the pawn is over it, the walking and falling modes of the project restoring the base their parents drop, and the base dropped with the hull's velocity imparted past the hull's extent plus `DeckMargin`, 50 cm; a pawn takes the deck only by touching it | `UFMDeckWalkingMode`, `UFMDeckFallingMode`, `UFMShipSettings` | |
@@ -118,7 +128,10 @@ this; a verdict that differs supersedes the decision and never rewrites it. Newe
 | 2026-09-05 — Ship: a body every world integrates from the same state, its inputs replicated with their frame, unpredicted | 2026-09-08 — The human review: a human reaches what the loop reaches | A station call rides the caller's input command and every world applies it at that command's frame, the caller's client as a prediction the server's replicated input confirms; on the designer's eye, the sail snapping forward and reverting on release under latency |
 | 2026-09-05 — The delivery arrives: the clips and their skeleton are in the project | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | Eight release curves counted; seven exist, none for underhand left, and the intake leaves the underhand pair unused |
 | 2026-09-07 — Melee: the swing, the rewind and the knob, measured | 2026-09-08 — The human review: a human reaches what the loop reaches | The blade baked from the clip as a segment in pawn space, no weapon on the pawn: the designer rules it does not accomplish what the project set out to do, the point being to test tracers on a ship drawn from a weapon; flagged as needing work, the trap of that date, and not debugged |
+| 2026-09-07 — Melee: the swing, the rewind and the knob, measured, its blade as a segment baked from the first-person clip | 2026-09-12 — Melee reopened: the hit traced from the weapon in the hand | Eight tracers between two sockets on the Greatsword, baked from the third-person clip and each swept from its last frame; the segment and its sub-steps gone |
+| 2026-09-07 — Melee: the swing, the rewind and the knob, measured, its brief's "Melee shipped" | 2026-09-12 — Melee reopened: the hit traced from the weapon in the hand | The rung reopens on the ladder on the designer's word, its scope the hit traced from a weapon drawn on the pawn; the 2026-09-08 ruling flagged the blade, this entry reopens the rung |
 | 2026-09-08 — The human review: a human reaches what the loop reaches, its station call applied at the command's frame | 2026-09-08 — The human review: a human reaches what the loop reaches | The call takes effect a session-wide delay after its command, chosen so every client has it before the frame, on the designer's ruling that a ship command may wait rather than be corrected: from the other window the sail overshot and snapped back on the caller's release |
+| 2026-09-08 — The human review: a human reaches what the loop reaches, its draw written and flagged | 2026-09-12 — Melee reopened: the hit traced from the weapon in the hand | The draw showed all along in the `Shot` backbuffer; the high-resolution screenshot that judged it omits debug draws |
 
 ## Known traps, indexed by what sets them off
 
@@ -261,7 +274,17 @@ meshes were left behind at intake. The designer's ruling *(2026-09-08)*: the imp
 not accomplish what the project set out to do, the point being to test tracers on a ship, drawn
 from a weapon; flagged as needing work, not debugged. The draw of a hit added the same day never
 showed in a capture and stays unverified. Bites at Ship Combat's inheritance and at the M group of
-`Docs/Checklist.md`. Discharged by a hit traced from a weapon drawn on the pawn.
+`Docs/Checklist.md`. Discharged by a hit traced from a weapon drawn on the pawn. Discharged 2026-09-12: the Greatsword in every hand,
+eight tracers between its sockets baked from the third-person clip and read within 0.4 cm of the
+drawn weapon on both clients by `melee.weapon`, and the draw seen in a `Shot` capture, the entry of that
+date.
+
+**Whenever the attacker judges a hit by the blade they see — *the first-person weapon is not the traced
+one.*** The arms carry the same weapon on their own rig, raised into the view, and its tip runs 27 to 74 cm
+from the traced blade over a release *(2026-09-12)*, reported by `melee.weapon` and asserted by nothing;
+a hit the attacker's screen shows beside the body may land, and one through it may miss. Bites at M9
+and M12 of `Docs/Checklist.md`, judged from the attacker's own view. Discharged by arms aligned to the
+body's weapon, the Stretch line, or by the designer's acceptance of the divergence.
 
 **Whenever a run's play window has focus — *a hand on the keyboard is input the loop cannot
 see.*** The mechanism and the rule are in `Docs/Debug-Instruments.md`, the shape of a run. Seven
@@ -281,8 +304,9 @@ re-deriving it"* names a relationship you would be breaking, not a value you may
 | The simulation rate | `FixedTickFrameRate` in `Config/DefaultNetworkPrediction.ini`, 60 | The engine's own fixed frame rate, which overrides it when enabled |
 | Hit timing under latency | `AdvanceFraction` and `AdvanceCapMs` in the combat settings, `fm.MeleeAdvanceFraction` and `fm.MeleeAdvanceCapMs` for a row; the advance rows report each setting *(2026-09-07)* | The windup |
 | Parry fairness | `ParryFrames` and `ParryConeDegrees` in the combat settings, the parry judged at the rendered frame, measured beside the advance | The window alone |
-| Where a swing reaches | `BLADE_LENGTH` in `Tools/Editor/bake-attacks.py` and the attack assets it writes; `HeadHeight` and `HeadRadius` in the combat settings | The clips |
+| Where a swing reaches | The weapon's `blade_base` and `blade_tip` sockets, placed by `Tools/Editor/weapon-sockets.py`, and `TracerCount` in the combat settings, then the attack assets `bake-attacks.py` writes; `HeadHeight` and `HeadRadius` in the combat settings *(2026-09-12)* | The clips |
 | The eye and the meshes | `EyeOffset`, `MeshOffset` and `MeshYaw` in the combat settings, the eye the head socket of the reference pose | The capsule |
+| The first-person hands in the view | `ArmsOffset` in the combat settings, 20 cm up, the arms' weapon riding along *(2026-09-12)* | The eye |
 | The net update rate | `NetServerMaxTickRate`, at the engine default | The simulation rate |
 | Inbound bytes per player | The client's frame rate, `t.MaxFPS`; a packaged client ran uncapped at 30 000 B/s against 10 000 capped at 60 *(2026-09-05)* | The simulation rate |
 | The injection pairing's spread | The render load: the loop runs at half resolution, and the demo's full-resolution walk row read a lead of 13 then 15 frames, spread 2 against the tolerance of 1, where the same row at half resolution reads within 1 *(2026-09-05)*; the walk row's tolerance is 2 after three spreads of 2 in a day with the play windows enlarged *(2026-09-05)* | The tolerance |
@@ -304,7 +328,7 @@ the bar into numbers.
 
 - **Ship Combat** — Cannon stations, holes, water, repair, bailing, sinking, respawn. **Bar**: per
   `Docs/Spec.md`. **Inherits**: the stations and their radii; `UFMCombatComponent` with the server's per-frame body
-  history, the frame and fraction an attacker's proxies were drawn at in every command, the sweep
+  history, the tracer sweep and the weapon in every hand with `melee.weapon` and the `BLADE` line, the frame and fraction an attacker's proxies were drawn at in every command, the sweep
   in ship space, replicated tallies and the `SCORE` line, which a cannon's shot and a hole can
   reuse; `FFMCombatInputs` and `FFMCombatState` as the pattern for a press in the command and state
   in the sync state; the `melee.*` rows, `pose_every`, the per-row console-variable reset and
@@ -330,11 +354,13 @@ the bar into numbers.
   head sphere following the clip rather than riding the capsule; a parry held rather than a
   window; an animation graph in place of explicit time; a material of the project's own on the
   delivered meshes. Deferred 2026-09-08, from the human review: water masked inside the hull,
-  the placeholder hull letting waves through its sides.
+  the placeholder hull letting waves through its sides. Deferred 2026-09-12, from the reopened
+  Melee: the first-person arms aligned to the body's weapon; the walk cycle scaled to speed, and
+  directional; the weapon's own material.
 
 ## Symbol index — which entries discuss this thing
 
-Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
+Current through **2026-09-12**. Regenerated, byte-sorted, one row per symbol.
 
 | Symbol | Entries |
 |---|---|
@@ -342,9 +368,9 @@ Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
 | `AFMHUD` | 09-08 |
 | `AFMOceanActor` | 09-05 |
 | `AFMPlayerController` | 09-05, 09-07, 09-08 |
-| `AFMPlayerPawn` | 09-05, 09-07, 09-08 |
+| `AFMPlayerPawn` | 09-05, 09-07, 09-08, 09-12 |
 | `AFMPlayerState` | 09-07 |
-| `AFMShip` | 09-05, 09-08 |
+| `AFMShip` | 09-05, 09-08, 09-12 |
 | `EFMAttackSide` | 09-07 |
 | `EFMAttackType` | 09-07 |
 | `EFMCombatPhase` | 09-07 |
@@ -352,7 +378,7 @@ Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
 | `FFMCombatInputs` | 09-07 |
 | `FFMCombatRules` | 09-07 |
 | `FFMCombatState` | 09-07 |
-| `FFMHitDraw` | 09-08 |
+| `FFMHitDraw` | 09-08, 09-12 |
 | `FFMShipInputs` | 09-05 |
 | `FFMShipState` | 09-05 |
 | `FFMStation` | 09-05, 09-08 |
@@ -360,18 +386,249 @@ Current through **2026-09-08**. Regenerated, byte-sorted, one row per symbol.
 | `FMOcean` | 09-05 |
 | `FM_TRACE` | 09-05 |
 | `LogFMTrace` | 09-04, 09-05 |
-| `UFMAttackData` | 09-07 |
-| `UFMCombatComponent` | 09-07, 09-08 |
-| `UFMCombatSettings` | 09-07 |
+| `UFMAttackData` | 09-07, 09-12 |
+| `UFMCombatComponent` | 09-07, 09-08, 09-12 |
+| `UFMCombatSettings` | 09-07, 09-12 |
 | `UFMInputTools` | 09-04 |
 | `UFMOceanSettings` | 09-05 |
-| `UFMOceanSubsystem` | 09-05 |
+| `UFMOceanSubsystem` | 09-05, 09-12 |
 | `UFMShipSettings` | 09-05, 09-08 |
 | `UFMSwimMode` | 09-05 |
 | `UFMSwimTransition` | 09-05 |
 | `UFMTimeTools` | 09-04 |
 | `UFMTraceLibrary` | 09-05 |
 | `UFMTraceSubsystem` | 09-05, 09-08 |
+
+## 2026-09-12 — Melee reopened: the hit traced from the weapon in the hand
+
+### Next session's brief
+
+**Pick up at Ship Combat**, whose brief is in the rung briefs above; Melee is struck through
+again, its reopened bar met on this binary: the Greatsword in every hand, eight tracers between
+its sockets baked from the third-person clips, `melee.weapon` reading the drawn weapon within
+0.4 cm of the traced blade on both clients at 0 and 150 ms, the whole matrix of 94 rows run on
+this binary, `0912-200520`, 93 green with every mutation proven and the new row at 150 ms red on
+the universal set alone, an injection spread of 2 over its eight presses, green with its siblings'
+tolerance on the rerun `0912-202501`; the hit draw seen in a `Shot` capture.
+The human review, `Docs/Checklist.md`, stands at M, the twelve items red for the designer's
+sitting; a trap of this date names the first-person weapon's divergence from the traced blade,
+27 to 74 cm over a release, for M9 and M12. **Open**: the M group, then F and C; the queue's paper
+pass, last; the walk cycle, presentation the loop never reads, seen in one capture; the injected-key
+flicker trap. Budget: none set. The editor is closed, the tree clean, every commit on the remote.
+
+### The plan, written before execution
+
+**The designer's word, 2026-09-12.** Melee reopens on the ladder for the hit traced from a weapon
+drawn on the pawn; the reference project's meshes come in; the third-person weapon is the truth
+and the first-person arms are cosmetic; the reference's locomotion clips are on offer. Later the same day: the Greatsword over the Zweihander, the more polished; an array of tracers along the blade. The rung's
+strikethrough leaves `CLAUDE.md`'s ladder, the 2026-09-08 queue row carries the verdict, and the
+brief above is the reopened scope.
+
+**What the reference does**, read from its text layer: its blade is two points, a base and a tip,
+recorded on the weapon actor and swept between ticks against bodies a rollback component rewinds;
+the two-handed clips are named for the Zweihander; the Greatsword the designer chose is a skeletal
+mesh of one bone with its own skeleton, no sockets, one material, its source file absent from this
+machine.
+
+**Scope.** Sub-slices in order, each committed when green. **One, the weapon in the project**: the
+Greatsword mesh and its skeleton by the delivery's route, material stripped as the mannequins' were, with the
+two-handed idle clips, first and third person, and the walk cycles on the delivered skeleton;
+`Docs/Melee-Delivery.tsv` regenerated. **Two, the blade on the weapon**: `blade_base` and
+`blade_tip` sockets on the mesh, the tip at its far end, the base a knob up from the grip, and
+`TracerCount` tracers spaced between them, the designer's array; `bake-attacks.py` evaluates each
+attack's third-person clip, carries the weapon through the hand socket and its mount, and writes
+every tracer's path into `UFMAttackData`; the sweep tests each tracer's path from its last frame to
+this one, in place of the one segment sub-stepped in time. **Three, the weapon drawn**: a skeletal mesh
+component at the hand socket on the arms and on the body, its mount a knob in the combat
+settings; the body's pose evaluated on the owner too, so its sockets read; `fm.MeleeDraw` draws
+every traced tracer path and the drawn weapon's tracers on every release frame; the hit draw's client
+call made to show. **Four, the proof**: a `BLADE` line on every client at every release frame,
+the third-person weapon's tracers and the baked ones at the presented frame in pawn space, the
+first-person tip beside them; `melee.weapon` asserts the third-person agreement and reports the
+first-person divergence; the melee family rerun. **Five, locomotion**: the body plays the walk
+cycle by explicit time from its speed and the stance idle when still, the arms their own idle and
+walk; presentation only, after the bar. **Six, closedown.**
+
+**Bar, pre-registered.** *Weapon*: every imported asset loads headless with no missing package
+and no load error, reaching nothing outside the delivery and the engine; the weapon seen in the
+hand on both meshes in a capture. *Blade*: six assets rebaked; each tip's forward reach during
+release over 110 cm, the still target's surface; every `melee.hit*` row lands one hit at every
+latency. *Drawn against traced*: on both clients, at every release frame of every attack, the
+third-person weapon's tracers each within 5 cm of its traced counterpart at the presented frame;
+the first-person tip's divergence reported per attack as its maximum over release, the
+designer's to judge. *Family*: every melee row green with every mutation proven at 0, 50, 100
+and 150 ms on the binary that ships. *Draw*: the tracer and a hit's draw seen in a capture on
+both clients.
+
+**Fallbacks.** The route failing on the mesh: a Geometry Script blade of its length at the hand,
+the queue told. The third-person clip's weapon meeting no target where the first-person did: the
+first-person bake kept, the divergence recorded, the truth's choice back to the designer.
+Agreement past 5 cm from the presented frame's interpolation: the band re-registered with its
+cause. The hit draw still absent: the draw carried on the pawn's tick in world space. A
+still-target row missing on the shorter blade: the target's distance re-registered, never the
+blade.
+
+**Coverage.** `melee.weapon` at 0 and 150 ms, a mutation on the drawn tracers. The family rerun,
+owed since 2026-09-09. **Discharged** when four ships: the trap on the blade as numbers.
+**Filed**: the first-person weapon's divergence, measured and unasserted; the walk, presentation
+the loop never reads.
+
+**Budget.** None set.
+
+### Measured
+
+**The bake from the third-person clips**, the Greatsword's `blade_base` 15 cm from the mesh origin
+toward the tip and `blade_tip` at the far end of its bounds, 108 cm apart, eight tracers between
+them, the windows unchanged from 2026-09-07:
+
+| Attack | Windup | Release | Recovery | Tip reach (cm) | Tip path (cm) |
+|---|---|---|---|---|---|
+| overhead L | 33 | 30 | 44 | 172 | 317 |
+| overhead R | 47 | 30 | 30 | 182 | 240 |
+| horizontal L | 31 | 30 | 65 | 170 | 298 |
+| horizontal R | 35 | 30 | 61 | 174 | 324 |
+| thrust L | 34 | 32 | 44 | 186 | 68 |
+| thrust R | 32 | 27 | 51 | 173 | 107 |
+
+**Drawn against traced**, `melee.weapon` at 0 and 150 ms, run `0912-200346`: 179 BLADE lines on
+each client, 27 to 32 per attack, every release frame; the third-person weapon's eight tracers
+within 0.4 cm of the baked ones on both clients at both round trips, 0.2 at 0 ms; the weapon
+component against the hand socket it rides, 0.0 cm. The first-person weapon against the traced
+blade, the largest over each release, tip then base:
+
+| Attack | Tip (cm) | Base (cm) |
+|---|---|---|
+| overhead L | 29.5 | 30.5 |
+| overhead R | 73.7 | 59.9 |
+| horizontal L | 33.9 | 30.6 |
+| horizontal R | 38.0 | 30.5 |
+| thrust L | 30.7 | 30.9 |
+| thrust R | 27.5 | 30.9 |
+
+The base sits 30 cm off throughout, the arms raised 20 cm into the view and their rig holding the
+hands elsewhere than the body's; the designer's to judge.
+
+**What the same line found on the way**, each measured on the session's captures before the fix
+and after it. The drawn tracers first read 20 to 49 cm off the bake with the base 5 to 9 cm off:
+the body mesh's pose evaluates after the pawn's tick, so a readback in the tick saw the previous
+render frame's pose, and the weapon's transform followed its bones only at the engine's own
+update; evaluating the mesh as it is posed and updating its children brought the base to 5 cm and
+left the tip at 25 to 73. The mesh's clip position then read 0.96 of the posed attack frame,
+16 over 16.667: the framework's integer step had timed every clip since the Melee rung, 4 percent
+slow, and the presentation's fraction between steps divided by the same integer; the real step
+brought the tip error to a flat 5.0 cm. That last 5 cm was the weapon's skeleton putting its one
+bone 5 cm along the blade where the mesh keeps it at the origin; the bake read the skeleton, the
+renderer binds the mesh, and reading the mesh's reference pose brought both ends to 0.0. The
+first-person arms had never posed: unrendered, they never evaluated, and unevaluated they stood in
+their reference pose beside the pawn, out of every view; evaluating them as they are posed and
+raising them 20 cm put the hands and the sword in the idle frame.
+
+**The hit draw shows.** The 2026-09-08 capture that never showed it was a high-resolution
+screenshot, which omits debug draws; the `Shot` command's backbuffer kept the capsule, the head and
+the tracer's path on the attacker's client at frames 50 and 54 of an overhead, `DRAWRX` on both
+clients for every hit.
+
+**The staging.** Seven assets renamed inside the reference's 5.8 editor on its staging branch,
+327 referencers rewritten by the renames, committed there; six copied, the mannequin skeleton kept
+as this project holds it; the audit loaded 129 of 129 with none failed and two dependencies
+outside the delivery, the walk cycle's two footstep notifies, stripped by the delivery's rule.
+
+### Decisions
+
+**The weapon and its tracers.** *Decision.* The Greatsword from the reference, its one-bone
+skeleton with it and its material stripped as the mannequins' were, on a skeletal mesh component
+at `weapon_rSocket` on the arms and on the body with an identity mount: the hand socket stands at
+the origin with identity rotation in the reference pose, and the mesh's blade runs along its minus
+Y as the bone's does. The blade is two sockets on the mesh, `blade_tip` at the far end of its
+bounds and `blade_base` 15 cm from the origin toward it, 108 cm apart, and `TracerCount` tracers
+spaced between them, eight. The bake evaluates each attack's third-person clip on the body mesh,
+carries the weapon through the hand socket and the mount, and writes every tracer's path; the
+server sweeps each tracer from its last frame's position to this one's, one hit per body per swing
+as before, and the sub-steps knob is gone. *Alternatives.* The Zweihander, the designer's first
+word, withdrawn for the Greatsword as the more polished; the base at the guard, which the bounds
+do not give; a static mesh, which the reference does not hold for this weapon. *Reopens* on the
+designer's eye at the grip, `BASE_FROM_ORIGIN` in `weapon-sockets.py`, or on a body slipping
+between tracers, `TracerCount`.
+
+**The weapon's frame is the mesh's reference pose.** *Decision.* The bake and the socket script
+read the mesh's bind pose through a component built without a world, since the renderer binds the
+mesh and the weapon's skeleton disagrees with it by 5 cm along the blade. *Measured* below.
+*Reopens* never.
+
+**A mesh evaluates as it is posed.** *Decision.* Each posed mesh ticks its animation, refreshes
+its bones and updates its children at once, the body on every client and the arms on the owner;
+the weapons hold their bind pose by force; the readback and the render share the frame.
+*Alternatives.* A tick after the mesh's; a delegate on the bones' finalize. *Reopens* on the cost
+of two evaluations per mesh per frame, unmeasured beyond the rows' tick times.
+
+**The real step.** *Decision.* Frames become seconds through the framework's
+`FixedStepRealTimeMS`, and the fraction between steps divides by it, in the combat presentation,
+the pawn, the ship and the ocean alike. *Reopens* never.
+
+**The first-person weapon.** *Decision.* The arms carry the same weapon at the same socket, raised
+20 cm with the arms by `ArmsOffset` so the idle hands and the sword sit in the view; its
+divergence from the traced blade rides every BLADE line and the row reports it unasserted, the
+designer's ruling that third person is the truth. *Alternatives.* The arms aligned to the body's
+weapon, a Stretch line. *Reopens* on the designer's eye at M1 and M9, the trap.
+
+**The proof.** *Decision.* `BLADE` on every rendered release frame on every client, for the owner
+and for a proxy; `melee.weapon` at 0 and 150 ms swings all six attacks and asserts every tracer
+within 5 cm of its baked counterpart and the weapon within 1 cm of the socket it rides, with two
+mutations. *Alternatives.* Asserting the first-person weapon, refused by the ruling. *Reopens* on
+a band the interpolation between frames outgrows.
+
+**Locomotion.** *Decision.* When no attack or parry poses a mesh, the body and the arms loop
+their idle by time, and their walk while the base-space speed exceeds `WalkSpeedMin`, 20 cm/s;
+the body's cycle is the reference's forward walk with its two footstep notifies stripped, which
+reached outside the delivery. *Alternatives.* A blend space; directional cycles; the cycle scaled
+to speed, deferred. *Reopens* on the designer's eye at M1 and D3.
+
+**The draws and the console.** *Decision.* Debug draws stay at depth priority 0, occluded by
+bodies, since depth 1 renders in no game viewport; the hit draw is verified by the `Shot`
+backbuffer; the driver's console goes through the world context. *Reopens* never.
+
+**The staging route.** *Decision.* By the designer's word the reference's 5.8 clone carries a
+staging branch: the rename inside its editor rewrites every referencer, the files are copied, and
+the audit saves only what loading dirtied, the packages being this engine's already; the
+mannequin skeleton stays as this project holds it. *Alternatives.* The 5.3 copy, which misled
+earlier sessions by the designer's account. *Reopens* never.
+
+**Line endings.** The system gitconfig's `core.autocrlf=true` rewrote 38 files CRLF at a checkout
+after the 2026-09-09 closedown; `gen-matrix.py --check` compared bytes and `docs-check` failed on
+a matrix that was current, the binary reading older than sources whose content had not moved.
+*Decision.* This clone sets `core.autocrlf=false` locally, the files are checked out again as LF,
+and the check compares with newlines normalised. *Alternative.* `eol=lf` in `.gitattributes`,
+which binds every clone. *Reopens* on another clone's checkout reading CRLF.
+
+### Verified against written
+
+**Verified.** The build, both binaries newer than every source. The staging: seven renames in
+the reference's 5.8 editor, 327 referencers rewritten and committed on its staging branch; the
+audit here loading 129 of 129, none failed, the two outside dependencies stripped. The blade
+sockets at (0, -15, 0) and (0, -123, 0) in the mesh's space, read back off the asset; the six
+attacks rebaked with their reach and path in the table above. `melee.weapon` at 0 and 150 ms, run
+`0912-200346`, 18 assertions green each with both mutations proven. The whole matrix on the
+binary that ships, run `0912-200520`, 94 rows, 93 green with every mutation proven and
+`melee.weapon` at 150 ms red on the universal set alone, the injection pairing spread 2 against
+a tolerance of 1 over its eight presses; with the tolerance of 2 its sibling rows carry, green at
+both round trips on the rerun `0912-202501`, both mutations proven. Captures
+looked at: the owner's arms and sword in the idle frame with the other body and its sword ahead;
+the hit's capsule, head and tracer path on the attacker's client at release; the body swinging
+the sword through release as the other client sees it. `docs-check` and `comment-check` pass, the
+four grown headers' baseline rows raised for the weapon's knobs and the readback.
+
+**Written, not verified.** The walk cycle, the body seen walking toward the camera in one capture and its stride not
+judged; the idle loop seen holding the stance; the tracer paths
+in green, drawn but occluded by the target's body in every frame taken; the hit draw on the
+target's client, `DRAWRX` arriving there and the frame not captured; `stage-delivery.py` as a
+route run once; the packaged client, waiting for the F group.
+
+**Beyond the plan.** The real step through the ship's and the ocean's presentation, a Melee-rung
+defect the tracers exposed; the arms evaluated as posed, which they never had been; `ArmsOffset`;
+the weapons forced to their bind pose; the audit saving only what loading dirtied; the driver's
+console through the world context; the line endings and the matrix check; the findings on
+sockets, reference poses, the integer step and the two capture paths.
+
 
 ## 2026-09-08 — The human review: a human reaches what the loop reaches
 

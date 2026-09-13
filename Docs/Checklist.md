@@ -258,10 +258,9 @@ Judged: 2026-09-09, session 1, RED, the designer: "I could press B to teleport b
 
 ## M — melee
 
-*Waits for the rework, 2026-09-08.* The hit is a blade baked from the clip as numbers, with no
-weapon on the pawn; the designer ruled that this does not accomplish what the project set out to
-do, the point being to test tracers on a ship drawn from a weapon. The items stay as written, red,
-and are judged once a weapon on the pawn does the hitting.
+*The rework landed 2026-09-12*: the Greatsword in every hand, eight tracers between its sockets
+doing the hitting, the first-person arms cosmetic and their divergence a trap in `Docs/Decisions.md`.
+The items stay as written, red, until the designer judges them.
 
 **M1 Your arms and sword** · RED
 Claim: `Docs/Spec.md`, Combat; the delivery.

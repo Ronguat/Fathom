@@ -77,6 +77,8 @@ def render_coverage():
 
 def main():
     text = open(DOC, encoding="utf-8", newline="").read()
+    nl = "\r\n" if "\r\n" in text else "\n"
+    text = text.replace("\r\n", "\n")
     for b, e in ((BEGIN, END), (COV_BEGIN, COV_END)):
         if b not in text or e not in text:
             print("gen-matrix: no %s region in %s" % (b, DOC))
@@ -90,7 +92,7 @@ def main():
             text = text[:i] + fresh + text[j:]
     if "--check" in sys.argv:
         return 1 if stale else 0
-    open(DOC, "w", encoding="utf-8", newline="").write(text)
+    open(DOC, "w", encoding="utf-8", newline="").write(text.replace("\n", nl))
     print("gen-matrix: %d scenario(s) written" % len(SC.SCENARIOS))
     return 0
 
