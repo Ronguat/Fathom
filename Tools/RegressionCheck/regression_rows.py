@@ -808,6 +808,42 @@ def melee_advance_whole(ctx, r, s):
     advance_report(ctx, r, s)
 
 
+def blades(ctx, world, pid):
+    return [ln for ln in ctx.lines("BLADE", world) if int(ln.fields.get("pid", -1)) == pid]
+
+
+def per_attack_max(lines, field):
+    out = {}
+    for ln in lines:
+        name = ln.fields.get("attack")
+        out[name] = max(out.get(name, 0.0), float(ln.fields.get(field, 0.0)))
+    return " ".join("%s=%.1f" % (k, v) for k, v in sorted(out.items())) or "none"
+
+
+@row("melee.weapon")
+def melee_weapon(ctx, r, s):
+    pid = role_pids(ctx).get("p1", -1)
+    want = ["horizontal_l", "horizontal_r", "overhead_l", "overhead_r", "thrust_l", "thrust_r"]
+    for world in ("C1", "C2"):
+        lines = blades(ctx, world, pid)
+        r.add(sorted(set(ln.fields.get("attack") for ln in lines)) == want, "p1 BLADE lines on %s cover every attack" % world,
+              "%d lines, %s" % (len(lines), " ".join(sorted(set(str(ln.fields.get("attack")) for ln in lines))) or "none"))
+        band(r, "p1 BLADE lines on %s per attack" % world,
+             [sum(1 for ln in lines if ln.fields.get("attack") == a) for a in want], 15, 200, "lines")
+        band(r, "drawn third-person tracers against the baked ones on %s, every release frame (cm)" % world,
+             [ln.fields.get("err_max", 99.0) for ln in lines], 0.0, 5.0, "cm")
+        band(r, "the weapon component against the hand socket it rides on %s (cm)" % world,
+             [ln.fields.get("att", 99.0) for ln in lines], 0.0, 1.0, "cm")
+        counts = set(int(ln.fields.get("n", 0)) for ln in lines)
+        r.add(len(counts) == 1 and min(counts) >= 2, "tracer count constant on %s" % world, "%s" % sorted(counts))
+        r.add(True, "per attack, the largest tracer error on %s (cm)" % world, per_attack_max(lines, "err_max"))
+    owner = [ln for ln in blades(ctx, "C1", pid) if ln.fields.get("fp_tip", -1.0) >= 0.0]
+    band(r, "first-person tip reported on C1", [len(owner)], 1, 100000, "lines")
+    r.add(True, "first-person tip against the traced tip on C1, largest per attack (cm)", per_attack_max(owner, "fp_tip"))
+    r.add(True, "first-person base against the traced base on C1, largest per attack (cm)", per_attack_max(owner, "fp_base"))
+    cost_sane(ctx, r)
+
+
 # --- self-test --------------------------------------------------------------------
 
 SELF_TEST_SLICE = """\

@@ -9,17 +9,17 @@
 #   ./Tools/CommentCheck/comment-check.sh --baseline
 #
 # file<TAB>comment lines<TAB>comment words
-Source/Fathom/Combat/FMAttackData.h	10	89
-Source/Fathom/Combat/FMCombatComponent.h	21	333
+Source/Fathom/Combat/FMAttackData.h	13	143
+Source/Fathom/Combat/FMCombatComponent.h	24	396
 Source/Fathom/Combat/FMCombatTypes.cpp	3	9
-Source/Fathom/Combat/FMCombatTypes.h	22	303
+Source/Fathom/Combat/FMCombatTypes.h	25	381
 Source/Fathom/Core/FMGameMode.h	1	19
 Source/Fathom/Core/FMGameState.h	7	77
 Source/Fathom/Core/FMHUD.h	6	63
 Source/Fathom/Core/FMPlayerController.h	21	318
 Source/Fathom/Core/FMPlayerState.h	1	21
 Source/Fathom/Deck/FMDeckModes.h	13	196
-Source/Fathom/Deck/FMPlayerPawn.h	24	457
+Source/Fathom/Deck/FMPlayerPawn.h	27	576
 Source/Fathom/Deck/FMSwimMode.h	6	59
 Source/Fathom/Fathom.h	2	21
 Source/Fathom/Net/FMTrace.h	12	138

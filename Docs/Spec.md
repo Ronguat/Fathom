@@ -83,11 +83,13 @@ ship space; a parry window that resolves the same way on both machines under lat
 which is combat state rolling back; and attack direction from mouse motion, replicated as intent.
 
 Three attack types, overhead, horizontal and thrust, each on either side: the type is the key
-pressed, the side is the direction of the view's last horizontal turn before the press. First
-person is the aim frame, with third person as the pre-registered fallback: the blade is a
-segment from the weapon socket along the blade's axis, baked from the first-person clip at every
-frame in pawn space, so the server sweeps from state alone and never from a skeletal pose; the
-swing turns with the pawn's yaw and not with its pitch. An attack is windup, release and recovery
+pressed, the side is the direction of the view's last horizontal turn before the press. The third-person
+weapon is the blade: an array of tracers spaced between two sockets on the weapon mesh in the
+hand, their positions baked from the third-person clip at every frame in pawn space, so the
+server sweeps from state alone and never from a skeletal pose, each tracer swept from its last
+frame's position to this one's; the first-person arms carry the same weapon cosmetically, and
+its divergence from the traced one is measured, never asserted; the swing turns with the pawn's
+yaw and not with its pitch. An attack is windup, release and recovery
 in frames from its data asset: windup ends where the clip's AutoAlignment curve reaches 1, a
 swing's release runs 30 frames from there and a thrust's to the plateau's end. Hit volumes are a
 capsule and a head sphere, the head tested first, and a body is met at most once per swing. The

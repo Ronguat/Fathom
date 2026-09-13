@@ -51,18 +51,23 @@ and `frame` under `sf` an input that arrived after its frame, which the delay ex
 tick and whenever it changes. `COMBAT pid= sf= phase=<idle|windup|release|recovery|parry>
 attack=<name|-> start=<frame> parry=<frame>` is written by every world for every pawn at a phase
 change, `start` the frame the attack began in the sync state, `parry` the parry's; the melee rows
-compare `start` and the phase order across worlds. `HIT pid=<attacker> sf= target= rf= rp= k=
+compare `start` and the phase order across worlds. `HIT pid=<attacker> sf= target= rf= rp= k= tracer=
 part=<head|body> x= y= z= tx= ty= tz= moved= window= facing=` is written by the server at the
 frame a blade met a body: `rf` the frame the attacker's command said its proxies were drawn from
 and `rp` the fraction toward the next, between which the body is rewound; `k` the attack frame;
 `x..z` the contact and `tx..tz` the rewound body's centre, both in the attacker's frame, ship
 space when it stands on the ship; `moved` how far that body moved since; `window` and `facing`
 whether it was parrying and facing. A proxy's own `POSE` labels `sf` with that same `rf`, so
-the row reads the rendered position off the label. `PARRY pid= sf= target= rf= rp= k= margin=
+the row reads the rendered position off the label. `PARRY pid= sf= target= rf= rp= k= tracer= margin=
 x= y= z=` is the same for a blade a parry met, `margin` the frames the window had left at `rf`. `SWING pid= sf= attack= start= hits= parried=` is written by the server
 as release ends. `SCORE pid= taken= dealt= parries=` is written by the server when a tally changes
 and by a client when the replicated tallies arrive. `BOARD pid= sf=` is written by the server
-when a pawn lands on the deck by the board key. `MARK category=<c>` is the marker hotkey,
+when a pawn lands on the deck by the board key. `BLADE pid= k=<attack frame> attack= n=<tracers> err_max= err_base= err_tip= att= pos= fp_base= fp_tip=` is
+written by a client on every rendered frame of a release, for its own pawn and for a proxy: the
+third-person weapon's tracers as drawn, read off its sockets in pawn space, against the baked
+tracers at the attack frame the body was posed at, the largest error and the two ends'; `fp_*`
+is the first-person weapon's ends against the same baked ends, on the owner, -1 elsewhere.
+`DRAWRX pid= hit= rf= tracer= parried=` is a client receiving a hit's draw. `MARK category=<c>` is the marker hotkey,
 `M`, and the console command `FM.Mark <category>`. Everything else is a rung's own vocabulary.
 
 **Clients relay their trace to the server** every tenth of a second over a reliable call in
@@ -88,16 +93,17 @@ for the items in `Docs/Checklist.md`. A
 view mode or show flag reaches the play viewport only through the controller's console.
 **A human at the play window** boards with B, flies where the view points with F and drops with
 F again, drives the stations from their placeholders on
-the deck with Left/Right, Up/Down, `[` `]`, X and E, sees the sail as a slab hanging from the
+the deck with Left/Right, Up/Down, `[` `]`, X and E, sees the weapon in every hand, the sail as a slab hanging from the
 yard, the wind as a pennant at the masthead and the
 floor's edge as five still columns, reads `AFMHUD`, the world tag, frame,
 measured lag, advance, the session's station delay, mode, ship-space place or the distance to the ship and, swimming, the way back, nearest station and its radius, the ship's speed
 and station values, sea state, wind, combat phase, tallies and the controller's notice, and
 sets a round trip on every world in the process with `FM.Latency <ms>`, or one per client with
 `FM.Latency <ms1> <ms2>`, the server carrying the smallest half. Every hit and parry the
-server resolves is drawn on both clients for half a second, the blade with the rewound capsule
+server resolves is drawn on both clients for half a second, the tracer's path with the rewound capsule
 and head, red for a hit and blue for a parry, on the ship as that world presents it;
-`fm.MeleeDraw 1` draws the local blade green on every release frame. The loop
+`fm.MeleeDraw 1` draws every tracer's path green on every release frame, the body weapon's tracers as drawn
+yellow and the arms' blade orange. The loop
 reads none of this; what is rendered is asserted by nothing.
 
 **The engine's replay system is the upgrade to recon**, recording the server for scrubbing in the
@@ -224,6 +230,7 @@ what is now untested. A loop that lags the surface still prints green.
 | `melee.parry` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f372 p2 tap parry | 10 s | parry, combat, cost |
 | `melee.parry-late` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f412 p2 tap parry | 10 s | parry, combat, cost |
 | `melee.swing` | S C1 C2 | 0, 50, 100, 150 | f120 p1 ship sail_length 1.0; f300 p2 ship wheel 0.5; f400 p1 face 1.0; f420 p1 tap attack_overhead | 12 s | combat, cost |
+| `melee.weapon` | S C1 C2 | 0, 150 | f120 p1 ship sail_length 1.0; f340 p1 face 1.0; f360 p1 tap attack_overhead; f500 p1 face -1.0; +9 more | 23 s | tracers, combat, cost |
 
 *Generated from `Tools/RegressionCheck/scenarios.py` by `Tools/RegressionCheck/gen-matrix.py`. Edit the fixtures there, never this table.*
 <!-- matrix:end -->
@@ -235,13 +242,14 @@ what is now untested. A loop that lags the surface still prints green.
 | Mechanic | Rows asserting it |
 |---|---|
 | two worlds | `deck.station`, `deck.station-key`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
-| cost | `deck.jump`, `deck.stand`, `deck.station`, `deck.station-key`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
+| cost | `deck.jump`, `deck.stand`, `deck.station`, `deck.station-key`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing`, `melee.weapon`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
 | injection latency | `deck.jump`, `deck.station-key`, `deck.walk`, `harness.jump`, `harness.walk`, `harness.walk-loss` |
 | determinism | `deck.jump`, `deck.stand`, `deck.swim`, `deck.walk`, `harness.idle`, `harness.jump`, `harness.walk`, `harness.walk-loss`, `ocean.agree`, `ship.sail`, `ship.stop`, `ship.turn`, `ship.turn-loss` |
-| combat | `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing` |
+| combat | `melee.advance-half`, `melee.advance-whole`, `melee.direction`, `melee.feint`, `melee.feint-loss`, `melee.hit`, `melee.hit-calm`, `melee.hit-walk`, `melee.parry`, `melee.parry-late`, `melee.swing`, `melee.weapon` |
 | rewind | `melee.hit`, `melee.hit-calm`, `melee.hit-walk` |
 | parry | `melee.parry`, `melee.parry-late` |
 | advance | `melee.advance-half`, `melee.advance-whole` |
+| tracers | `melee.weapon` |
 
 *Generated from each row's `covers` in `Tools/RegressionCheck/scenarios.py` by `Tools/RegressionCheck/gen-matrix.py`.*
 <!-- coverage:end -->

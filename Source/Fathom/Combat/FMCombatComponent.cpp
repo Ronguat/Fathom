@@ -19,7 +19,7 @@
 namespace
 {
 	TAutoConsoleVariable<int32> CVarMeleeDraw(TEXT("fm.MeleeDraw"), 0,
-		TEXT("Draws the local pawn's blade on every release frame"));
+		TEXT("Draws the local pawn's tracer paths, and its drawn weapons' tracers, on every release frame"));
 	constexpr double DrawSeconds = 0.5;
 }
 
@@ -158,12 +158,13 @@ double UFMCombatComponent::PresentedFrame() const
 	{
 		return Tick.Interpolation.ToFrame - 1 + Tick.Interpolation.PCT;
 	}
-	const float Fraction = FMath::Clamp(Tick.UnspentTimeMS / static_cast<float>(FMath::Max(1, Tick.FixedStepMS)), 0.0f, 1.0f);
+	const float Fraction = FMath::Clamp(Tick.UnspentTimeMS / FMath::Max(1.0f, Tick.FixedStepRealTimeMS), 0.0f, 1.0f);
 	return Mover->GetLastTimeStep().ServerFrame - 1 + Fraction;
 }
 
-bool UFMCombatComponent::Presented(bool bFirstPerson, const UAnimSequence*& OutClip, float& OutTime) const
+bool UFMCombatComponent::Presented(bool bFirstPerson, const UAnimSequence*& OutClip, float& OutTime, float& OutAttackFrame) const
 {
+	OutAttackFrame = -1.0f;
 	const FFMCombatState* S = State();
 	if (!S)
 	{
@@ -171,13 +172,14 @@ bool UFMCombatComponent::Presented(bool bFirstPerson, const UAnimSequence*& OutC
 	}
 	const double Frame = PresentedFrame();
 	const UNetworkPredictionWorldManager* Prediction = GetWorld()->GetSubsystem<UNetworkPredictionWorldManager>();
-	const float StepSeconds = Prediction ? Prediction->GetFixedTickState().FixedStepMS / 1000.0f : 1.0f / 60.0f;
+	const float StepSeconds = Prediction ? Prediction->GetFixedTickState().FixedStepRealTimeMS / 1000.0f : 1.0f / 60.0f;
 	const EFMCombatPhase Phase = PhaseAt(*S, FMath::FloorToInt32(Frame));
 	if (Phase == EFMCombatPhase::Windup || Phase == EFMCombatPhase::Release || Phase == EFMCombatPhase::Recovery)
 	{
 		const UFMAttackData* Data = AttackData(S->Attack);
 		OutClip = bFirstPerson ? Data->FirstPerson : Data->ThirdPerson;
-		OutTime = static_cast<float>(FMath::Max(0.0, Frame - S->AttackStart)) * StepSeconds;
+		OutAttackFrame = static_cast<float>(FMath::Max(0.0, Frame - S->AttackStart));
+		OutTime = OutAttackFrame * StepSeconds;
 		return OutClip != nullptr;
 	}
 	if (Phase == EFMCombatPhase::Parry)
@@ -187,6 +189,20 @@ bool UFMCombatComponent::Presented(bool bFirstPerson, const UAnimSequence*& OutC
 		return OutClip != nullptr;
 	}
 	return false;
+}
+
+FTransform UFMCombatComponent::PresentedPawnFrame() const
+{
+	const USceneComponent* Visual = Mover ? Mover->GetPrimaryVisualComponent() : nullptr;
+	const AActor* Owner = GetOwner();
+	const FVector Location = Visual ? Visual->GetComponentLocation() : Owner->GetActorLocation();
+	const float Yaw = Visual ? Visual->GetComponentRotation().Yaw : Owner->GetActorRotation().Yaw;
+	return FTransform(FRotator(0.0f, Yaw, 0.0f), Location);
+}
+
+bool UFMCombatComponent::DrawEnabled()
+{
+	return CVarMeleeDraw.GetValueOnGameThread() > 0;
 }
 
 int32 UFMCombatComponent::PlayerId() const
@@ -209,6 +225,8 @@ void UFMCombatComponent::OnRep_Score()
 void UFMCombatComponent::ClientDraw_Implementation(const FFMHitDraw& Draw)
 {
 	PendingDraws.Emplace(GetWorld()->GetTimeSeconds() + DrawSeconds, Draw);
+	FM_TRACE(this, TEXT("DRAWRX pid=%d hit=%d rf=%d tracer=%d parried=%d"),
+		PlayerId(), Draw.Frame, Draw.RenderedFrame, Draw.Tracer, Draw.bParried ? 1 : 0);
 }
 
 void UFMCombatComponent::DrawPending()
@@ -232,9 +250,9 @@ void UFMCombatComponent::DrawPending()
 		const FVector Up = Frame.TransformVectorNoScale(Draw.Up);
 		DrawDebugCapsule(World, Centre, K->BodyHalfHeight, K->BodyRadius, FRotationMatrix::MakeFromZ(Up).ToQuat(), Colour, false, -1.0f, 0, 1.5f);
 		DrawDebugSphere(World, Centre + Up * K->HeadHeight, K->HeadRadius, 12, Colour, false, -1.0f, 0, 1.5f);
-		DrawDebugLine(World, Frame.TransformPosition(Draw.BladeBase), Frame.TransformPosition(Draw.BladeTip), Colour, false, -1.0f, 0, 3.0f);
+		DrawDebugLine(World, Frame.TransformPosition(Draw.TracerFrom), Frame.TransformPosition(Draw.TracerTo), Colour, false, -1.0f, 0, 3.0f);
 	}
-	if (CVarMeleeDraw.GetValueOnGameThread() <= 0)
+	if (!DrawEnabled())
 	{
 		return;
 	}
@@ -244,14 +262,19 @@ void UFMCombatComponent::DrawPending()
 	{
 		return;
 	}
-	const int32 Kf = FMath::FloorToInt32(PresentedFrame()) - S->AttackStart;
-	FVector Base, Tip;
-	if (Kf >= Data->WindupFrames && Kf < Data->WindupFrames + Data->ReleaseFrames && Data->BladeAt(Kf, Base, Tip))
+	const float Kf = static_cast<float>(PresentedFrame() - S->AttackStart);
+	TArray<FVector> Tracers, Previous;
+	if (Kf < Data->WindupFrames || Kf >= Data->WindupFrames + Data->ReleaseFrames
+		|| !Data->TracersBetween(Kf, Tracers) || !Data->TracersBetween(FMath::Max(Kf - 1.0f, 0.0f), Previous))
 	{
-		const AActor* Owner = GetOwner();
-		const FTransform Pawn(FRotator(0.0f, Owner->GetActorRotation().Yaw, 0.0f), Owner->GetActorLocation());
-		DrawDebugLine(World, Pawn.TransformPosition(Base), Pawn.TransformPosition(Tip), FColor::Green, false, -1.0f, 0, 2.0f);
+		return;
 	}
+	const FTransform Frame = PresentedPawnFrame();
+	for (int32 T = 0; T < Tracers.Num(); ++T)
+	{
+		DrawDebugLine(World, Frame.TransformPosition(Previous[T]), Frame.TransformPosition(Tracers[T]), FColor::Green, false, -1.0f, 0, 1.0f);
+	}
+	DrawDebugLine(World, Frame.TransformPosition(Tracers[0]), Frame.TransformPosition(Tracers.Last()), FColor::Green, false, -1.0f, 0, 2.5f);
 }
 
 void UFMCombatComponent::HandlePreSimulationTick(const FMoverTimeStep& TimeStep, const FMoverInputCmdContext& InputCmd)
@@ -369,15 +392,14 @@ void UFMCombatComponent::Sweep(FFMCombatState& S, const FMoverDefaultSyncState& 
 	{
 		return;
 	}
-	FVector Base0, Tip0, Base1, Tip1;
-	if (!Attack->BladeAt(Kf, Base1, Tip1))
+	TConstArrayView<FVector> Tracers, Previous;
+	if (!Attack->TracersAt(Kf, Tracers))
 	{
 		return;
 	}
-	if (!Attack->BladeAt(Kf - 1, Base0, Tip0))
+	if (!Attack->TracersAt(Kf - 1, Previous))
 	{
-		Base0 = Base1;
-		Tip0 = Tip1;
+		Previous = Tracers;
 	}
 
 	const UPrimitiveComponent* MyBase = Body.GetMovementBase();
@@ -387,7 +409,6 @@ void UFMCombatComponent::Sweep(FFMCombatState& S, const FMoverDefaultSyncState& 
 	const FTransform Pawn(FRotator(0.0f, MyYaw, 0.0f), MyLocation);
 	const FVector Up = MyBase ? BaseTransform.InverseTransformVectorNoScale(FVector::UpVector) : FVector::UpVector;
 	const float AxisHalf = FMath::Max(0.0f, K->BodyHalfHeight - K->BodyRadius);
-	const int32 Steps = FMath::Max(1, K->SweepSteps);
 	const int32 MyId = PlayerId();
 
 	for (TActorIterator<APawn> It(GetWorld()); It; ++It)
@@ -418,11 +439,10 @@ void UFMCombatComponent::Sweep(FFMCombatState& S, const FMoverDefaultSyncState& 
 		const FVector Head = Centre + Up * K->HeadHeight;
 		const FVector Axis0 = Centre - Up * AxisHalf;
 		const FVector Axis1 = Centre + Up * AxisHalf;
-		for (int32 Step = 1; Step <= Steps; ++Step)
+		for (int32 T = 0; T < Tracers.Num(); ++T)
 		{
-			const float Alpha = static_cast<float>(Step) / Steps;
-			const FVector A0 = Pawn.TransformPosition(FMath::Lerp(Base0, Base1, Alpha));
-			const FVector A1 = Pawn.TransformPosition(FMath::Lerp(Tip0, Tip1, Alpha));
+			const FVector A0 = Pawn.TransformPosition(Previous[T]);
+			const FVector A1 = Pawn.TransformPosition(Tracers[T]);
 			FVector Contact;
 			const TCHAR* Part = nullptr;
 			if (FFMCombatRules::SegmentToPoint(A0, A1, Head, Contact) <= K->HeadRadius)
@@ -445,12 +465,13 @@ void UFMCombatComponent::Sweep(FFMCombatState& S, const FMoverDefaultSyncState& 
 			const FVector ToMe = (MyLocation - Centre).GetSafeNormal2D();
 			const bool bFacing = FVector::DotProduct(Forward, ToMe) >= FMath::Cos(FMath::DegreesToRadians(K->ParryConeDegrees * 0.5f));
 			FFMHitDraw Draw;
-			Draw.BladeBase = A0;
-			Draw.BladeTip = A1;
+			Draw.TracerFrom = A0;
+			Draw.TracerTo = A1;
 			Draw.Centre = Centre;
 			Draw.Up = Up;
 			Draw.Frame = Frame;
 			Draw.RenderedFrame = AtFrame;
+			Draw.Tracer = static_cast<uint8>(T);
 			Draw.bShipSpace = MyBase != nullptr;
 			Draw.bParried = bWindow && bFacing;
 			ClientDraw(Draw);
@@ -460,8 +481,8 @@ void UFMCombatComponent::Sweep(FFMCombatState& S, const FMoverDefaultSyncState& 
 				++S.Parried;
 				++Other->ParriesMade;
 				Other->TraceScore();
-				FM_TRACE(this, TEXT("PARRY pid=%d sf=%d target=%d rf=%d rp=%.2f k=%d margin=%d x=%.1f y=%.1f z=%.1f"),
-					MyId, Frame, TheirId, AtFrame, AtFraction, Kf, K->ParryFrames - (AtFrame - Their.ParryStart), Contact.X, Contact.Y, Contact.Z);
+				FM_TRACE(this, TEXT("PARRY pid=%d sf=%d target=%d rf=%d rp=%.2f k=%d tracer=%d margin=%d x=%.1f y=%.1f z=%.1f"),
+					MyId, Frame, TheirId, AtFrame, AtFraction, Kf, T, K->ParryFrames - (AtFrame - Their.ParryStart), Contact.X, Contact.Y, Contact.Z);
 			}
 			else
 			{
@@ -470,8 +491,8 @@ void UFMCombatComponent::Sweep(FFMCombatState& S, const FMoverDefaultSyncState& 
 				++Other->HitsTaken;
 				TraceScore();
 				Other->TraceScore();
-				FM_TRACE(this, TEXT("HIT pid=%d sf=%d target=%d rf=%d rp=%.2f k=%d part=%s x=%.1f y=%.1f z=%.1f tx=%.1f ty=%.1f tz=%.1f moved=%.1f window=%d facing=%d"),
-					MyId, Frame, TheirId, AtFrame, AtFraction, Kf, Part, Contact.X, Contact.Y, Contact.Z, Centre.X, Centre.Y, Centre.Z, Moved, bWindow ? 1 : 0, bFacing ? 1 : 0);
+				FM_TRACE(this, TEXT("HIT pid=%d sf=%d target=%d rf=%d rp=%.2f k=%d tracer=%d part=%s x=%.1f y=%.1f z=%.1f tx=%.1f ty=%.1f tz=%.1f moved=%.1f window=%d facing=%d"),
+					MyId, Frame, TheirId, AtFrame, AtFraction, Kf, T, Part, Contact.X, Contact.Y, Contact.Z, Centre.X, Centre.Y, Centre.Z, Moved, bWindow ? 1 : 0, bFacing ? 1 : 0);
 			}
 			break;
 		}

@@ -155,6 +155,11 @@ a routing fact rather than a limit. Melee's intake retargets or swaps the manneq
   with `socket_name`, `bone_name` and the relative transform, where `Skeleton.Sockets` is refused
   to reflection; a `SkeletalMeshComponent()` built in Python with `set_skeletal_mesh_asset` answers
   `get_num_bones`, `get_bone_name` and `get_bone_index` outside any world.
+- **A socket's name and bone are read-only to reflection; the MCP skeletal mesh toolset makes named
+  sockets** *(Python and MCP, 2026-09-12)*: `SkeletalMeshSocket.socket_name` and `bone_name` refuse
+  `set_editor_property`, so a socket built with `new_object` cannot be named from Python;
+  `SkeletalMeshTools.add_socket(mesh, name, bone)` creates it named and parented, `relative_location`
+  then takes a reflection write, `SkeletalMesh.find_socket` reaches it and `save_loaded_asset` keeps it.
 - **Bone positions in world space are readable live in PIE from Python** *(2026-08-28)*:
   `SkeletalMeshComponent.get_socket_location` resolves bone names, not only sockets, during a play
   session. With `GameplayStatics.set_global_time_dilation` it charts any bone through any event.
@@ -455,3 +460,37 @@ not because the capability was absent — a guessed API name, and the Blueprint 
 wanted. And `is_editor_property_overridden` returns an enum whose every member is truthy: tested with
 `if r:` it reported every name as overridden; compared against `EditorPropertyValueState.OVERRIDDEN`
 it reported none. **A test that cannot return "no" is not a test.**
+
+## 2026-09-12 — The weapon in the hand, measured against its bake
+
+**A skeletal weapon mounts by Python and MCP together** *(Python and MCP, 2026-09-12)*: the socket
+finding above; `SkeletalMeshComponent.get_ref_pose_transform(bone)` reads the mesh's reference pose
+without a world, and it is the mesh's, not its skeleton's, that the renderer binds to. The
+Greatsword's mesh keeps its one bone at the origin while the skeleton it came with puts it at
+minus five along the blade; a bake read from the skeleton sat 5 cm off the drawn weapon on every
+tracer until it read the mesh.
+
+**An unrendered skeletal mesh component holds no bones** *(PIE, 2026-09-12)*: with
+`OnlyTickPoseWhenRendered`, a component nothing renders never evaluates, its sockets answer at their
+bone-relative offsets over an identity bone, and a first-person arms mesh whose reference pose lies
+outside the view never enters it, since it cannot render until it poses. `TickAnimation(0)` then
+`RefreshBoneTransforms()` after `SetPosition` evaluates the set time at once, and attached children
+move with the bones only after `UpdateChildTransforms()`; without it a child reads the pose the
+engine evaluated a render frame earlier. A weapon with no animation holds its bind pose through
+`SetForceRefPose(true)`.
+
+**The prediction framework's fixed step is an integer of milliseconds** *(headers and PIE,
+2026-09-12)*: `FFixedTickState::FixedStepMS` is 16 at 60 frames a second and
+`FixedStepRealTimeMS` the 16.667 ms each frame takes. A clip timed by the integer plays 4 percent
+slow, which read as a 20 to 40 cm tip error against the bake; the unspent fraction between steps
+divides by the real step too.
+
+**A high-resolution screenshot omits debug draws; the `Shot` command's backbuffer keeps them**
+*(PIE, 2026-09-12)*: `AutomationLibrary.take_high_res_screenshot` showed no line, capsule or point
+that `SystemLibrary.execute_console_command(world, "Shot")` captured in the same frames, which is
+what hid the hit draw on 2026-09-08. Lines at depth priority 1 render in no game viewport; keep
+debug draws at 0 and accept that a body occludes them.
+
+**`PlayerController.console_command` is not in this engine's Python reflection** *(Python,
+2026-09-12)*; `SystemLibrary.execute_console_command(world, cmd)` sets a console variable for the
+whole process from any world context.

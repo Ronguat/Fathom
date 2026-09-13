@@ -543,7 +543,7 @@ FTransform AFMShip::PresentedTransform() const
 	if (Prediction)
 	{
 		const FFixedTickState& Tick = Prediction->GetFixedTickState();
-		Fraction = FMath::Clamp(Tick.UnspentTimeMS / static_cast<float>(FMath::Max(1, Tick.FixedStepMS)), 0.0f, 1.0f);
+		Fraction = FMath::Clamp(Tick.UnspentTimeMS / FMath::Max(1.0f, Tick.FixedStepRealTimeMS), 0.0f, 1.0f);
 	}
 	return FTransform(FQuat::Slerp(LastHullPose.GetRotation(), HullPose.GetRotation(), Fraction),
 		FMath::Lerp(LastHullPose.GetLocation(), HullPose.GetLocation(), Fraction));

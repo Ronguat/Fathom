@@ -92,7 +92,7 @@ def teleport(role, loc, yaw=0.0):
 
 
 def console(role, command):
-    STATE["pcs"][role].console_command(command)
+    unreal.SystemLibrary.execute_console_command(world(TAGS[role]), command)
     return command
 
 

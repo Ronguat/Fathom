@@ -49,7 +49,7 @@ SHIP_INPUTS = ("wheel", "sail_length", "sail_angle", "anchor", "ladder")
 
 # The mechanics a row may claim to cover. The coverage map in Docs/Debug-Instruments.md is
 # generated from these, so a claim outside the list fails at load rather than drifting.
-MECHANICS = ("two worlds", "cost", "injection latency", "determinism", "combat", "rewind", "parry", "advance")
+MECHANICS = ("two worlds", "cost", "injection latency", "determinism", "combat", "rewind", "parry", "advance", "tracers")
 
 # Rung order, which is the order the matrix lists families in.
 FAMILIES = ("harness", "ocean", "ship", "deck", "melee", "ship-combat", "ship-to-ship")
@@ -372,6 +372,27 @@ SCENARIOS = {
         stop=dict(duration=10.0),
         mutations=[("regex", r"\[S\] (HIT|PARRY) ", r"[S] NONE "), ("regex", r"(\[C2\] SCORE pid=\d+ taken=)\d+", r"\g<1>9")],
         allow=[],
+    ),
+    # Every attack once, alternating sides by a turn before each press; the BLADE lines on both
+    # clients compare the drawn third-person weapon's tracers with the baked ones at the frame the
+    # body was posed at, and report the first-person weapon's divergence for the designer.
+    "melee.weapon": dict(
+        family="melee", covers=["tracers", "combat", "cost"],
+        worlds=("S", "C1", "C2"), latencies=(0, 150), loss=0.0,
+        roles=dict(p1=("C1", (0.0, 15200.0, 320.0), 0.0),
+                   p2=("C2", (150.0, 15200.0, 320.0), 180.0)),
+        cvars={"fm.SeaState": "1.0", "fm.WindAngle": "30"},
+        plan=[(120, "p1", "ship", "sail_length", 1.0),
+              (340, "p1", "face", 1.0), (360, "p1", "tap", "attack_overhead"),
+              (500, "p1", "face", -1.0), (520, "p1", "tap", "attack_overhead"),
+              (660, "p1", "face", 1.0), (680, "p1", "tap", "attack_horizontal"),
+              (820, "p1", "face", -1.0), (840, "p1", "tap", "attack_horizontal"),
+              (980, "p1", "face", 1.0), (1000, "p1", "tap", "attack_thrust"),
+              (1140, "p1", "face", -1.0), (1160, "p1", "tap", "attack_thrust")],
+        stop=dict(duration=23.0),
+        mutations=[("set", "BLADE", "err_max", "99.0"), ("regex", r"(\[C2\] BLADE .*? n=)\d+", r"\g<1>1")],
+        allow=[],
+        injection_tolerance=2,
     ),
 }
 

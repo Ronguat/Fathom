@@ -32,12 +32,13 @@ struct FFMTeleportEffect : public FTeleportEffect
 /**
  * The player's pawn: a capsule driven by a Character Mover component on the Network Prediction
  * backend, first-person camera at the eye, the delivered arms drawn for the owner and the body
- * for everyone else in the engine's default material, each posed from the combat state at the
- * presented frame. Input is the
- * controller's key table, read when the input command is authored; the attack's side is the last
- * turn of the control yaw. On the owning client the view turns with the deck's yaw at each
- * finalized frame, so a player standing on a turning ship keeps facing the same part of it.
- * Writes INPUT on every key edge and POSE every PoseEveryFrames frames.
+ * for everyone else in the engine's default material, the weapon in each one's hand at the hand
+ * socket, each posed from the combat state at the presented frame and otherwise from the idle
+ * and walk clips by time. Input is the controller's key table, read when the input command is
+ * authored; the attack's side is the last turn of the control yaw. On the owning client the view
+ * turns with the deck's yaw at each finalized frame, so a player standing on a turning ship keeps
+ * facing the same part of it. Writes INPUT on every key edge, POSE every PoseEveryFrames frames,
+ * and BLADE on every release frame: the drawn weapons' tracers against the baked ones.
  */
 UCLASS()
 class FATHOM_API AFMPlayerPawn : public APawn, public IMoverInputProducerInterface
@@ -112,8 +113,11 @@ protected:
 	/** The base's transform as drawn this frame: a ship's mesh between its last two frames, any other base as it is. */
 	static FTransform PresentedBase(const UPrimitiveComponent& Base);
 
-	/** Poses one mesh from the combat state at the presented frame, the first attack's first frame when idle. */
+	/** Poses one mesh from the combat state at the presented frame, or from the walk and idle clips by time, and evaluates it at once where its bones are read, so the frame draws the pose it was given; the body's pose remembers the attack frame it stands at for TraceBlade. */
 	void Pose(USkeletalMeshComponent* Target, bool bFirstPerson);
+
+	/** Reads the drawn weapons' tracers, the body's and for the owner the arms', against the baked tracers at the attack frame the body was just posed at, and writes BLADE. */
+	void TraceBlade();
 
 	/** The smoothed root Mover offsets between frames; the meshes and the camera ride it. */
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
@@ -128,6 +132,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<USkeletalMeshComponent> BodyMesh;
 
+	/** The weapon in the arms' hand, seen by the owner, and in the body's, seen by everyone else. */
+	UPROPERTY(VisibleAnywhere, Category="Fathom")
+	TObjectPtr<USkeletalMeshComponent> ArmsWeapon;
+
+	UPROPERTY(VisibleAnywhere, Category="Fathom")
+	TObjectPtr<USkeletalMeshComponent> BodyWeapon;
+
 	UPROPERTY(VisibleAnywhere, Category="Fathom")
 	TObjectPtr<UCameraComponent> Camera;
 
@@ -139,6 +150,11 @@ protected:
 
 private:
 	FString RoleName() const;
+
+	UPROPERTY() TObjectPtr<UAnimSequence> FirstPersonIdle;
+	UPROPERTY() TObjectPtr<UAnimSequence> ThirdPersonIdle;
+	UPROPERTY() TObjectPtr<UAnimSequence> FirstPersonWalk;
+	UPROPERTY() TObjectPtr<UAnimSequence> ThirdPersonWalk;
 
 	FName HarnessRole;
 	TWeakObjectPtr<AFMShip> Ship;
@@ -165,4 +181,8 @@ private:
 	float LastControlYaw = 0.0f;
 	bool bHasLastControlYaw = false;
 	TMap<USkeletalMeshComponent*, const UAnimSequence*> Posed;
+	float LoopSeconds = 0.0f;
+	uint8 PosedAttack = 0;
+	float PosedAttackFrame = -1.0f;
+	bool bPosedRelease = false;
 };

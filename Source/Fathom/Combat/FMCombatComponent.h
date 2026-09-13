@@ -23,18 +23,19 @@ struct FFMBodySample
 	int32 AttackStart = -1;
 };
 
-/** A hit or parry as the server resolved it: the blade and the rewound body in the attacker's frame, ship space when it stood on the ship. */
+/** A hit or parry as the server resolved it: the tracer's path over the frame and the rewound body in the attacker's frame, ship space when it stood on the ship. */
 USTRUCT()
 struct FFMHitDraw
 {
 	GENERATED_BODY()
 
-	UPROPERTY() FVector BladeBase = FVector::ZeroVector;
-	UPROPERTY() FVector BladeTip = FVector::ZeroVector;
+	UPROPERTY() FVector TracerFrom = FVector::ZeroVector;
+	UPROPERTY() FVector TracerTo = FVector::ZeroVector;
 	UPROPERTY() FVector Centre = FVector::ZeroVector;
 	UPROPERTY() FVector Up = FVector::UpVector;
 	UPROPERTY() int32 Frame = -1;
 	UPROPERTY() int32 RenderedFrame = -1;
+	UPROPERTY() uint8 Tracer = 0;
 	UPROPERTY() bool bShipSpace = false;
 	UPROPERTY() bool bParried = false;
 };
@@ -42,13 +43,14 @@ struct FFMHitDraw
 /**
  * Combat on a Mover pawn. Reads FFMCombatInputs from each frame's command and writes
  * FFMCombatState into the sync state inside the simulation tick, so every world runs the same
- * transitions and a mistaken prediction rolls back. The server keeps every frame's body, sweeps
- * the blade during release against the other bodies at the frame the attacker's command says it
- * rendered, and tallies into replicated counts; once a second it refreshes the player state's
- * advance from the connection's round trip. Each hit and parry is sent to the attacker's and the
- * target's clients, which draw it for half a second on the ship as they present it. Writes
- * COMBAT on every world at a phase change, HIT, PARRY and SWING on the server, SCORE wherever
- * the tallies change.
+ * transitions and a mistaken prediction rolls back. The server keeps every frame's body and, on
+ * each release frame, sweeps every tracer of the attack from its last frame's position to this
+ * one's against the other bodies at the frame the attacker's command says it rendered, tallying
+ * into replicated counts; once a second it refreshes the player state's advance from the
+ * connection's round trip. Each hit and parry is sent to the attacker's and the target's clients,
+ * which draw it for half a second on the ship as they present it. Writes COMBAT on every world at
+ * a phase change, HIT, PARRY and SWING on the server, SCORE wherever the tallies change, DRAWRX
+ * on a client as a hit's draw arrives.
  */
 UCLASS()
 class FATHOM_API UFMCombatComponent : public UActorComponent
@@ -78,10 +80,14 @@ public:
 	static int32 RenderedFrame(const UWorld* World, float& OutFraction);
 	/** The frame the owner is drawn at, with the fraction between steps. */
 	double PresentedFrame() const;
-	/** The clip and the time into it at the presented frame; false when idle. */
-	bool Presented(bool bFirstPerson, const UAnimSequence*& OutClip, float& OutTime) const;
+	/** The clip and the time into it at the presented frame, and the attack frame it stands at, -1 outside an attack; false when idle. */
+	bool Presented(bool bFirstPerson, const UAnimSequence*& OutClip, float& OutTime, float& OutAttackFrame) const;
+	/** Pawn space as this world draws the owner: yaw only, at the mover's visual component. */
+	FTransform PresentedPawnFrame() const;
+	/** fm.MeleeDraw is set. */
+	static bool DrawEnabled();
 
-	/** Draws the hits and parries sent to this client while their moment lasts, and the local blade on every release frame when fm.MeleeDraw is set. Called from the owner's tick. */
+	/** Draws the hits and parries sent to this client while their moment lasts, and the local tracers' paths on every release frame when fm.MeleeDraw is set. Called from the owner's tick. */
 	void DrawPending();
 
 	virtual void BeginPlay() override;

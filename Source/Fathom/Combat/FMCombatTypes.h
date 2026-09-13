@@ -42,18 +42,34 @@ public:
 	UPROPERTY(config, EditAnywhere, Category="Bodies") float HeadRadius = 15.0f;
 	/** Frames of body history the server keeps per pawn. */
 	UPROPERTY(config, EditAnywhere, Category="Bodies") int32 HistoryFrames = 256;
-	/** Blade positions tested between two attack frames. */
-	UPROPERTY(config, EditAnywhere, Category="Bodies") int32 SweepSteps = 4;
+
+	/** The weapon in the hand, drawn on the arms and on the body at WeaponSocket, offset and turned by the mount; its blade_base and blade_tip sockets bound the tracers. */
+	UPROPERTY(config, EditAnywhere, Category="Weapon") TSoftObjectPtr<USkeletalMesh> WeaponMesh;
+	UPROPERTY(config, EditAnywhere, Category="Weapon") FName WeaponSocket = TEXT("weapon_rSocket");
+	UPROPERTY(config, EditAnywhere, Category="Weapon") FVector WeaponOffset = FVector::ZeroVector;
+	UPROPERTY(config, EditAnywhere, Category="Weapon") FRotator WeaponRotation = FRotator::ZeroRotator;
+	UPROPERTY(config, EditAnywhere, Category="Weapon") FName BladeBaseSocket = TEXT("blade_base");
+	UPROPERTY(config, EditAnywhere, Category="Weapon") FName BladeTipSocket = TEXT("blade_tip");
+	/** Tracers spaced from blade_base to blade_tip, each swept from its last frame's position to this one's. */
+	UPROPERTY(config, EditAnywhere, Category="Weapon") int32 TracerCount = 8;
 
 	UPROPERTY(config, EditAnywhere, Category="Presentation") TSoftObjectPtr<USkeletalMesh> FirstPersonMesh;
 	UPROPERTY(config, EditAnywhere, Category="Presentation") TSoftObjectPtr<USkeletalMesh> ThirdPersonMesh;
 	UPROPERTY(config, EditAnywhere, Category="Presentation") TSoftObjectPtr<UAnimSequence> FirstPersonParryPose;
 	UPROPERTY(config, EditAnywhere, Category="Presentation") TSoftObjectPtr<UAnimSequence> ThirdPersonParryPose;
+	/** Looped by time when idle, and while moving faster than WalkSpeedMin. */
+	UPROPERTY(config, EditAnywhere, Category="Presentation") TSoftObjectPtr<UAnimSequence> FirstPersonIdle;
+	UPROPERTY(config, EditAnywhere, Category="Presentation") TSoftObjectPtr<UAnimSequence> ThirdPersonIdle;
+	UPROPERTY(config, EditAnywhere, Category="Presentation") TSoftObjectPtr<UAnimSequence> FirstPersonWalk;
+	UPROPERTY(config, EditAnywhere, Category="Presentation") TSoftObjectPtr<UAnimSequence> ThirdPersonWalk;
+	UPROPERTY(config, EditAnywhere, Category="Presentation") float WalkSpeedMin = 20.0f;
 	/** The camera in pawn space: the head socket of the reference pose, which the bake prints. */
 	UPROPERTY(config, EditAnywhere, Category="Presentation") FVector EyeOffset = FVector(0.0, 0.0, 64.0);
 	/** The meshes under the capsule: origin at the feet, facing +X. */
 	UPROPERTY(config, EditAnywhere, Category="Presentation") FVector MeshOffset = FVector(0.0, 0.0, -88.0);
 	UPROPERTY(config, EditAnywhere, Category="Presentation") float MeshYaw = -90.0f;
+	/** Added to the arms' place under the capsule, so the first-person hands sit in the view; the arms' weapon rides along, its divergence measured. */
+	UPROPERTY(config, EditAnywhere, Category="Presentation") FVector ArmsOffset = FVector::ZeroVector;
 
 	/** The advance in frames for a round trip, from the settings or the console variables. */
 	int32 AdvanceFramesFor(float RoundTripMs, float StepMs) const;

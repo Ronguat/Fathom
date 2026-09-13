@@ -12,6 +12,7 @@
 #include "Deck/FMDeckModes.h"
 #include "Deck/FMSwimMode.h"
 #include "DefaultMovementSet/CharacterMoverComponent.h"
+#include "DrawDebugHelpers.h"
 #include "Engine/SkeletalMesh.h"
 #include "GameFramework/PlayerState.h"
 #include "MoverDataModelTypes.h"
@@ -65,7 +66,15 @@ AFMPlayerPawn::AFMPlayerPawn(const FObjectInitializer& ObjectInitializer)
 	BodyMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BodyMesh"));
 	BodyMesh->SetupAttachment(Visual);
 	BodyMesh->SetOwnerNoSee(true);
-	for (USkeletalMeshComponent* Mesh : { ArmsMesh.Get(), BodyMesh.Get() })
+	ArmsWeapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsWeapon"));
+	ArmsWeapon->SetupAttachment(ArmsMesh);
+	ArmsWeapon->SetOnlyOwnerSee(true);
+	BodyWeapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BodyWeapon"));
+	BodyWeapon->SetupAttachment(BodyMesh);
+	BodyWeapon->SetOwnerNoSee(true);
+	ArmsWeapon->SetForceRefPose(true);
+	BodyWeapon->SetForceRefPose(true);
+	for (USkeletalMeshComponent* Mesh : { ArmsMesh.Get(), BodyMesh.Get(), ArmsWeapon.Get(), BodyWeapon.Get() })
 	{
 		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Mesh->SetCanEverAffectNavigation(false);
@@ -116,12 +125,35 @@ void AFMPlayerPawn::BeginPlay()
 		{ BodyMesh.Get(), K->ThirdPersonMesh.LoadSynchronous() } };
 	for (const TPair<USkeletalMeshComponent*, USkeletalMesh*>& Rig : Rigs)
 	{
-		Rig.Key->SetRelativeLocationAndRotation(K->MeshOffset, FRotator(0.0f, K->MeshYaw, 0.0f));
+		Rig.Key->SetRelativeLocationAndRotation(K->MeshOffset + (Rig.Key == ArmsMesh ? K->ArmsOffset : FVector::ZeroVector), FRotator(0.0f, K->MeshYaw, 0.0f));
 		if (Rig.Value)
 		{
 			Rig.Key->SetSkeletalMeshAsset(Rig.Value);
 		}
 	}
+	USkeletalMesh* WeaponAsset = K->WeaponMesh.LoadSynchronous();
+	const TPair<USkeletalMeshComponent*, USkeletalMeshComponent*> Hands[] = {
+		{ ArmsWeapon.Get(), ArmsMesh.Get() },
+		{ BodyWeapon.Get(), BodyMesh.Get() } };
+	for (const TPair<USkeletalMeshComponent*, USkeletalMeshComponent*>& Hand : Hands)
+	{
+		Hand.Key->AttachToComponent(Hand.Value, FAttachmentTransformRules::KeepRelativeTransform, K->WeaponSocket);
+		Hand.Key->SetRelativeLocationAndRotation(K->WeaponOffset, K->WeaponRotation);
+		if (WeaponAsset)
+		{
+			Hand.Key->SetSkeletalMeshAsset(WeaponAsset);
+		}
+	}
+	if (!IsNetMode(NM_DedicatedServer))
+	{
+		BodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+		ArmsWeapon->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+		BodyWeapon->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+	}
+	FirstPersonIdle = K->FirstPersonIdle.LoadSynchronous();
+	ThirdPersonIdle = K->ThirdPersonIdle.LoadSynchronous();
+	FirstPersonWalk = K->FirstPersonWalk.LoadSynchronous();
+	ThirdPersonWalk = K->ThirdPersonWalk.LoadSynchronous();
 }
 
 void AFMPlayerPawn::Tick(float DeltaSeconds)
@@ -137,12 +169,14 @@ void AFMPlayerPawn::Tick(float DeltaSeconds)
 	}
 	if (!IsNetMode(NM_DedicatedServer))
 	{
+		LoopSeconds += DeltaSeconds;
 		if (GetLocalRole() != ROLE_SimulatedProxy)
 		{
 			SmoothVisual();
 		}
 		Pose(ArmsMesh, true);
 		Pose(BodyMesh, false);
+		TraceBlade();
 		Combat->DrawPending();
 	}
 }
@@ -158,7 +192,7 @@ void AFMPlayerPawn::SmoothVisual()
 	if (Prediction)
 	{
 		const FFixedTickState& Tick = Prediction->GetFixedTickState();
-		Fraction = FMath::Clamp(Tick.UnspentTimeMS / static_cast<float>(FMath::Max(1, Tick.FixedStepMS)), 0.0f, 1.0f);
+		Fraction = FMath::Clamp(Tick.UnspentTimeMS / FMath::Max(1.0f, Tick.FixedStepRealTimeMS), 0.0f, 1.0f);
 	}
 	const FVector Local = FMath::Lerp(SmoothFrom, SmoothTo, Fraction);
 	const float Yaw = SmoothYawFrom + FMath::FindDeltaAngleDegrees(SmoothYawFrom, SmoothYawTo) * Fraction;
@@ -188,11 +222,38 @@ void AFMPlayerPawn::Pose(USkeletalMeshComponent* Target, bool bFirstPerson)
 {
 	const UAnimSequence* Clip = nullptr;
 	float Time = 0.0f;
-	if (!Combat->Presented(bFirstPerson, Clip, Time))
+	float AttackFrame = -1.0f;
+	if (!bFirstPerson)
 	{
-		const UFMAttackData* Idle = Combat->AttackData(1);
-		Clip = Idle ? (bFirstPerson ? Idle->FirstPerson.Get() : Idle->ThirdPerson.Get()) : nullptr;
-		Time = 0.0f;
+		bPosedRelease = false;
+		PosedAttack = 0;
+	}
+	if (Combat->Presented(bFirstPerson, Clip, Time, AttackFrame))
+	{
+		if (!bFirstPerson && AttackFrame >= 0.0f)
+		{
+			const FFMCombatState* S = Combat->State();
+			const UFMAttackData* Data = S ? Combat->AttackData(S->Attack) : nullptr;
+			PosedAttack = S ? S->Attack : 0;
+			PosedAttackFrame = AttackFrame;
+			bPosedRelease = Data && AttackFrame >= Data->WindupFrames && AttackFrame < Data->WindupFrames + Data->ReleaseFrames;
+		}
+	}
+	else
+	{
+		const FMoverDefaultSyncState* State = Mover->GetSyncState().SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
+		const FVector Velocity = State ? (State->GetMovementBase() ? State->GetVelocity_BaseSpace() : State->GetVelocity_WorldSpace()) : FVector::ZeroVector;
+		const bool bWalking = Velocity.Size2D() > GetDefault<UFMCombatSettings>()->WalkSpeedMin;
+		Clip = bWalking ? (bFirstPerson ? FirstPersonWalk : ThirdPersonWalk) : (bFirstPerson ? FirstPersonIdle : ThirdPersonIdle);
+		if (Clip)
+		{
+			Time = FMath::Fmod(LoopSeconds, FMath::Max(Clip->GetPlayLength(), 0.001f));
+		}
+		else
+		{
+			const UFMAttackData* Idle = Combat->AttackData(1);
+			Clip = Idle ? (bFirstPerson ? Idle->FirstPerson.Get() : Idle->ThirdPerson.Get()) : nullptr;
+		}
 	}
 	if (!Clip)
 	{
@@ -205,6 +266,76 @@ void AFMPlayerPawn::Pose(USkeletalMeshComponent* Target, bool bFirstPerson)
 		Target->SetAnimation(const_cast<UAnimSequence*>(Clip));
 	}
 	Target->SetPosition(Time, false);
+	if (Target == BodyMesh || IsLocallyControlled())
+	{
+		Target->TickAnimation(0.0f, false);
+		Target->RefreshBoneTransforms();
+		Target->UpdateChildTransforms();
+	}
+}
+
+void AFMPlayerPawn::TraceBlade()
+{
+	if (!bPosedRelease)
+	{
+		return;
+	}
+	const UFMCombatSettings* K = GetDefault<UFMCombatSettings>();
+	const UFMAttackData* Data = Combat->AttackData(PosedAttack);
+	TArray<FVector> Baked;
+	if (!Data || !BodyWeapon->GetSkeletalMeshAsset() || !Data->TracersBetween(PosedAttackFrame, Baked) || Baked.Num() < 2)
+	{
+		return;
+	}
+	const FTransform Frame = Combat->PresentedPawnFrame();
+	const auto Drawn = [&](const USkeletalMeshComponent* Weapon, TArray<FVector>& Out)
+	{
+		const FVector Base = Frame.InverseTransformPosition(Weapon->GetSocketLocation(K->BladeBaseSocket));
+		const FVector Tip = Frame.InverseTransformPosition(Weapon->GetSocketLocation(K->BladeTipSocket));
+		Out.SetNumUninitialized(Baked.Num());
+		for (int32 T = 0; T < Baked.Num(); ++T)
+		{
+			Out[T] = FMath::Lerp(Base, Tip, static_cast<float>(T) / (Baked.Num() - 1));
+		}
+	};
+	TArray<FVector> Body;
+	Drawn(BodyWeapon, Body);
+	const FTransform Hand = BodyMesh->GetSocketTransform(K->WeaponSocket);
+	const FTransform Ridden = FTransform(K->WeaponRotation, K->WeaponOffset) * Hand;
+	float Attach = 0.0f;
+	for (const FName& Socket : { K->BladeBaseSocket, K->BladeTipSocket })
+	{
+		const FVector Local = BodyWeapon->GetSocketTransform(Socket, RTS_Component).GetLocation();
+		Attach = FMath::Max(Attach, static_cast<float>((Ridden.TransformPosition(Local) - BodyWeapon->GetSocketLocation(Socket)).Size()));
+	}
+	float ErrMax = 0.0f;
+	for (int32 T = 0; T < Baked.Num(); ++T)
+	{
+		ErrMax = FMath::Max(ErrMax, static_cast<float>((Body[T] - Baked[T]).Size()));
+	}
+	float FpBase = -1.0f, FpTip = -1.0f;
+	if (IsLocallyControlled() && ArmsWeapon->GetSkeletalMeshAsset())
+	{
+		TArray<FVector> Arms;
+		Drawn(ArmsWeapon, Arms);
+		FpBase = static_cast<float>((Arms[0] - Baked[0]).Size());
+		FpTip = static_cast<float>((Arms.Last() - Baked.Last()).Size());
+		if (UFMCombatComponent::DrawEnabled())
+		{
+			DrawDebugLine(GetWorld(), Frame.TransformPosition(Arms[0]), Frame.TransformPosition(Arms.Last()), FColor::Orange, false, -1.0f, 0, 1.5f);
+		}
+	}
+	if (UFMCombatComponent::DrawEnabled())
+	{
+		for (const FVector& Point : Body)
+		{
+			DrawDebugPoint(GetWorld(), Frame.TransformPosition(Point), 8.0f, FColor::Yellow, false, -1.0f, 0);
+		}
+	}
+	const APlayerState* Player = GetPlayerState();
+	FM_TRACE(this, TEXT("BLADE pid=%d k=%.2f attack=%s n=%d err_max=%.1f err_base=%.1f err_tip=%.1f att=%.1f pos=%.2f fp_base=%.1f fp_tip=%.1f"),
+		Player ? Player->GetPlayerId() : -1, PosedAttackFrame, *Data->AttackName(), Baked.Num(), ErrMax,
+		static_cast<float>((Body[0] - Baked[0]).Size()), static_cast<float>((Body.Last() - Baked.Last()).Size()), Attach, BodyMesh->GetPosition() * 60.0f, FpBase, FpTip);
 }
 
 void AFMPlayerPawn::SetHarnessRole(FName InRole)
