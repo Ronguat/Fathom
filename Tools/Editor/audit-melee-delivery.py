@@ -73,7 +73,7 @@ for a in assets:
     if len(rows) % 40 == 0:
         unreal.SystemLibrary.collect_garbage()
 
-saved = unreal.EditorAssetLibrary.save_directory(ROOT, False, True)
+saved = unreal.EditorAssetLibrary.save_directory(ROOT, True, True)
 unreal.log("AUDIT save_directory: %s" % saved)
 
 project = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())

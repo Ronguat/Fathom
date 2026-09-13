@@ -62,6 +62,8 @@ Clips/Overhead_Right	riposte_overhead_R_2h_fpp	AnimSequence	0.5000	30	1.000	off	
 Clips/Overhead_Right	riposte_overhead_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
 Clips/Overhead_Right	riposte_perfect_overhead_R_2h_fpp	AnimSequence	0.2000	12	1.000	off	0		SKM_Mannequin_Skeleton
 Clips/Overhead_Right	riposte_perfect_overhead_R_2h_tpp	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Stance	Idle_2h_FPP	AnimSequence	0.0333	2	1.000	off	0	handsoffset_loc_x;handsoffset_rot_x	SKM_Mannequin_Skeleton
+Clips/Stance	Idle_Stance_2h	AnimSequence	4.0000	240	1.000	off	0		SKM_Mannequin_Skeleton
 Clips/Thrust_Left	2h_FP_Sword_L_ParryPose_L_ThrustRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
 Clips/Thrust_Left	2h_FP_Zwei_L_Thrust_v01	AnimSequence	2.0000	120	1.000	off	0	AutoAlignment	SKM_Mannequin_Skeleton
 Clips/Thrust_Left	2h_TP_Sword_L_ParryPose_L_ThrustRiposte_v01	AnimSequence	0.5000	30	1.000	off	0		SKM_Mannequin_Skeleton
@@ -121,7 +123,11 @@ Clips/Underhand_Right	underhand_R_2h_fpp	AnimSequence	1.7500	105	1.000	off	0	Aut
 Clips/Underhand_Right	underhand_R_2h_fpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
 Clips/Underhand_Right	underhand_R_2h_tpp	AnimSequence	1.7500	105	1.000	off	0	CombatLayering_Arm_L;CombatLayering_Arm_R;CombatLayering_Head;CombatLayering_Legs;CombatLayering_Pelvis	SKM_Mannequin_Skeleton
 Clips/Underhand_Right	underhand_R_2h_tpp_exhausted	AnimSequence	2.3333	140	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Walk	LOCO_N_Walk_F	AnimSequence	1.1333	34	1.000	off	0		SKM_Mannequin_Skeleton
+Clips/Walk	fpp_2h_walking	AnimSequence	1.3333	80	1.000	off	0	handsoffset_loc_x;handsoffset_rot_y;handsoffset_rot_z	SKM_Mannequin_Skeleton
 Rig	SKM_Mannequin	SkeletalMesh						lambert4=none	SKM_Mannequin_Skeleton
 Rig	SKM_Mannequin_Arms	SkeletalMesh						lambert4=none	SKM_Mannequin_Skeleton
 Rig	SKM_Mannequin_Invis	SkeletalMesh						lambert4=none	SKM_Mannequin_Skeleton
 Rig	SKM_Mannequin_Skeleton	Skeleton							
+Weapon	SM_Claymore_Rig_Skeleton	Skeleton							
+Weapon	SM_Greatsword	SkeletalMesh						M_Longsword=none	SM_Claymore_Rig_Skeleton
